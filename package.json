@@ -1,0 +1,48 @@
+{
+  "name": "d21-voting-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0 <23",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others -n api,web \"npm run dev -w @d21/api\" \"npm run dev -w @d21/web\"",
+    "build": "npm run build -w @d21/api && npm run build -w @d21/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --exclude '**/*.integration.test.ts'",
+    "test:db": "vitest run apps/api/src/db/schema.integration.test.ts apps/api/src/modules/auth/auth.integration.test.ts",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:generate": "npm run db:generate -w @d21/api",
+    "db:migrate": "npm run db:migrate -w @d21/api",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
+    "admin:set-password": "npm run admin:set-password -w @d21/api",
+    "admin:revoke-sessions": "npm run admin:revoke-sessions -w @d21/api"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^4.1.12"
+  },
+  "packageManager": "npm@11.6.2",
+  "overrides": {
+    "esbuild": "^0.28.1"
+  }
+}
