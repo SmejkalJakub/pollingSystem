@@ -20,7 +20,7 @@ export const jurorProgressSchema = z.enum([
 export const juryGroupCodeSchema = z.enum(juryGroupCodes);
 export const voteValueSchema = z.union([z.literal(1), z.literal(-1)]);
 
-// Structural validation only. D21 limits and submit completeness are not yet approved.
+// Structural shape; the domain engine applies approved D21 rules using server data.
 export const ballotEntrySchema = z.strictObject({
   votingItemId: z.uuid(),
   voteValue: voteValueSchema,
@@ -84,3 +84,457 @@ export const adminAccessResponseSchema = z.strictObject({
 export type Principal = z.infer<typeof principalSchema>;
 export type AuthenticatedSession = z.infer<typeof authenticatedSessionSchema>;
 export type SessionResponse = z.infer<typeof sessionResponseSchema>;
+
+const nameSchema = z.string().trim().min(1).max(200);
+export const eventInputSchema = z.strictObject({
+  name: nameSchema,
+  description: z.string().trim().max(5000),
+});
+export const eventPatchSchema = eventInputSchema
+  .partial()
+  .refine(
+    (value) => Object.keys(value).length > 0,
+    'Provide at least one field.',
+  );
+export const eventSchema = eventInputSchema.extend({
+  id: z.uuid(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const eventListSchema = z.array(eventSchema);
+export const eventParamsSchema = z.strictObject({ eventId: z.uuid() });
+export type EventInput = z.infer<typeof eventInputSchema>;
+export type EventPatch = z.infer<typeof eventPatchSchema>;
+export type EventRecord = z.infer<typeof eventSchema>;
+
+export const juryGroupInputSchema = z.strictObject({
+  code: juryGroupCodeSchema,
+  name: nameSchema,
+});
+export const juryGroupPatchSchema = juryGroupInputSchema.pick({ name: true });
+export const juryGroupSchema = juryGroupInputSchema.extend({
+  id: z.uuid(),
+  eventId: z.uuid(),
+});
+export const jurorInputSchema = z.strictObject({
+  displayName: nameSchema,
+  juryGroupId: z.uuid(),
+});
+export const jurorPatchSchema = jurorInputSchema
+  .partial()
+  .refine(
+    (value) => Object.keys(value).length > 0,
+    'Provide at least one field.',
+  );
+export const jurorSchema = jurorInputSchema.extend({
+  id: z.uuid(),
+  eventId: z.uuid(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const juryGroupListSchema = z.array(juryGroupSchema);
+export const jurorListSchema = z.array(jurorSchema);
+export const rosterSchema = z.strictObject({
+  groups: juryGroupListSchema,
+  jurors: jurorListSchema,
+  locked: z.boolean(),
+});
+export const groupParamsSchema = eventParamsSchema.extend({
+  groupId: z.uuid(),
+});
+export const jurorParamsSchema = eventParamsSchema.extend({
+  jurorId: z.uuid(),
+});
+export type JuryGroupInput = z.infer<typeof juryGroupInputSchema>;
+export type JuryGroupRecord = z.infer<typeof juryGroupSchema>;
+export type JurorInput = z.infer<typeof jurorInputSchema>;
+export type JurorPatch = z.infer<typeof jurorPatchSchema>;
+export type JurorRecord = z.infer<typeof jurorSchema>;
+export type Roster = z.infer<typeof rosterSchema>;
+
+// The server resolves these identities from the session, never from browser claims.
+export const wizardIdentitySchema = z.strictObject({
+  principal: jurorPrincipalSchema,
+  event: eventSchema,
+  group: juryGroupSchema,
+  expiresAt: z.iso.datetime(),
+});
+export type WizardIdentity = z.infer<typeof wizardIdentitySchema>;
+
+// Limits are explicitly entered by administrators; no automatic D21 rounding.
+export const positiveVotesPerNegative = 2;
+const configurationCount = z.number().int().min(1).max(2147483647);
+export const votingConfigurationSchema = z
+  .strictObject({
+    selectedPlaces: configurationCount,
+    maxPlusVotes: configurationCount,
+    maxMinusVotes: z.number().int().min(0).max(2147483647),
+    allowNegativeVotes: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.maxPlusVotes <= value.selectedPlaces)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maxPlusVotes'],
+        message: 'Positive votes must exceed the number of selected places.',
+      });
+    if (
+      value.maxMinusVotes >
+      Math.floor(value.maxPlusVotes / positiveVotesPerNegative)
+    )
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maxMinusVotes'],
+        message: 'Each negative requires two positive votes.',
+      });
+    if (!value.allowNegativeVotes && value.maxMinusVotes !== 0)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maxMinusVotes'],
+        message: 'Disabled negative votes require a zero limit.',
+      });
+  });
+export type VotingConfiguration = z.infer<typeof votingConfigurationSchema>;
+export const votingDraftInputSchema = z.strictObject({
+  name: nameSchema,
+  instructions: z.string().trim().max(5000),
+  kind: z.enum(['selection', 'final']),
+});
+export const votingDraftPatchSchema = votingDraftInputSchema
+  .partial()
+  .refine(
+    (value) => Object.keys(value).length > 0,
+    'Provide at least one field.',
+  );
+export const votingRecordSchema = votingDraftInputSchema.extend({
+  id: z.uuid(),
+  eventId: z.uuid(),
+  status: votingStatusSchema,
+  selectedPlaces: configurationCount.nullable(),
+  maxPlusVotes: z.number().int().min(0).max(2147483647).nullable(),
+  maxMinusVotes: z.number().int().min(0).max(2147483647).nullable(),
+  allowNegativeVotes: z.boolean().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const votingListSchema = z.array(votingRecordSchema);
+export const votingParamsSchema = z.strictObject({ votingId: z.uuid() });
+export type VotingDraftInput = z.infer<typeof votingDraftInputSchema>;
+export type VotingDraftPatch = z.infer<typeof votingDraftPatchSchema>;
+export type VotingRecord = z.infer<typeof votingRecordSchema>;
+export const votingGroupsInputSchema = z.strictObject({
+  // Draft setup can be incomplete. Activation will require approved readiness checks.
+  juryGroupIds: z
+    .array(z.uuid())
+    .max(2)
+    .refine(
+      (ids) => new Set(ids).size === ids.length,
+      'Choose each group only once.',
+    ),
+});
+export type VotingGroupsInput = z.infer<typeof votingGroupsInputSchema>;
+
+export const teamInputSchema = eventInputSchema;
+export const teamPatchSchema = eventPatchSchema;
+export const teamRecordSchema = teamInputSchema.extend({
+  id: z.uuid(),
+  eventId: z.uuid(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const teamListSchema = z.array(teamRecordSchema);
+export const teamParamsSchema = eventParamsSchema.extend({ teamId: z.uuid() });
+const displayOrderSchema = z.number().int().min(0).max(2147483647);
+export const votingItemInputSchema = z.strictObject({
+  teamId: z.uuid(),
+  displayOrder: displayOrderSchema,
+});
+export const votingItemPatchSchema = votingItemInputSchema
+  .partial()
+  .refine(
+    (value) => Object.keys(value).length > 0,
+    'Provide at least one field.',
+  );
+export const votingItemRecordSchema = z.strictObject({
+  id: z.uuid(),
+  eventId: z.uuid(),
+  votingId: z.uuid(),
+  teamId: z.uuid().nullable(),
+  name: nameSchema,
+  description: z.string().trim().max(5000),
+  displayOrder: displayOrderSchema,
+});
+export const votingItemListSchema = z.array(votingItemRecordSchema);
+export const votingItemParamsSchema = votingParamsSchema.extend({
+  itemId: z.uuid(),
+});
+export type TeamInput = z.infer<typeof teamInputSchema>;
+export type TeamPatch = z.infer<typeof teamPatchSchema>;
+export type TeamRecord = z.infer<typeof teamRecordSchema>;
+export type VotingItemInput = z.infer<typeof votingItemInputSchema>;
+export type VotingItemPatch = z.infer<typeof votingItemPatchSchema>;
+export const votingActionSchema = z.strictObject({});
+
+export const jurorStartSchema = z.strictObject({
+  eventId: z.uuid(),
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+});
+export const jurorAccessStatusSchema = z.strictObject({ issued: z.boolean() });
+export const jurorLinkSchema = z.strictObject({ url: z.url() });
+export const wizardStepSchema = z.strictObject({
+  id: z.uuid(),
+  name: nameSchema,
+  instructions: z.string().max(5000),
+  kind: z.enum(['selection', 'final']),
+  status: z.enum(['active', 'closed', 'archived']),
+  selectedPlaces: z.number().int().nullable(),
+  maxPlusVotes: z.number().int().nullable(),
+  maxMinusVotes: z.number().int().nullable(),
+  allowNegativeVotes: z.boolean().nullable(),
+  progress: jurorProgressSchema.default('not_started'),
+});
+export const wizardStepsSchema = z.array(wizardStepSchema);
+export const wizardCurrentSchema = wizardIdentitySchema.extend({
+  steps: wizardStepsSchema,
+});
+export const wizardStepParamsSchema = z.strictObject({ stepId: z.uuid() });
+export const jurorStartResponseSchema = z.strictObject({
+  session: authenticatedSessionSchema,
+  wizard: wizardCurrentSchema,
+});
+export type WizardCurrent = z.infer<typeof wizardCurrentSchema>;
+export type WizardStep = z.infer<typeof wizardStepSchema>;
+
+// Validation only: no draft, submission or ballot ownership fields.
+export const ballotValidationInputSchema = z.strictObject({
+  entries: z.array(ballotEntrySchema),
+});
+export const ballotIssueSchema = z.enum([
+  'CONFIGURATION_NOT_READY',
+  'VOTING_UNAVAILABLE',
+  'UNKNOWN_ITEM',
+  'DUPLICATE_ITEM',
+  'PLUS_LIMIT',
+  'MINUS_LIMIT',
+  'NEGATIVES_DISABLED',
+  'NEGATIVE_ELIGIBILITY',
+]);
+export const ballotValidationSchema = z.strictObject({
+  valid: z.boolean(),
+  issues: z.array(ballotIssueSchema),
+  plusUsed: z.number().int().nonnegative(),
+  minusUsed: z.number().int().nonnegative(),
+  plusRemaining: z.number().int().nonnegative(),
+  minusRemaining: z.number().int().nonnegative(),
+  minusEntitlement: z.number().int().nonnegative(),
+});
+export type BallotIssue = z.infer<typeof ballotIssueSchema>;
+export type BallotValidation = z.infer<typeof ballotValidationSchema>;
+
+// A null revision asserts that no ballot exists. Never accept owner/status claims.
+export const ballotDraftInputSchema = z.strictObject({
+  expectedRevision: z.number().int().min(0).max(2147483647).nullable(),
+  entries: z.array(ballotEntrySchema),
+});
+export const ballotDraftSchema = z.strictObject({
+  status: ballotStatusSchema,
+  revision: z.number().int().nonnegative(),
+  savedAt: z.iso.datetime(),
+  submittedAt: z.iso.datetime().nullable(),
+  entries: z.array(ballotEntrySchema),
+  validation: ballotValidationSchema,
+  progress: jurorProgressSchema,
+});
+export const ballotDraftResponseSchema = ballotDraftSchema.nullable();
+export const wizardStepDetailSchema = z.strictObject({
+  current: wizardCurrentSchema,
+  step: wizardStepSchema,
+  items: votingItemListSchema,
+  ballot: ballotDraftResponseSchema,
+});
+export type BallotDraftInput = z.infer<typeof ballotDraftInputSchema>;
+export type BallotDraft = z.infer<typeof ballotDraftSchema>;
+export type WizardStepDetail = z.infer<typeof wizardStepDetailSchema>;
+
+export const wizardReviewCategorySchema = z.strictObject({
+  step: wizardStepSchema,
+  items: votingItemListSchema,
+  ballot: ballotDraftResponseSchema,
+});
+export const wizardReviewSchema = z.strictObject({
+  current: wizardCurrentSchema,
+  categories: z.array(wizardReviewCategorySchema),
+});
+// Only explicitly selected, previously saved versions may be submitted from review.
+export const wizardFinalSubmitInputSchema = z.strictObject({
+  categories: z
+    .array(
+      z.strictObject({
+        stepId: z.uuid(),
+        expectedRevision: z.number().int().min(0).max(2147483647),
+        entries: z.array(ballotEntrySchema),
+      }),
+    )
+    .min(1)
+    .refine(
+      (categories) =>
+        new Set(categories.map((category) => category.stepId)).size ===
+        categories.length,
+      'Select each category only once.',
+    ),
+});
+export const wizardFinalResultSchema = z.discriminatedUnion('outcome', [
+  z.strictObject({
+    stepId: z.uuid(),
+    outcome: z.literal('submitted'),
+    ballot: ballotDraftSchema,
+  }),
+  z.strictObject({
+    stepId: z.uuid(),
+    outcome: z.literal('rejected'),
+    code: z.string(),
+    status: z.number().int(),
+  }),
+]);
+export const wizardFinalSubmitSchema = z.strictObject({
+  results: z.array(wizardFinalResultSchema),
+});
+export type WizardReview = z.infer<typeof wizardReviewSchema>;
+export type WizardReviewCategory = z.infer<typeof wizardReviewCategorySchema>;
+export type WizardFinalSubmitInput = z.infer<
+  typeof wizardFinalSubmitInputSchema
+>;
+export type WizardFinalSubmit = z.infer<typeof wizardFinalSubmitSchema>;
+
+// Submit atomically validates/stores the current selection using the same revision boundary.
+export const ballotSubmitInputSchema = ballotDraftInputSchema;
+export const ballotUnlockInputSchema = z.strictObject({
+  expectedRevision: z.number().int().min(0).max(2147483647),
+});
+export const adminBallotParamsSchema = z.strictObject({
+  votingId: z.uuid(),
+  ballotId: z.uuid(),
+});
+export const adminBallotSchema = z.strictObject({
+  id: z.uuid(),
+  jurorId: z.uuid(),
+  displayName: z.string(),
+  status: ballotStatusSchema,
+  revision: z.number().int().nonnegative(),
+  submittedAt: z.iso.datetime().nullable(),
+});
+export const adminBallotsSchema = z.array(adminBallotSchema);
+export type AdminBallot = z.infer<typeof adminBallotSchema>;
+
+// Operational metadata only: choices and historical submission snapshots stay private.
+export const dashboardQuerySchema = z.strictObject({ eventId: z.uuid() });
+export const dashboardProblemSchema = z.enum([
+  'CONFIGURATION_NOT_READY',
+  'UNLINKED_ITEMS',
+  'NO_ELIGIBLE_JURORS',
+  'INVALID_DRAFT',
+  'LOCKED_BALLOT',
+  'UNAVAILABLE_PENDING',
+  'INELIGIBLE_BALLOTS',
+  'INVALID_SUBMISSION',
+]);
+export const dashboardJurorSchema = z.strictObject({
+  id: z.uuid(),
+  displayName: z.string(),
+  groupId: z.uuid(),
+  progress: jurorProgressSchema,
+  savedAt: z.iso.datetime().nullable(),
+  submittedAt: z.iso.datetime().nullable(),
+});
+export const dashboardCountsSchema = z.strictObject({
+  expected: z.number().int().nonnegative(),
+  submitted: z.number().int().nonnegative(),
+  pending: z.number().int().nonnegative(),
+  invalid: z.number().int().nonnegative(),
+  locked: z.number().int().nonnegative(),
+});
+export const dashboardCategorySchema = z.strictObject({
+  id: z.uuid(),
+  eventId: z.uuid(),
+  name: z.string(),
+  kind: z.enum(['selection', 'final']),
+  status: votingStatusSchema,
+  state: z.enum(['ready', 'in_progress', 'done', 'problem']),
+  groups: juryGroupListSchema,
+  counts: dashboardCountsSchema,
+  groupCounts: z.array(
+    z.strictObject({ groupId: z.uuid(), counts: dashboardCountsSchema }),
+  ),
+  problems: z.array(dashboardProblemSchema),
+  jurors: z.array(dashboardJurorSchema),
+});
+export const dashboardOverviewSchema = z.strictObject({
+  event: eventSchema,
+  asOf: z.iso.datetime(),
+  categories: z.array(dashboardCategorySchema),
+  totals: dashboardCountsSchema.extend({
+    categories: z.number().int().nonnegative(),
+    completedCategories: z.number().int().nonnegative(),
+    pendingJurors: z.number().int().nonnegative(),
+    problemCategories: z.number().int().nonnegative(),
+  }),
+});
+export const dashboardDetailSchema = z.strictObject({
+  event: eventSchema,
+  asOf: z.iso.datetime(),
+  category: dashboardCategorySchema,
+});
+export type DashboardCategory = z.infer<typeof dashboardCategorySchema>;
+export type DashboardOverview = z.infer<typeof dashboardOverviewSchema>;
+export type DashboardCounts = z.infer<typeof dashboardCountsSchema>;
+export type DashboardProblem = z.infer<typeof dashboardProblemSchema>;
+
+export const resultsQuerySchema = z.strictObject({ eventId: z.uuid() });
+export const resultRowSchema = z.strictObject({
+  id: z.uuid(),
+  teamId: z.uuid().nullable(),
+  name: z.string(),
+  description: z.string(),
+  displayOrder: z.number().int().nonnegative(),
+  plus: z.number().int().nonnegative(),
+  minus: z.number().int().nonnegative(),
+  score: z.number().int(),
+  rank: z.number().int().positive(),
+  tied: z.boolean(),
+  selection: z.enum(['selected', 'unresolved', 'outside']),
+});
+export const resultsReasonSchema = z.enum([
+  'NOT_CLOSED',
+  'PENDING_BALLOTS',
+  'DATA_PROBLEMS',
+  'CUTOFF_TIE',
+]);
+export const resultsCategorySchema = z.strictObject({
+  id: z.uuid(),
+  eventId: z.uuid(),
+  name: z.string(),
+  kind: z.enum(['selection', 'final']),
+  status: votingStatusSchema,
+  selectedPlaces: z.number().int().positive().nullable(),
+  groups: juryGroupListSchema,
+  counts: dashboardCountsSchema,
+  problems: z.array(dashboardProblemSchema),
+  stage: z.enum(['provisional', 'final']),
+  reasons: z.array(resultsReasonSchema),
+  boundaryTie: z.boolean(),
+  rows: z.array(resultRowSchema),
+});
+export const resultsOverviewSchema = z.strictObject({
+  event: eventSchema,
+  asOf: z.iso.datetime(),
+  categories: z.array(resultsCategorySchema),
+});
+export const resultsDetailSchema = z.strictObject({
+  event: eventSchema,
+  asOf: z.iso.datetime(),
+  category: resultsCategorySchema,
+});
+export type ResultsCategory = z.infer<typeof resultsCategorySchema>;
+export type ResultsOverview = z.infer<typeof resultsOverviewSchema>;
+export type ResultRow = z.infer<typeof resultRowSchema>;
+export type ResultsReason = z.infer<typeof resultsReasonSchema>;
