@@ -1,5 +1,7 @@
 # Simplification Stage 2 — compact event workspace
 
+**Release update, 2026-10-18:** deployed with Stages 1–3 as `a79338c` on the existing free test service. Original local-only boundaries below are historical. See [release evidence and limits](../implementation/progress.md#stages-13-release-verification--2026-10-18).
+
 Authorized 2026-10-18. This stage reorganizes local administration into one event workspace. Stage 1 access and all existing voting rules remain authoritative. No backend, contract, migration, dependency or hosting change is introduced.
 
 ## Navigation
@@ -33,6 +35,6 @@ Editable tables, batch/spreadsheet preview, one-save-per-table workflows, automa
 
 ## Validation
 
-See [progress](../implementation/progress.md) for actual source, PostgreSQL and browser results, review, preservation and limitations. Browser cases use generated local databases and compiled local servers. Stage 2 has not been deployed; the hosted pilot remains the historical Phase 13 version.
+See [progress](../implementation/progress.md) for actual source, PostgreSQL and browser results, review, preservation and limitations. Browser cases use generated local databases and compiled local servers. Stages 1–3 are now deployed as recorded above; the original local validation remains separate from hosted release checks.
 
 Stage 3 subsequently introduces the approved [Teams-only editable table, paste preview and atomic save](simplification-stage-3.md). Other later-stage work listed above remains unimplemented.

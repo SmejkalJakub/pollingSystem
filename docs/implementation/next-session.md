@@ -1,6 +1,16 @@
 # Session handoff
 
-**Deployment update, 2026-10-18: IN_PROGRESS.** User now authorizes deploying Stages 1–3 to the existing free test instance and explicitly approves commit/push to main. Earlier local-only statements below are historical release boundaries. Fresh hosted backup is taken before migration; external key setup and verified deployment remain in progress. Stage 4 implementation has not started.
+**Deployment update, 2026-10-18: DONE.** Stages 1–3 are live on the existing [free test service](https://d21-voting-test.onrender.com), source `a79338c`, Render deploy `dep-dbaimoeq1p3s73bqt4sg`. Six migrations, hosted preservation, authenticated workspace/Teams and test-link revocation checks pass. Clipboard success was announced twice; the browser connector returned an empty clipboard, so live copied-text equality is unverified (local automated copying/fallback passed). Earlier local-only statements below describe historical stage boundaries. User explicitly approves a new Stage 4 chat for the Jurors table, including automatic T/V groups; no Stage 4 implementation occurs here.
+
+## Approved next session: Simplification Stage 4
+
+The user explicitly selected **Create Stage 4 chat; include automatic T/V groups** after the release. Start only Stage 4 in that new chat. Read README, every implementation document, relevant wiki and actual code/Git state before changes.
+
+Implement a Jurors table with inline names and T/V assignment, spreadsheet paste preview, one atomic save, retained row/field errors, stale-edit comparison and safe retries without duplicate identities. Include automatic T/V groups. Reuse approved Stage 3 atomic/retry/comparison behavior where appropriate, while respecting juror identity and the stricter roster freeze. Preserve existing juror IDs, links/sessions, ballots, memberships/history and existing group names/IDs; never unfreeze or silently replace credentials. Inspect group creation/membership constraints before choosing automatic group behavior. Obtain a decision for any genuinely unresolved affected product rule instead of inventing it. Categories/combined setup/bulk copying/duplication/readiness remain later stages.
+
+The release source is `a79338c`; see [current release verification](progress.md#stages-13-release-verification--2026-10-18) and [deployment guide](../wiki/deployment.md). Documentation may have a later main commit; auto-deploy is off. Preserve the root `.env`, ignored `deploy/.env.test`, all private backups and external key file. Stage 4 is authorized for local implementation, validation, review, accurate four-document handoff and cleanup. Current publication approval applies to this completed Stages 1–3 release; do not infer automatic Stage 4 commit/push/deployment authorization.
+
+## Historical Stage 3 local handoff
 
 Updated 2026-10-18. **Simplification Stage 3: DONE locally.** Phases 0–13 and Stages 1–2 remain DONE. Working tree stays on `main` after `38112f4`, retaining earlier uncommitted Stage 1/2 work. No commit, push, deployment, cloud/live-data operation, development migration, credential reset, charge or other-project change.
 

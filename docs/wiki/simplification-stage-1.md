@@ -1,5 +1,7 @@
 # Simplification Stage 1 — juror access and copying
 
+**Release update, 2026-10-18:** deployed with Stages 1–3 as `a79338c` on the existing free test service. Original local-only boundaries below are historical. See [release evidence and limits](../implementation/progress.md#stages-13-release-verification--2026-10-18).
+
 Approved 2026-10-18. This local session supersedes the earlier Phase 2/5 juror 12-hour session and one-time-only link-display decisions. Phases 0–13 remain completed historical work. No subsequent simplification stage, commit, push, deployment, cloud operation or live data change is authorized by this session.
 
 ## Juror sessions

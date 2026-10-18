@@ -1,5 +1,7 @@
 # Simplification Stage 3 — editable Teams table
 
+**Release update, 2026-10-18:** deployed with Stages 1–3 as `a79338c` on the existing free test service. Original local-only boundaries below are historical. See [release evidence and limits](../implementation/progress.md#stages-13-release-verification--2026-10-18).
+
 **DONE locally**, approved 2026-10-18 after read-only inspection found no precise prior Stage 3 boundary. This stage covers Teams only. Jurors/categories tables, automatic T/V groups, combined category setup, bulk assignment/copy/duplication and new readiness tools remain later work. All changes stay local; no commit, push, deployment, cloud/live operation, development migration or credential reset.
 
 ## Organizer workflow
@@ -28,4 +30,4 @@ Authentication, same-origin/custom-header, no-store and strict contracts remain 
 
 ## Validation and limits
 
-Actual source, PostgreSQL, browser, source/visual review and preservation results are recorded in [progress](../implementation/progress.md). Stage 3 is not deployed. No new voting, group-size, identity, submission, revision, unlock/history, result/tie/finality or XLSX rule is introduced. [Stage 1 prerequisites](simplification-stage-1.md) still apply, including external keys and additive migration 0005 before any future authorized deployment.
+Actual source, PostgreSQL, browser, source/visual review and preservation results are recorded in [progress](../implementation/progress.md). Stage 3 is deployed; see the release record above. No new voting, group-size, identity, submission, revision, unlock/history, result/tie/finality or XLSX rule is introduced. [Stage 1 prerequisites](simplification-stage-1.md) still apply, including external keys and additive migration 0005 before any future authorized deployment.

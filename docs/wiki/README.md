@@ -1,6 +1,6 @@
 # Project wiki
 
-Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–13 are complete within the approved scope: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Consult progress for current validation and completion status.
+Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–13 are complete within the approved scope: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Stages 1–3 are deployed; Stage 4 (Jurors table and automatic T/V groups) is approved for a new chat. Consult progress for current validation and completion status.
 
 | Page                                                    | Purpose                                                                                                                                            |
 | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
