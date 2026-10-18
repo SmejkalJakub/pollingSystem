@@ -10,7 +10,7 @@ services:
     healthCheckPath: /api/ready
     autoDeployTrigger: 'off'
     # Free services have no pre-deploy hook or remote operator shell.
-    dockerCommand: /bin/sh -c "node apps/api/dist/migrate.js && exec node apps/api/dist/server.js"
+    dockerCommand: ./deploy/start-test.sh
     envVars:
       - key: DATABASE_URL
         sync: false

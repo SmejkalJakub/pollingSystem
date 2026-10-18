@@ -114,6 +114,13 @@ describe('PostgreSQL migrations and integrity', () => {
       "SELECT count(*)::int AS count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'",
     );
     expect(tables.rows[0].count).toBe(14);
+    const triggerFunction = await pool.query(
+      "SELECT proconfig, prosecdef FROM pg_proc WHERE oid = 'public.freeze_event_roster()'::regprocedure",
+    );
+    expect(triggerFunction.rows[0]).toEqual({
+      proconfig: ['search_path=public, pg_temp'],
+      prosecdef: false,
+    });
   });
 
   it('permits duplicate display names without using them as identity', async () => {

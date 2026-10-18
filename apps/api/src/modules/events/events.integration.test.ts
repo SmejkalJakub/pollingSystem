@@ -225,7 +225,7 @@ describe('event and jury management against PostgreSQL', () => {
             'SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations',
           )
         ).rows[0].count,
-      ).toBe(4);
+      ).toBe(5);
       const migratedItems = await upgrade.query(
         'SELECT id,team_id,name,description FROM voting_items ORDER BY id',
       );

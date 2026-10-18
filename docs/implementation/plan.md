@@ -268,6 +268,7 @@ User continues from the Phase 12 handoff, requests local Linux hosting and a liv
 - [x] Validate container startup, repeated migrations, hidden-password operator, real container HTTP voting and complete backup/restore row equality.
 - [x] Finish source/browser review and document final 56 fast/246 PostgreSQL/6 browser passes, local container/restore evidence, limitations and the earlier isolated uncertain response; cleanup is recorded in progress/handoff.
 - [x] Connect confirmed owning accounts, verify $0/free quotas/no Render card and obtain explicit commit/push/free-test provisioning authorization. Create only the separate Supabase test project; apply/repeat migrations with verified TLS and restricted backend access.
-- [ ] Verify real Render/Supabase TLS, origin/cookies, inbound proxy/throttling, disabled Data API/GraphQL, migrations, voting/XLSX and remote backup/restore before inviting colleagues.
+- [x] Provision only the new free Render service; push three Conventional Commits. Verify hosted PostgreSQL TLS, disabled Data API/GraphQL, migration repeat and clear security advisors; add portable trigger search-path hardening without editing the original four migrations.
+- [ ] Deploy the corrected executable startup script, configure readiness, and verify live origin/cookies, proxy/throttling, voting/XLSX and remote backup/restore before inviting colleagues.
 
 Phase 13 remains IN_PROGRESS until the live hosting gates and requested testing URL are handled. Local validation does not establish managed-provider readiness. Continue this same phase; no next phase. Authorized commits/push must use multiple short Conventional Commits without co-author trailers.

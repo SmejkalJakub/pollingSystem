@@ -29,6 +29,13 @@
       "when": 1792185830612,
       "tag": "0003_young_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792328826771,
+      "tag": "0004_freeze_roster_search_path",
+      "breakpoints": true
     }
   ]
 }

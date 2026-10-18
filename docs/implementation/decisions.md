@@ -202,3 +202,8 @@ Consequences: store explicit integer limits and number of advancing teams/winner
 - Free billing verified: Supabase quote $0/month; Render Hobby has no card and unused quotas. No billing changes or paid resources/upgrades.
 - New separate Supabase ref `ieqmrqctivjiljzyyucn` uses a dedicated backend login, disabled Data API/GraphQL, restricted default grants, verified-TLS session pooling and the unchanged compiled Drizzle migrator. Database CREATE permission is required even when Drizzle's schema already exists; no role/create-database/superuser privilege is granted.
 - Public dashboard-linked Supabase CA is included in the image and enabled only by explicit `NODE_EXTRA_CA_CERTS`; URLs require `sslmode=verify-full`. Private connection stays in ignored mode-0600 `deploy/.env.test`; no existing project credentials are reused. Render direct-service settings must match `render.yaml`; direct creation is not automatic Blueprint synchronization.
+
+## Phase 13 deployment corrections — 2026-10-18
+
+- Direct MCP creation provisioned only the new free Render service, with manual deploys. The first build passed; inline Docker command quoting failed at startup. Use an executable startup script, with migration failure stopping startup and exec preserving signals.
+- Provider advisor exposed a mutable lookup path on the existing invoker roster trigger. Fix portably with additive Drizzle migration 0004, preserving applied SQL 0000–0003. Pin `public, pg_temp`; do not grant definer privileges or change voting/roster behavior. Hosted security advisor is clear after applying it.

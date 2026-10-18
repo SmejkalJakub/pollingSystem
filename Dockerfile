@@ -24,6 +24,7 @@ COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/src/db/migrations apps/api/dist/migrations
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --from=build /app/deploy/supabase-root.crt deploy/supabase-root.crt
+COPY --from=build --chmod=755 /app/deploy/start-test.sh deploy/start-test.sh
 USER node
 EXPOSE 3001
 HEALTHCHECK --interval=15s --timeout=5s --start-period=15s --retries=3 CMD node -e "fetch('http://127.0.0.1:3001/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

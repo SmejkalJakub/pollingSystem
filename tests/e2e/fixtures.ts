@@ -92,7 +92,7 @@ export const test = base.extend<object, { runtime: Runtime }>({
               'SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations',
             )
           ).rows[0].count,
-        ).toBe(4);
+        ).toBe(5);
         const password = `Disposable E2E ${randomBytes(16).toString('hex')}`;
         await setAdminPassword(pool, password);
         server = spawn(process.execPath, ['apps/api/dist/server.js'], {
