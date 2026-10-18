@@ -44,3 +44,110 @@
     @apply m-0 bg-background font-sans text-foreground antialiased;
   }
 }
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-xs uppercase tracking-widest text-muted-foreground;
+  }
+  .wizard-link {
+    @apply inline-flex min-h-11 min-w-11 items-center underline underline-offset-4 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
+  }
+}
+
+@media (max-width: 639px) {
+  .voting-table,
+  .voting-table thead,
+  .voting-table tbody {
+    display: block;
+  }
+  .voting-table tr {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr) 3.5rem 3.5rem;
+  }
+  .voting-table caption {
+    display: block;
+  }
+  .voting-table th {
+    width: auto;
+  }
+}
+.voting-table button {
+  scroll-margin-top: 11rem;
+}
+
+.dashboard-progress {
+  appearance: none;
+  border: 0;
+  background: var(--secondary);
+  color: var(--ring);
+}
+.dashboard-progress::-webkit-progress-bar {
+  background: var(--secondary);
+}
+.dashboard-progress::-webkit-progress-value {
+  background: var(--ring);
+}
+.dashboard-progress::-moz-progress-bar {
+  background: var(--ring);
+}
+
+/* Keep the ranking table readable without sideways scrolling on small screens. */
+.results-table {
+  table-layout: fixed;
+}
+.results-table th:nth-child(1) {
+  width: 3.5rem;
+}
+.results-table th:nth-child(n + 3) {
+  width: 4.4rem;
+}
+@media (max-width: 639px) {
+  .results-table,
+  .results-table tbody {
+    display: block;
+  }
+  .results-table caption {
+    display: block;
+  }
+  .results-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .results-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding-block: 1rem;
+  }
+  .results-table .results-rank {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
+  }
+  .results-table .results-team {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    padding: 0;
+  }
+  .results-table .results-plus,
+  .results-table .results-minus,
+  .results-table .results-score {
+    grid-row: 2;
+    padding: 0.5rem 0 0;
+    text-align: left;
+  }
+  .results-table .results-plus {
+    grid-column: 1;
+  }
+  .results-table .results-minus {
+    grid-column: 2;
+  }
+  .results-table .results-score {
+    grid-column: 3;
+  }
+}

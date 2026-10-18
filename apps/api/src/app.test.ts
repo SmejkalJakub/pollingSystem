@@ -7,6 +7,27 @@ import {
 import { buildApp } from './app';
 
 describe('foundation API', () => {
+  it.each(['55P03', '57014', 'ECONNREFUSED', 'ETIMEDOUT'])(
+    'returns a retryable, sanitized error for dependency failure %s',
+    async (code) => {
+      const app = buildApp({ checkDatabase: async () => {} });
+      app.get('/dependency-failure', () => {
+        throw Object.assign(new Error('private SQL and connection details'), {
+          code,
+        });
+      });
+      try {
+        const response = await app.inject('/dependency-failure');
+        expect(response.statusCode).toBe(503);
+        expect(apiErrorSchema.parse(response.json()).error.code).toBe(
+          'DEPENDENCY_UNAVAILABLE',
+        );
+        expect(response.body).not.toContain('private');
+      } finally {
+        await app.close();
+      }
+    },
+  );
   it('reports liveness separately from database readiness', async () => {
     const app = buildApp({
       checkDatabase: async () => {

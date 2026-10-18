@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AdminWorkspace } from '@/modules/admin/AdminWorkspace';
 import type { SessionResponse } from '@d21/contracts';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,10 @@ export function AuthScreen() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const authenticated = typeof state === 'object' && state.authenticated;
   const expiresAt = authenticated ? state.expiresAt : undefined;
+  const onExpired = useCallback(() => {
+    setState({ authenticated: false });
+    setNotice('Přihlášení již není platné. Přihlaste se prosím znovu.');
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -128,6 +133,16 @@ export function AuthScreen() {
     </p>
   );
 
+  if (authenticated && state.principal.kind === 'admin')
+    return (
+      <AdminWorkspace
+        onExpired={onExpired}
+        logout={logout}
+        busy={busy}
+        error={errorNotice}
+      />
+    );
+
   return (
     <>
       <AppHeader section="Administrace" />
@@ -180,7 +195,7 @@ export function AuthScreen() {
             <p className="font-medium">{state.principal.displayName}</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               {state.principal.kind === 'admin'
-                ? 'Přístup pro správu a garanci je aktivní. Správa eventů bude dostupná v další fázi.'
+                ? 'Přístup pro správu a garanci je aktivní.'
                 : 'Přístup porotce je aktivní. Administrace je dostupná pouze organizátorům.'}
             </p>
             <p className="mt-4 text-sm text-muted-foreground">

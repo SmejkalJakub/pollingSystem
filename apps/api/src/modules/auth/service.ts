@@ -18,16 +18,17 @@ export const SESSION_SECONDS = 12 * 60 * 60;
 export function createAuthService(pool: Pool) {
   async function readSession(
     token: string | undefined,
+    connection: Pick<Pool, 'query'> = pool,
   ): Promise<AuthenticatedSession | null> {
     if (!isSecret(token)) return null;
-    const result = await pool.query(
+    const result = await connection.query(
       `SELECT s.expires_at, s.admin_user_id, s.event_id, s.juror_id,
               u.display_name AS admin_name, j.display_name AS juror_name, j.jury_group_id
        FROM sessions s
        LEFT JOIN admin_access a ON a.user_id = s.admin_user_id
        LEFT JOIN users u ON u.id = a.user_id
        LEFT JOIN event_jurors j ON j.id = s.juror_id AND j.event_id = s.event_id
-       WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > now()`,
+       WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > statement_timestamp()`,
       [secretHash(token)],
     );
     const row = result.rows[0];

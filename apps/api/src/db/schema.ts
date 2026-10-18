@@ -32,6 +32,8 @@ export const events = pgTable('events', {
   id: id(),
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
+  // Sticky once voting starts or any ballot exists. Not a voting lifecycle API.
+  rosterLockedAt: timestamp('roster_locked_at', { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -142,17 +144,40 @@ export const votingAllowedGroups = pgTable(
   ],
 );
 
+export const teams = pgTable(
+  'teams',
+  {
+    id: id(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'restrict' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [unique('teams_event_id_id_unique').on(table.eventId, table.id)],
+);
+
 export const votingItems = pgTable(
   'voting_items',
   {
     id: id(),
     eventId: uuid('event_id').notNull(),
     votingId: uuid('voting_id').notNull(),
+    // Nullable for legacy/direct SQL compatibility; all new API entries require a team.
+    teamId: uuid('team_id'),
     name: text('name').notNull(),
     description: text('description').notNull().default(''),
     displayOrder: integer('display_order').notNull().default(0),
   },
   (table) => [
+    unique('voting_items_voting_team_unique').on(table.votingId, table.teamId),
+    foreignKey({
+      name: 'voting_items_same_event_team_fk',
+      columns: [table.eventId, table.teamId],
+      foreignColumns: [teams.eventId, teams.id],
+    }).onDelete('restrict'),
     unique('voting_items_scope_unique').on(
       table.eventId,
       table.votingId,

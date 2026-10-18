@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readEnvironment } from '../config';
+import { dropTestDatabase } from './test-database';
 
 // Always create a disposable database. Never truncate or migrate the configured database.
 const databaseName = `d21_test_${randomUUID().replaceAll('-', '')}`;
@@ -93,8 +94,7 @@ describe('PostgreSQL migrations and integrity', () => {
   afterAll(async () => {
     await pool.end();
     try {
-      if (created)
-        await admin.query(`DROP DATABASE "${databaseName}" WITH (FORCE)`);
+      if (created) await dropTestDatabase(admin, databaseName);
     } finally {
       await admin.end();
     }
@@ -113,7 +113,7 @@ describe('PostgreSQL migrations and integrity', () => {
     const tables = await pool.query(
       "SELECT count(*)::int AS count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'",
     );
-    expect(tables.rows[0].count).toBe(13);
+    expect(tables.rows[0].count).toBe(14);
   });
 
   it('permits duplicate display names without using them as identity', async () => {

@@ -15,6 +15,20 @@
       "when": 1792146982313,
       "tag": "0001_regular_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792152102080,
+      "tag": "0002_low_talon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792185830612,
+      "tag": "0003_young_starbolt",
+      "breakpoints": true
     }
   ]
 }

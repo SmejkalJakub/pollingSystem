@@ -15,10 +15,13 @@
   },
   "dependencies": {
     "@d21/contracts": "*",
+    "@d21/voting-domain": "*",
     "@fastify/cookie": "^11.1.3",
     "@fastify/rate-limit": "^11.2.1",
+    "@fastify/static": "10.1.6",
     "dotenv": "^18.0.8",
     "drizzle-orm": "^0.45.4",
+    "exceljs": "4.4.0",
     "fastify": "^5.12.7",
     "pg": "^8.23.1",
     "zod": "^4.6.7"

@@ -1,17 +1,39 @@
 import { useEffect } from 'react';
 import { AppHeader } from '@/components/AppHeader';
 import { AuthScreen } from '@/modules/auth/AuthScreen';
-import { JurorLanding } from '@/modules/auth/JurorLanding';
+import { JurorPortal } from '@/modules/voting-wizard/JurorPortal';
 
 export function App() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
-  const adminLogin = path === '/admin/login';
+  const adminLogin =
+    path === '/admin/login' ||
+    path === '/admin/events' ||
+    /^\/admin\/events\/[0-9a-f-]{36}\/(dashboard|results)$/i.test(path) ||
+    /^\/admin\/results\/votings\/[0-9a-f-]{36}$/i.test(path) ||
+    /^\/admin\/dashboard\/votings\/[0-9a-f-]{36}$/i.test(path) ||
+    /^\/admin\/(events|votings)\/[0-9a-f-]{36}$/i.test(path);
   useEffect(() => {
     document.title = adminLogin ? 'D21 — Administrace' : 'D21 — Hlasování';
   }, [adminLogin]);
 
   if (adminLogin) return <AuthScreen />;
-  if (path === '/') return <JurorLanding />;
+  const step = /^\/wizard\/steps\/([0-9a-f-]{36})$/i.exec(path);
+  if (
+    path === '/' ||
+    path === '/wizard' ||
+    step ||
+    path === '/wizard/review' ||
+    path === '/wizard/confirmation'
+  )
+    return (
+      <JurorPortal
+        stepId={step?.[1]}
+        reviewPage={
+          path === '/wizard/review' || path === '/wizard/confirmation'
+        }
+        confirmationPage={path === '/wizard/confirmation'}
+      />
+    );
   return (
     <>
       <AppHeader />

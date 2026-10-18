@@ -14,6 +14,7 @@ import {
 } from 'vitest';
 import { sessionResponseSchema } from '@d21/contracts';
 import { readEnvironment } from '../../config';
+import { dropTestDatabase } from '../../db/test-database';
 import { buildApp } from '../../app';
 import {
   createAuthService,
@@ -79,8 +80,7 @@ describe('authentication against PostgreSQL', () => {
   afterAll(async () => {
     await pool.end();
     try {
-      if (created)
-        await admin.query(`DROP DATABASE "${databaseName}" WITH (FORCE)`);
+      if (created) await dropTestDatabase(admin, databaseName);
     } finally {
       await admin.end();
     }

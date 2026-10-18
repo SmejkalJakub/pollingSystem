@@ -1,6 +1,6 @@
 import { AppHeader } from '@/components/AppHeader';
 
-export function JurorLanding() {
+export function JurorLanding({ notice }: { notice?: string }) {
   return (
     <>
       <AppHeader section="Pro porotce" />
@@ -11,6 +11,11 @@ export function JurorLanding() {
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Vstup pro porotce
         </h1>
+        {notice && (
+          <p role="status" className="mt-4">
+            {notice}
+          </p>
+        )}
         <p className="mt-4 leading-relaxed text-muted-foreground">
           K hlasování použijte svůj osobní odkaz od organizátora akce.
         </p>

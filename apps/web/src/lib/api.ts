@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import {
   healthResponseSchema,
   readinessResponseSchema,
@@ -60,4 +61,35 @@ export async function authRequest(
   }
   if (response.status === 204) return { authenticated: false } as const;
   return sessionResponseSchema.parse(await response.json());
+}
+
+export async function apiRequest<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  options: {
+    method?: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+    body?: unknown;
+    signal?: AbortSignal;
+  } = {},
+): Promise<T> {
+  const response = await fetch(`/api${path}`, {
+    method: options.method ?? 'GET',
+    credentials: 'same-origin',
+    cache: 'no-store',
+    signal: options.signal,
+    headers: options.method
+      ? { 'Content-Type': 'application/json', 'X-D21-Request': '1' }
+      : {},
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+  if (!response.ok) {
+    const error = apiErrorSchema.safeParse(await response.json());
+    throw new ApiError(
+      response.status,
+      error.success ? error.data.error.code : 'UNKNOWN',
+    );
+  }
+  return schema.parse(
+    response.status === 204 ? undefined : await response.json(),
+  );
 }

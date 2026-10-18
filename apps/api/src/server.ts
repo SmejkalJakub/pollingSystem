@@ -1,13 +1,37 @@
+import { createResultsService } from './modules/results/service';
+import { createDashboardService } from './modules/dashboard/service';
+import { createBallotAdminService } from './modules/ballots/admin';
 import { createAuthService } from './modules/auth/service';
 import { buildApp } from './app';
 import { readEnvironment } from './config';
 import { createDatabase } from './db/client';
+import { createEventService } from './modules/events/service';
+import { createVotingService } from './modules/votings/service';
+import { createWizardService } from './modules/wizard/service';
+import { createJurorAccessService } from './modules/auth/juror-access';
+import { fileURLToPath } from 'node:url';
 
 const environment = readEnvironment();
 const { pool } = createDatabase(environment.DATABASE_URL);
+const auth = createAuthService(pool);
 const app = buildApp({
   logger: true,
-  auth: { service: createAuthService(pool), origin: environment.APP_ORIGIN },
+  webRoot:
+    environment.SERVE_WEB === 'true'
+      ? fileURLToPath(new URL('../../web/dist', import.meta.url))
+      : undefined,
+  trustedProxy: environment.TRUSTED_PROXY_CIDRS,
+  auth: {
+    service: auth,
+    origin: environment.APP_ORIGIN,
+    events: createEventService(pool, auth),
+    votings: createVotingService(pool, auth),
+    wizard: createWizardService(pool, auth),
+    ballotAdmin: createBallotAdminService(pool, auth),
+    dashboard: createDashboardService(pool, auth),
+    results: createResultsService(pool, auth),
+    jurorAccess: createJurorAccessService(pool, auth),
+  },
   checkDatabase: async () => {
     await pool.query('select 1');
   },
