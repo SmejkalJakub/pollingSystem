@@ -1,0 +1,24 @@
+# Separate Supabase database; configure DATABASE_URL and APP_ORIGIN in Render.
+# Minor colleague testing only: free plans, no paid resources or upgrades.
+services:
+  - type: web
+    name: d21-voting-test
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/ready
+    autoDeployTrigger: 'off'
+    # Free services have no pre-deploy hook or remote operator shell.
+    dockerCommand: /bin/sh -c "node apps/api/dist/migrate.js && exec node apps/api/dist/server.js"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: API_PORT
+        value: '3001'
+      - key: TRUSTED_PROXY_CIDRS
+        value: ''
+      - key: NODE_EXTRA_CA_CERTS
+        value: /app/deploy/supabase-root.crt

@@ -83,3 +83,49 @@ Dashboard counts derive from eligible jurors and actually submitted ballots per 
 Propose TypeScript checks, ESLint, production builds, Vitest for pure rules and components, Fastify request-injection API tests, integration tests against PostgreSQL for constraints and concurrent submissions, and Playwright for critical E2E flows. The packages and commands will be introduced in Phase 1.
 
 Phase 0 requires documentation review and source/link checks only. UI implementation later must include loading, empty, error, keyboard, touch, and mobile behavior, following the [design reference](design-reference.md).
+
+## Phase 4 implemented extension — 2026-10-17
+
+Phase 4 is complete. Shared event teams with same-event voting entries use additive migration 0003. Explicit administrator-entered limits and validated first activation use existing voting columns; event-first transactions share roster-freeze locks. Configuration freezes after first activation, while approved admin reopening preserves history without readiness checks. See [voting configuration](voting-configuration.md) for actual routes/validation; earlier proposal-only routes above are not implementation claims.
+
+## Phase 5 implemented extension — 2026-10-17
+
+`auth/juror-access.ts` owns event/juror link issuance, revocation and session redemption. `wizard/` owns read-only welcome/authorized category projections, separately from future `ballots/` writes. Both register inside existing cookie/origin scope. The API derives identities from hashed secrets/sessions and current membership. Event-first writes and shared-event reads serialize with existing roster/voting locks. No migration or new dependency is needed. Shared contracts cover all new public responses; a shared typed web transport serves admin/wizard modules.
+
+`voting-wizard/` provides root entry, `/wizard` and UUID step routes using normal browser navigation for direct links, refresh and history. Position is URL state, not persisted voting progress. Closed/archived authorized steps remain visible; drafts remain hidden. Details and exact decisions: [juror entry and wizard](juror-wizard.md). No ballot/D21 engine was added.
+
+## Phase 6 implemented extension — 2026-10-17
+
+`@d21/voting-domain` contains pure D21 validation/transitions using approved contract configuration/ratio. Both API and web import it through explicit workspace dependencies. `wizard/service` reuses its existing event-locked projection/session authorization for a validation-only POST; it writes nothing. Request entries carry only item identity/sign, while current context comes from the database. A prior validation result never authorizes later persistence/submission.
+
+`CategoryVoting` owns local temporary choices, counters, invalid-state explanation and explicit server-check feedback. The user chose retaining edits that reduce negative eligibility until corrected; no automatic removal. Browser navigation/refresh resets choices. No new store/router/external dependency or migration. Phase 7 remains gated by Q04 persistence/submission contract decisions.
+
+## Phase 7 implementation — 2026-10-17
+
+`ballots/service.ts` owns owner-scoped snapshot projection and transactional draft replacement. `wizard/service.ts` runs reads/validation under a shared event lock and saves under an exclusive event lock, resolving current session/group/authorized categories inside the same transaction. It passes only server-derived context into ballot operations. Snapshot reads are batched across authorized categories. Stored ballot lifecycle stays draft/submitted/cancelled; progress and validity are derived, not additional persisted states. Existing tables/revision columns suffice; no migration or external dependency.
+
+The user chooses independent category submission (Phase 8), preserving other categories for later return. Draft revision null means absent; integer revisions prevent silent stale-tab overwrite. Full entry replacement and revision increment roll back together. Submitted/cancelled records are never overwritten. Closed categories retain readable drafts and reject writes until reopened. `useBallotDraft` owns local edits/base snapshot/conflict recovery; `DraftPersistence` presents save/restore/comparison feedback; `CategoryVoting` retains pure D21 interaction. Successful revalidation never silently replaces local edits, and transient refresh failure preserves the editor. No draft save is submission.
+
+## Phase 8 implementation — 2026-10-17
+
+Existing event-first transaction and ballot revision boundaries now include category submission and administrator-only unlocking. Submission reuses authoritative context/rules and stores entries/state/submittedAt/revision/history atomically; matching no-write confirmation retries are safe. Unlock rechecks shared-admin authorization after event-lock waits, preserves choices/history and increments revision before returning a draft. Current submitted data stays in ballots/entries; historical snapshots live in existing audit_logs and must not be counted as extra ballots. Storing vote choices there is an explicit history exception, not routine HTTP logging. No new table, migration or dependency. Contracts expose submittedAt and strict submit/unlock inputs; web reuses draft conflict/recovery and adds focused confirmations. [Detailed contract](ballot-submission.md). Phase 9 review/final action remains separate.
+
+## Phase 9 implementation — 2026-10-17
+
+Wizard review reuses current event/session/group projections under a shared event lock and batches authorized owner ballots/items. Final submission selects saved revisions/choices and invokes the existing Phase 8 write in a separate exclusive event-first transaction per category. Normal category failures return individual outcomes; global session/infrastructure loss stops later operations without rolling back earlier independent commits. Browser workflow state/confirmed retries stay local to `useReviewSubmission`; category presentation is separate. `/wizard/confirmation` is refreshable from current ballots, without a new event-completion state. No dependency, table or migration. [Approved contract/recovery](multi-category-review.md).
+
+## Phase 10 implementation — 2026-10-18
+
+`dashboard/` adds shared-admin metadata-only overview/category projections under the existing shared event lock, with post-wait session/statement-time expiry rechecks. Event-batched queries derive eligibility/current submitted participation and saved validity without reading audit history or exposing choices. The web dashboard reuses existing session recovery/transport and semantic tokens; explicit refresh exposes its snapshot time. No migration/dependency/realtime infrastructure. [Counting and API contract](operational-dashboard.md). Results/ties remain Phase 11.
+
+## Phase 11 implementation — 2026-10-18
+
+`results/` aggregates only current eligible submitted entries under a shared parent-event lock. It reuses the exported locked dashboard projection for participation/validity, then reads batched category configuration and item totals in the same transaction. Pure `voting-domain/results.ts` computes scores, competition ranks and cutoff ties; the browser presents server results only. Shared strict contracts expose aggregate team/category data without juror choices/history. Existing admin guards and post-wait session checks apply. No dependency, migration, persistent result state or tie-resolution write. [Full contract](results-ranking.md).
+
+## Phase 12 — 2026-10-18
+
+`auth/admin-transaction.ts` centralizes request-bound shared-admin checks within event locks and at transaction completion. Older admin services now bind the request cookie explicitly; event descriptive updates serialize with snapshot reads. Existing audit_logs records actual lifecycle/link changes atomically. Results reuses one locked dashboard projection for the three-sheet XLSX export, releases the lock before ZIP generation and rechecks authorization before returning it. Server-only ExcelJS with compatible patched UUID override; no schema/migration. [Operational contract](operational-hardening.md).
+
+## Phase 13 — in progress, 2026-10-18
+
+Opt-in built hosting adds `webRoot` to the existing application factory, serving static assets/SPA routes and registering the same API under `/api`; development retains its Vite proxy and root API. `@fastify/static` handles built assets. Proxy trust is off unless validated IP/CIDR ranges are configured; security origin/cookie/link decisions remain independent of forwarded host/protocol. API builds bundle both workspace packages and emit flat server/migrate/operator entry points with immutable migration copies. One non-root Docker image supports isolated local Linux Compose and the approved Render service with a separate Supabase PostgreSQL project. Playwright/axe test the built application with generated local databases. Provider Data API/GraphQL must remain disabled; actual TLS/proxy/provider/restore validation is a live deployment gate. [Deployment details](deployment.md).

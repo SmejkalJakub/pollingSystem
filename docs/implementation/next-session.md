@@ -1,86 +1,68 @@
-# Next-session handoff
+# Session handoff
 
-Updated 2026-10-16.
+Updated 2026-10-18. **Last completed phase: Phase 12 — DONE. Current: Phase 13 — E2E Validation & Production Readiness: IN_PROGRESS.** Local Linux package, repeatable E2E/accessibility checks and local container/backup validation are complete. The separate Supabase database is created and migrated; Render publication and live verification remain. The user explicitly authorizes multiple short Conventional Commits without co-author trailers and pushing this repository. Preserve all work, `.env`, development credentials/data and four immutable migrations.
 
-## Last completed phase and current state
+## Latest instruction: unpaid minor testing only
 
-**Phase 2 — Authentication & Sessions: DONE. Phase 3: NOT_STARTED.** Stop after Phase 2; the user must explicitly start a new session for Phase 3.
+Use **Render Free + a separate Supabase Free project**. This supersedes the paid-plan proposal. No paid compute/add-ons/upgrades or chargeable overages are authorized. Confirm a $0 setup/free quotas before provisioning; prefer no payment method so exceeding limits suspends rather than bills. `render.yaml` uses Free and migrate-then-start (no paid pre-deploy hook). Free has no remote shell: the deployment guide now runs the existing compiled hidden-password operator locally with an explicit private env file targeting only the new test DB. Preserve the root `.env`. Free sleep/cold-start and inactivity pauses are acceptable limitations for minor testing, not production readiness. The latest source check passes (56 tests/typechecks/lint/format/builds). Docker now includes the public Supabase CA; Render enables it before Node starts.
 
-The working npm workspace has React/Vite/Tailwind/shadcn, Fastify, Zod contracts, PostgreSQL/Drizzle and 13 tables. Authentication uses one shared administration password, with no email or individual login accounts. The user explicitly changed this from the earlier email/password proposal during Phase 2. Admin and guarantor have identical permissions and a shared identity. Jurors will use unique event/juror secret links; only backend preparation exists.
+## Phase 13 handoff — continue this phase
 
-Browser routing: `/` is the public juror landing with personal-link instructions and no administration link; `/admin/login` is the direct password-login URL. Unknown paths show not-found content. This user-requested Phase 2 follow-up does not implement juror link redemption or start a later phase.
+- User requests Linux-local hosting and live colleague testing. **Approved:** Render + a separate Supabase project, no automatic test-data deletion, user owns accounts/backups/restores. Story Teller was inspected read-only (Vercel + Supabase); do not modify/reuse its database.
+- Ready files: `Dockerfile`, `compose.host.yaml`, `deploy/.env.host.example`, `render.yaml`, [deployment/backup/live guide](../wiki/deployment.md); API opt-in static/SPA `/api` hosting, IP/CIDR proxy configuration, compiled server/migrate/operator entry points and optional dedicated migration URL; Playwright/axe in `tests/e2e` and `playwright.config.ts`.
+- Final source `npm run check` PASS (56 fast tests, four workspace + E2E typechecks, lint/format/builds); PostgreSQL 246/246 PASS; final built-app browser 6/6 PASS (desktop, phone, dark-browser-preference/reduced-motion landscape). Three diagnostic desktop repetitions also passed. One earlier uncertain submission response had no captured root cause; response status/contract assertions now expose any recurrence. Do not claim a product fix for that isolated attempt.
+- Linux ARM64 container build/non-root runtime, fresh startup, repeat migrations, hidden password operator, real HTTP voting/results, restart/image upgrade/data retention and exact local backup/restore equality across 15 tables PASS. `db:generate`: 14 tables/no drift; `.env` and SQL hashes unchanged. Full evidence/limits in progress.md.
+- Cleanup verified: generated local test database count 0; exact disposable Compose project/volume removed; original development PostgreSQL healthy. Temporary credentials/scripts/dump removed, `.env`/SQL hashes unchanged. Test images remain in the local build cache; generated result screenshots are preserved outside the repository in the session visualization directory.
+- Confirmed owners: Supabase “SmejkalJakub's Org” (`ljobtzyeffzapiajvdez`, Free) and Render “Jakub's workspace” (`tea-d91qrvhkh4rs73aqgbh0`, Hobby). User explicitly requires other projects untouched. Render billing shows no card, $0 charges and unused free quotas (750 hours, 5 GB bandwidth, 500 pipeline minutes). No shared billing settings changed.
+- New Supabase `d21-polling-test` (`ieqmrqctivjiljzyyucn`, Frankfurt) is active. Data API disabled before migrations; pg_graphql removed. Dedicated `d21_app` owns app tables and has only this database's schema-creation privileges. Private mode-0600 ignored `deploy/.env.test` holds its connection; root development `.env` is preserved. Verified TLS session pooler works; compiled migrations applied and repeated successfully. Provider-role table grants are absent. No other cloud project was changed.
+- **Remaining:** commit/push the reviewed project, create only the free Render test service, and verify the allocated HTTPS address and live flows. No paid resources/upgrades. `render.yaml` passes the current Render public JSON schema after quoting `'off'` to avoid YAML 1.1 boolean coercion. Direct service creation must match the checked-in configuration; it does not establish automatic Blueprint synchronization.
+- Set exact provider HTTPS `APP_ORIGIN`; confirm inbound proxy/IP sanitization and distinct-client throttling before setting `TRUSTED_PROXY_CIDRS` (empty/default is safe but may group clients). Never infer proxy IPs from outbound ranges. Run the deployment guide's live cookie/origin/T/V/submission/results/XLSX/restart/backup-restore checks, record actual URL/results and then assess Phase 13 acceptance.
+- No full screen-reader/native mobile/load/multi-instance/native spreadsheet/Linux x86/live provider validation is claimed. Designed light palette stays light under a dark browser preference. Deadlines and alerts remain excluded. No new product rules or automatic retention/deletion.
 
-Git is initialized on main without commits/remote. Preserve the existing untracked project files. No commit is authorized. Original local servers/database remain running; inspect before starting duplicates. Disposable browser-test services/databases were cleaned up.
+## Approved boundaries
 
-## Required starting procedure
+- Shared admin/guarantor identity, equal permissions and no individual attribution. Organizer-issued reusable juror links have no expiry; sessions remain 12 hours. Regeneration/revocation ends the juror's sessions. Existing same-origin/header/no-store protections remain authoritative.
+- Explicit D21 caps: plus > places; minus >= 0 and <= floor(plus/2), zero if disabled; places and combined allowance below candidate count. One negative per two positives actually cast; optional/empty usage; same-sign removes/opposite replaces. Retain invalid reducing edits until corrected; never delete votes automatically.
+- Configuration/items/permissions freeze after first activation. Event roster additions/removal/reassignment sticky-freeze once voting starts or any ballot exists. Unconditional admin reopening preserves ballots/frozen configuration/sticky roster lock.
+- Q04: categories independent. Review explicitly selects saved valid open categories; nothing automatically selected. Empty saved drafts are labelled/explicitly selected; absence is not an empty saved draft. Submitted/unselected/invalid/unavailable categories remain intact. Normal failures have independent outcomes; global auth/infrastructure failure stops later work, preserving earlier commits and exact-retry recovery.
+- Q08: only shared administration unlocks for juror correction. Retain choices as draft, increment revision and preserve original submission/unlock history. Closed/archived categories need separate reopening before juror writes. No separate admin lock/reset/cancel/delete policy.
+- **Only current eligible `ballots.status='submitted'` contributes to results. Never aggregate audit snapshots.** Unlock removes current votes until replacement. Confirmation retry requires identical entries independent of order and current revision = requested base + 1; writes no timestamp/history even after closure. Later unlock/replacement invalidates old retries.
+- Q06 now approved: score = positives minus negatives, descending competition ranks (1, 2, 2, 4), equal scores share rank. Stable row order never breaks ties. A tied group wholly fitting the available places is selected together. A group crossing the cutoff is entirely unresolved; select only teams wholly above it. Organizer resolves ties outside the app; no extra winner/tie-break/runoff or resolution write.
+- Results final only when closed/archived, positive eligibility, all eligible submissions, no factual data problems and no unresolved cutoff tie. Otherwise provisional with reasons. Active/full participation is still provisional. Unlock/reopen may reverse finality. No certification/publication persistence is inferred.
 
-Read README.md, AGENTS.md, all implementation documents, the master brief and relevant wiki pages. Inspect actual source, package scripts, Git status and service state. Use [local development](../wiki/local-development.md) and [authentication](../wiki/authentication.md).
+Detailed contracts: [results](../wiki/results-ranking.md), [submission/unlock](../wiki/ballot-submission.md), [review/final submit](../wiki/multi-category-review.md), [wizard](../wiki/juror-wizard.md), [dashboard](../wiki/operational-dashboard.md). Save/review versions and choices must match. Availability, validity, saved progress and lifecycle remain distinct. Confirmation reload derives current data without event-completion storage. Authorization loss clears protected content.
 
-Visual reference: [Lovable preview](https://lovable.dev/preview/B5g1pVIhaqERXx1MrD7RrOkKifuxT8Mt). Thoughtful improvements are allowed. Preview codes, counts and demo behavior do not override confirmed requirements.
+Phase 12 user decisions supersede prior open gates: **no deadlines or alerts**. Existing admin actions suffice. **XLSX results + participation + export time** is approved. No new intervention, publication or deployment policy.
 
-## Next phase and exact scope
+## Phase 12 implementation
 
-**Phase 3 — Event & Jury Management**, only in a new user-started session:
+User explicitly excludes deadlines and alerts; nullable legacy deadline storage remains inert, with no API/UI/enforcement. Existing factual integrity indicators stay. Shared admin/guarantor and approved close/reopen/unlock/link semantics are unchanged. XLSX contains current category results, eligible-juror participation and export time. [Operational contract](../wiki/operational-hardening.md).
 
-- Event creation/list/detail/edit API and admin screens.
-- Jury-group management and juror creation/list/edit.
-- Correct event membership and T/V group assignment.
-- Runtime validation, authorization, relational integrity, tests, usable loading/empty/error/mobile states, review and documentation.
+- Request-bound event/jury/voting/team service factories and shared `auth/admin-transaction.ts` check the current session on the transaction connection after the event lock and before completion. Event creation/listing use an authorized transaction. Ballot admin/dashboard/results reuse the helper. Event metadata updates take the same exclusive event lock as other writes.
+- Existing `audit_logs` stores actual activation/closure/reopening and link issuance/revocation with shared-admin identity, statement-time timestamp and minimal state/count context. Failure rolls back state/audit. No-op lifecycle retries/revocation append nothing; regeneration intentionally replaces access. No link/session/password/choice data in new records. Existing approved submission/unlock snapshots remain unchanged and never count as current votes.
+- Known database connection/capacity/lock/statement timeouts return sanitized retryable `503 DEPENDENCY_UNAVAILABLE`; unexpected errors remain generic 500. No automatic mutation retry.
+- `GET /results/export.xlsx?eventId=<UUID>` returns guarded/no-store attachment XLSX. Strict claims; results and participation reuse one shared event-locked projection with one UTC snapshot time. Release lock before ZIP generation, recheck authorization before delivery. Read creates no ballots/history.
+- Workbook sheets **Kategorie**, **Výsledky**, **Účast** preserve categories including setup/empty, numeric plus/minus/scores/ranks, shared ranks/cutoff ties, provisional/final reasons/problems, current descriptions, UUID identities, and eligible-juror progress/UTC timestamps. No individual choices/revisions/history/credentials. Literal string cells including `= + - @`, no formulas/macros/hyperlinks, filters/frozen headers/wrapped text/row sizing.
+- Event results has **Stáhnout XLSX**, pending/success/focused retry, cancellation on unmount, keyboard focus restoration and auth-loss clearing. Backend-only ExcelJS 4.4.0 with compatible UUID 11.1.1 override. Clean install verified. No migration/table change: four immutable SQL migrations, 14 tables.
 
-Before affected implementation resolve:
+Main files: API `auth/admin-transaction.ts`, `events/audit.ts`, older admin services/routes, ballot admin/dashboard/results helper adoption, results `workbook.ts`/route/service/`operations.integration.test.ts`, error handler/tests, contracts `ResultsOverview`, web `results/ExportResults.tsx` and event results integration, manifests/lockfile and continuity/wiki docs.
 
-- Q05: may jury memberships change once voting starts or ballots exist? Do not silently invalidate eligibility or history.
-- Q10: when are equal T/V groups of 5/7/9 enforced? The proposed incomplete-setup/activation validation policy is not yet approved.
-- Destructive deletion/archive semantics remain unapproved. Existing references use RESTRICT; do not invent cascade deletion of history.
+## Validation and cleanup
 
-No voting configuration, D21 engine, ballot saving/submission, full wizard, dashboard or results in Phase 3. Q02/Q04 and other later gates remain open.
+Baseline source PASS (48 fast tests) and PostgreSQL 216/216 PASS after local-access rerun; initial sandbox attempt skipped assertions. Final post-review **npm run check PASS: four typechecks/lint/format, 52 fast tests and both builds**. Final expanded **PostgreSQL 246/246 PASS**, eight files including 30 new operational cases. Details/failures/fixes in progress.md. Original ballot-history test helper now selects ballot-target history, with separate new tests verifying lifecycle/link audit.
 
-## Authentication facts and integration boundaries
+New coverage includes audit/idempotence/invalid transitions/rollback, no-secret link history, exports/numeric counts/ranks/ties/Unicode/literal strings/privacy/empty/event scope, closure/unlock/replacement without history inflation, strict auth/claims/no-store, 17 actual event-lock revocation waits across older read/write/link/export routes, statement-time expiry, authorization loss inside transactions with complete rollback, and discarding a fully generated workbook after revocation. Excluded past deadlines do not affect otherwise authorized voting. Four fast cases cover sanitized retryable dependency errors.
 
-- `npm run admin:set-password` prompts twice with echo suppressed, initially creates or later replaces the shared credential, and revokes all prior admin sessions. No default password exists, and none was seeded into development during Phase 2.
-- `npm run admin:revoke-sessions` revokes existing admin sessions while retaining the password. Current password holders can log in again.
-- PostgreSQL stores session token hashes, one actor, created/expiry/revocation timestamps. Sessions expire absolutely after 12 hours; logout revokes the current session.
-- `APP_ORIGIN` defaults to `http://127.0.0.1:5173`. HTTPS origins get Secure `__Host-d21-session` cookies; local HTTP uses `d21-session`. All mutations in the auth scope require `X-D21-Request: 1`; supplied Origin must match exactly.
-- Register future admin modules inside `registerAuth`'s encapsulated cookie/origin scope and apply `adminGuard`. A browser screen is not an authorization boundary. Admin and guarantor share `administer` access; do not add email/account flows or expanded RBAC.
-- `juror_access` stores hashed event/juror secrets; `resolveJurorAccess` never identifies by name. Sessions can represent a juror, with same-event references and current group lookup. Public issuance/redemption, link lifetime and wizard/category entry remain future work. Confirm link lifecycle before exposing it.
-- `POST /auth/juror/start` is deliberately not exposed yet; implement its real wizard/category contract in Phase 5. The web app includes an informational juror landing and confirms administration login at `/admin/login`.
+Real-backend browser PASS: direct protected results/login, final 10/10 score 10, keyboard download and actual workbook reopened programmatically with correct sheets/counts/time, pending/success/focus, stopped owned API → focused export failure → restart/keyboard retry success, expired-session export clears protected data and shows login. Fresh login/export verified after final source review. Desktop 1280px, phone 375×812 and landscape 812×375: no measured overflow, download 44px high. Screenshot `phase12-export.png` is outside repo in session visualization directory; disposable data only.
 
-## Important files
+Clean npm 11.6.2 `ci` PASS; UUID 11.1.1 override verified, zero reported vulnerabilities. Apply/repeat migrations in generated browser DB PASS; `db:generate` reports 14 tables/no drift. SQL 0000–0003 hashes and `.env` digest match baseline; development public-table/credential digest unchanged. Owned API/web stopped, ports 3002/5174 have no listeners; viewport reset/tab closed; exact generated DB dropped normally/absence verified; helper/credential manifest and downloaded test workbook removed. No unrelated service stopped, no development migration/write and no commit.
 
-- `apps/api/src/modules/auth/{crypto,service,routes,operator}.ts`: password protection, database sessions, guarded routes and operator tools.
-- `apps/api/src/modules/auth/{crypto,routes}.test.ts` and `auth.integration.test.ts`: auth behavior and real database coverage.
-- `apps/api/src/{app,config,server}.ts`: factory, generic errors, environment and startup; keep testable injection.
-- `apps/api/src/db/schema.ts` and migrations: ten foundation tables plus `admin_access`, `juror_access`, `sessions`. Add migrations; never rewrite applied `0000`/`0001` history.
-- `apps/api/src/db/schema.integration.test.ts`: disposable database checks, configured connection needs CREATEDB.
-- `packages/contracts/src/index.ts`: shared auth schemas and distinct voting/ballot/progress states.
-- `apps/web/src/modules/auth/AuthScreen.tsx`, `lib/api.ts`, `components/ui/{button,input}.tsx`, `index.css`: existing UI, transport and semantic tokens.
+Limits: no automated browser suite/full screen-reader/native Excel or LibreOffice/load/multi-instance/deployment validation. Snapshot/manual freshness, in-memory export scale, long-text cell expansion, shared-admin attribution, privileged SQL and process-local login throttling remain explicit. Deadlines and alerts are excluded by user decision, not pending requirements.
 
-Keep same-event/same-voting references, one ballot per juror/voting, one ±1 entry per item and future allowed-group server authorization. Foundation constraints do not implement full eligibility, immutable submissions or approved D21 rules.
+## Historical Phase 12 handoff into Phase 13
 
-## Commands and validation
+The new Phase 13 session has now started and hosting/ownership/retention direction is approved above. Earlier Phase 12 completion/validation below is historical. Continue Phase 13 with the live deployment gates above, preserving all approved product rules.
 
-Use Node 22.13+ within 22.x. npm 11.6.2 is the verified installer; the host's older npm had peer-resolution issues.
+Phase 13 from the brief: integrated admin/T/V voting/results E2E, mobile/accessibility verification, repeatable startup/migrations, production configuration, a simple approved container/deployment setup, deployment documentation, final review and handoff. Preserve XLSX/audit/session guarantees. Deadline/alert work is excluded. Validate actual outcomes and limitations, clean up owned resources, document accurately and stop. No deployment or commit is authorized by this handoff.
 
-```sh
-npx --yes npm@11.6.2 ci
-npm run db:up
-npm run db:migrate
-npm run admin:set-password
-npm run dev
-npm run check
-npm run test:db
-```
-
-Preserve an existing `.env`; copy `.env.example` only when missing. App: http://127.0.0.1:5173. API: http://127.0.0.1:3001. The frontend `/api` proxy preserves the same-origin boundary. Administration login is at http://127.0.0.1:5173/admin/login.
-
-Latest validation: typecheck/lint/format/build PASS; 12 fast tests PASS; 26 real PostgreSQL tests PASS. Additive migration application and regeneration/no-drift PASS. Operator commands verified against disposable data. Browser login/error/focus, refresh persistence, logout, keyboard, desktop, 375px portrait, 812px landscape and server-outage/retry recovery PASS. Automated browser E2E/full accessibility/production operations have not run. The routing follow-up passed `npm run check` and browser route/refresh/home/unknown-path/mobile checks; database tests were not rerun for that frontend-only change. See progress.md for review findings and limitations.
-
-## Phase 3 acceptance criteria
-
-- Admin can create/edit events and view list/detail using real data.
-- Admin can manage jury groups and jurors with approved setup/membership rules.
-- Correct T/V/event assignments are enforced; invalid combinations and unauthorized access are rejected.
-- Shared-password sessions protect all new admin operations.
-- Backend/frontend scenarios and responsive states are verified with meaningful tests.
-- Typecheck/lint/relevant tests/build pass; review and four implementation documents are updated.
-- Stop after Phase 3. Do not advance automatically or commit without authorization.
+Commands: `npm run dev`, `npm run check`, `npm run test:db`, `npm run db:generate`, `npm run db:migrate`. Node 22.13+ in 22.x; verified npm 11.6.2 installer; local Compose PostgreSQL 54329. Preserve `.env`; do not stop unrelated services.

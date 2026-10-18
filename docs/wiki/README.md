@@ -1,6 +1,6 @@
 # Project wiki
 
-Persistent project knowledge for independent and concurrent sessions. Updated 2026-10-16. Phase 0 architecture is approved; current implementation is Phase 2 authentication on the Phase 1 foundation.
+Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–12 are complete: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Consult progress for current validation and completion status.
 
 | Page                                                    | Purpose                                                                                                                                            |
 | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -12,7 +12,21 @@ Persistent project knowledge for independent and concurrent sessions. Updated 20
 | [Progress](../implementation/progress.md)               | Verified workspace state and validation results.                                                                                                   |
 | [Decision log](../implementation/decisions.md)          | Confirmed requirements and proposals, clearly distinguished.                                                                                       |
 | [Next session](../implementation/next-session.md)       | Starting point for continuing work without chat history.                                                                                           |
+| [Event and jury management](event-jury-management.md)   | Approved roster policy, admin screens, API and migration integration.                                                                              |
+| [Voting configuration](voting-configuration.md)         | Implemented voting configuration, teams, lifecycle API/UI and validation.                                                                          |
+| [Juror entry and wizard](juror-wizard.md)               | Approved link/session lifecycle, organizer workflow, authorized steps, temporary voting and validation boundaries.                                 |
+| [Category submission](ballot-submission.md)             | Atomic per-category submission, retries, locking and administrator-only unlocking/history.                                                         |
 | [Authentication](authentication.md)                     | Shared password, operator commands, session/cookie behavior, API and boundaries.                                                                   |
 | [Local development](local-development.md)               | Installation, configuration, migrations, checks, and local startup.                                                                                |
 
 Use the user's explicit instructions and approved decisions as authority. Treat the preview as visual guidance. The architecture baseline is approved; recommendations attached to unresolved product questions are not approved requirements.
+
+[Multi-category review and final submission](multi-category-review.md) records the approved Phase 9 contract and recovery behavior.
+
+[Operational dashboard](operational-dashboard.md) defines eligible/current-submitted counting, setup boundaries, factual problems, API consistency and manual refresh.
+
+[Results and ranking](results-ranking.md) records Phase 11 current-submitted-only counts, approved Q06 ranks/cutoff ties/finality, guarded API and responsive internal results screens.
+
+[Operational hardening and XLSX export](operational-hardening.md) records Phase 12 scope, audit, transaction authorization, error handling and workbook/API semantics.
+
+[Linux hosting and colleague testing](deployment.md) describes the Phase 13 container, Render/Supabase setup, backup/restore, E2E checks and remaining live validation gates.

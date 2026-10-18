@@ -1,6 +1,6 @@
 # Local development
 
-Phase 2 adds shared-password administration login and sessions to the foundation. Event management and voting workflows remain future work. See [authentication](authentication.md) for the approved model and operator commands.
+Phases 0–12 are complete. Jurors can save and restore category drafts with D21 validation and stale-revision protection across tabs/devices. Draft saves never submit votes. Explicit independent category submission, safe retries, locked confirmation and administrator-only unlocking/history are now implemented; see [submission](ballot-submission.md). See [juror entry](juror-wizard.md), [voting configuration](voting-configuration.md) and [authentication](authentication.md).
 
 ## Requirements
 
@@ -25,7 +25,7 @@ Copy the example only if `.env` does not already exist; preserve an existing con
 
 Open [the local web app](http://127.0.0.1:5173). The API listens on 127.0.0.1:3001 by default. The frontend development proxy maps `/api/*` to the API's root routes. Both processes stop when the foreground development command is interrupted.
 
-The home page is a juror landing with personal-link instructions. Open [administration login](http://127.0.0.1:5173/admin/login) directly for the shared-password form; the public page has no admin link. Set it with the hidden terminal prompt; there is no seeded/default password. It follows the [Lovable visual reference](design-reference.md), with Czech copy, shared tokens, shadcn controls, loading/error/retry states and mobile layout. Successful login confirms shared administration access; event management is not implemented yet.
+The home page is the juror entry surface. Organizers generate personal links from the event roster’s **Osobní přístup** control and deliver them privately. Links have no expiry; sessions expire after 12 hours. `/wizard` and `/wizard/steps/:stepId` restore authenticated category navigation. Open [administration login](http://127.0.0.1:5173/admin/login) directly for the shared-password form; the public page has no admin link. Set it with the hidden terminal prompt; there is no seeded/default password. It follows the [Lovable visual reference](design-reference.md), with Czech copy, shared tokens, shadcn controls, loading/error/retry states and mobile layout. Successful login opens the event list. Direct administration routes are `/admin/events`, `/admin/events/:eventId` and `/admin/votings/:votingId`; see [event/jury management](event-jury-management.md) and [voting drafts and permissions](voting-configuration.md).
 
 ## Configuration
 
@@ -52,9 +52,9 @@ npm run test:db
 npm run build
 ```
 
-`npm run check` runs typecheck, lint, formatting, fast tests, and both builds. Run `npm run test:db` separately with PostgreSQL available. Integration tests create a uniquely named `d21_test_<uuid>` database, apply migrations there, test constraints and transactional rollback, and drop only that generated database afterward. They do not migrate, truncate, or delete records in the configured development database. An interrupted run may leave a generated test database; inspect it before manual cleanup.
+`npm run check` runs typecheck, lint, formatting, fast tests, and both builds. Run `npm run test:db` separately with PostgreSQL available. Integration tests create uniquely named disposable test databases, apply migrations there, test constraints and transactional rollback, and drop only that generated database afterward. They do not migrate, truncate, or delete records in the configured development database. An interrupted run may leave a generated test database; inspect it before manual cleanup.
 
-API tests use Fastify injection. Authentication integration tests exercise the real PostgreSQL session/credential store, login/logout, replacement/revocation, concurrent replacement/login, expiry, secure cookies, origin checks, throttling and juror event isolation. Contract tests exercise structural validation. PostgreSQL tests verify repeatable migrations, event/voting isolation, duplicate ballot protection under concurrency, ±1 values, single entry per item, submission timestamp consistency, and rollback. These foundation tests do not establish D21 methodology or a final submission workflow.
+API tests use Fastify injection. Authentication integration tests exercise the real PostgreSQL session/credential store, login/logout, replacement/revocation, concurrent replacement/login, expiry, secure cookies, origin checks, throttling and juror event isolation. Event/jury integration tests exercise CRUD, strict validation, all endpoint authorization/origin guards, cross-event relationships, pre-freeze removal, RESTRICT conflicts, sticky freezes and migration upgrade/backfill. Contract tests exercise structural validation. PostgreSQL tests verify repeatable migrations, event/voting isolation, duplicate ballot protection under concurrency, ±1 values, single entry per item, submission timestamp consistency, and rollback. Phase 7 also tests draft persistence/restoration, ownership, stale-save races, atomic rollback and lifecycle/session lock waits. Phase 8 additionally covers independent submit, matching/different concurrent requests, administrator-only unlock/history/replacement, legacy/exhausted/cancelled records, rollback and actual session/lifecycle lock waits (167 PostgreSQL checks total).
 
 `npm run format` applies formatting. The original supplied brief is excluded to preserve it byte-for-byte. Generated migration SQL/snapshots are excluded from formatting and linting.
 
@@ -67,9 +67,9 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Review generated SQL before applying it. Migration history prevents reapplying completed migrations. Do not edit a migration after it is applied in a shared environment; generate a new migration instead. No destructive product operations exist yet, and references currently use RESTRICT.
+Review generated SQL before applying it. Migration history prevents reapplying completed migrations. Do not edit a migration after it is applied in a shared environment; generate a new migration instead. Phase 3 permits unreferenced juror membership removal only before the roster freezes; references retain RESTRICT. Event/group deletion and archive are not exposed.
 
-The foundation migration contains events, users, jury groups, event jurors, votings, allowed groups, voting items, ballots, entries, and audit logs. The additive Phase 2 migration adds shared admin access, juror secret storage and sessions. D21 parameters can be unset in a draft. Activation, authorized-group checks, submission transactions, and domain update timestamps maintained by application operations are responsibilities of subsequent phases. Database constraints alone do not authorize a vote or lock submitted records against direct SQL access.
+The foundation migration contains events, users, jury groups, event jurors, votings, allowed groups, voting items, ballots, entries, and audit logs. The additive Phase 2 migration adds shared admin access, juror secret storage and sessions. Phase 3 migration `0002_low_talon.sql` adds the sticky roster-freeze marker and voting/ballot triggers. Additive Phase 4 `0003_young_starbolt.sql` adds shared teams and same-event item references, backfilling legacy items without merging names or changing ballot references. There are now 14 tables and four migrations. D21 parameters can be unset in a draft. Activation and current allowed-group checks are implemented. Phase 6 validates selections; Phase 7 persists drafts under exclusive event locks with expected revisions. Phase 8 submission/unlock uses these same locks/revisions and existing audit_logs history; no schema change. Domain update timestamps are maintained by their application operations. Database constraints alone do not authorize a vote or lock submitted records against direct SQL access.
 
 ## Health and builds
 
@@ -77,7 +77,7 @@ The foundation migration contains events, users, jury groups, event jurors, voti
 - `GET /ready`: checks PostgreSQL with a bounded connection/query timeout; returns 200 when connected or 503 when unavailable. This is connection readiness, not a check for migration completeness or production readiness.
 - Both endpoints expose stable shared schemas and no database details.
 
-`npm run build` emits the API to `apps/api/dist` and the web assets to `apps/web/dist`. Start the built API using `npm run start -w @d21/api`; `npm run preview -w @d21/web` previews the built frontend locally. Full production routing, credentials, containerization, and deployment belong to Phase 13; this is not a deployment guide.
+`npm run build` emits the API to `apps/api/dist` and the web assets to `apps/web/dist`. Start the built API using `npm run start -w @d21/api`; `npm run preview -w @d21/web` previews the built frontend locally. Phase 13 adds compiled `apps/api/dist/migrate.js` and `operator.js`, bundled workspace packages and opt-in same-origin built hosting. See the [deployment guide](deployment.md) for Linux containers and the approved Render/Supabase test target; live provider checks are still pending.
 
 `npm run db:down` stops/removes this project's containers and network while retaining its named data volume. No reset or volume-deletion command is provided.
 
@@ -86,3 +86,23 @@ The foundation migration contains events, users, jury groups, event jurors, voti
 The root esbuild override selects a patched 0.28.x release across development tools. This avoids older vulnerable transitive versions in Drizzle Kit/tsup. Migration generation and application builds are verified against the override. npm may still report deprecation notices for Drizzle Kit's legacy loader packages; those are distinct from vulnerability advisories. Do not run a forced audit downgrade of Drizzle Kit.
 
 Implementation references: [Tailwind Vite integration](https://tailwindcss.com/docs/installation/using-vite), [shadcn Vite setup](https://ui.shadcn.com/docs/installation/vite), [Drizzle migrations](https://orm.drizzle.team/docs/migrations). Package-lock.json records the tested dependency resolution.
+
+## Phase 9 review validation
+
+Juror review/confirmation routes are `/wizard/review` and `/wizard/confirmation`; selected final submission is `POST /wizard/final-submit`. [Workflow and recovery](multi-category-review.md). The PostgreSQL suite now has 186 passing checks, including independent selected submits, saved-version integrity, partial-commit recovery, concurrent requests, unlock/replacement and actual event-lock authorization/lifecycle changes. No new dependency/migration. Browser checks used an isolated generated database and temporary services, cleaned up afterward; development data/credentials were preserved.
+
+## Phase 10 dashboard validation
+
+Open an administration event and choose **Průběh hlasování** (`/admin/events/:eventId/dashboard`). Category detail is `/admin/dashboard/votings/:votingId`. Data has a snapshot timestamp and explicit refresh. [Contract and counting rules](operational-dashboard.md). The database test script includes the new dashboard suite: 200 PostgreSQL checks total across six files, with generated databases only. Existing 41 fast tests and full type/lint/format/build checks pass. No migration/dependency. Real-backend browser validation used disposable credentials/data; all temporary services/database were removed and development records/credentials were digest-compared unchanged.
+
+## Phase 11 results validation
+
+Event results are `/admin/events/:eventId/results`; category results are `/admin/results/votings/:votingId`. Both use existing administration session recovery, snapshot times and explicit refresh. [Counting/ranking/finality contract](results-ranking.md). The root PostgreSQL test script now includes `modules/results/results.integration.test.ts`; final evidence/counts are in progress.md. No new dependency/migration. Browser validation used a generated disposable database, with development public-table data and `.env` digest-compared unchanged.
+
+## Phase 12 — 2026-10-18
+
+On event results choose **Stáhnout XLSX**. The protected `/results/export.xlsx?eventId=<UUID>` creates categories, team results and participation sheets with one UTC snapshot time. ExcelJS 4.4.0 is API-only; root override pins its compatible UUID 11.1.1 patch. A clean npm 11.6.2 install passed with zero reported vulnerabilities. The DB script includes `modules/results/operations.integration.test.ts`; final counts/limitations are in progress.md. Deadlines and alerts are excluded by the user. [Full contract](operational-hardening.md).
+
+## Repeatable browser validation — Phase 13
+
+After installing dependencies and making local PostgreSQL available, run `npx playwright install chromium` and `npm run test:e2e`. The suite builds the app and runs desktop, phone and dark reduced-motion landscape projects against its own generated disposable databases/real HTTP server. It exercises compiled migrations twice and uses only disposable credentials; configured development data is not seeded/reset. The test connection must permit CREATE/DROP DATABASE. Do not run this suite against a hosted production database. Run it separately from builds/database integration suites when diagnosing timing failures; final checks must record any failed attempts rather than hiding them. Full screen-reader, native mobile, load and live-provider testing remain separate. Configuration includes opt-in `SERVE_WEB`, explicit `TRUSTED_PROXY_CIDRS`, and optional `MIGRATION_DATABASE_URL`; do not replace `.env` during setup.

@@ -4,7 +4,11 @@ coverage/
 .env
 .env.*
 !.env.example
+!deploy/.env.host.example
 *.log
 .DS_Store
 playwright-report/
 test-results/
+*.dump
+backups/
+.pg_service.conf

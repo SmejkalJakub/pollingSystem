@@ -1,0 +1,47 @@
+name: d21-host
+
+x-app: &app
+  image: ${D21_IMAGE:-d21-voting:local}
+  build: .
+  environment:
+    DATABASE_URL: postgresql://d21:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env.host}@postgres:5432/d21
+    APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN in deploy/.env.host}
+    SERVE_WEB: 'true'
+    API_HOST: 0.0.0.0
+    API_PORT: 3001
+    TRUSTED_PROXY_CIDRS: ''
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: d21
+      POSTGRES_USER: d21
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - host_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U d21 -d d21']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  migrate:
+    <<: *app
+    command: ['node', 'apps/api/dist/migrate.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+  app:
+    <<: *app
+    restart: unless-stopped
+    init: true
+    ports:
+      - '127.0.0.1:${HOST_PORT:-8080}:3001'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  host_postgres_data:

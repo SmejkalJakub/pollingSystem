@@ -2,7 +2,7 @@
 
 Hackathon voting with D21 rules, technical (T) and second (V) jury groups, an administration workspace, a juror wizard, progress monitoring, and results.
 
-Phase 2 provides a shared-password administration login, protected API access, database-backed sessions and operator tools on the React/Fastify/PostgreSQL foundation. Event management and voting workflows begin in later phases.
+Phases 0–12 are DONE; Phase 13 is IN_PROGRESS. Jurors use organizer-issued reusable links without expiry, with 12-hour sessions, protected category navigation, D21 controls, server validation and explicit per-category draft saving/restoration. Revision checks and comparison protect edits across tabs/devices. Saved drafts can be valid, invalid or empty; saving never submits votes. Each category can now be submitted independently with atomic validation/storage and safe retries. Submitted choices are locked; only administration can unlock them for juror correction/resubmission, preserving submission history. Administrators can configure selection/final voting, shared teams and entries, explicit positive/negative limits, allowed T/V groups, first activation, closure and unconditional reopening. Activation rejects incomplete configuration and requires equal T/V groups of 5, 7 or 9 jurors each. Review now shows saved choices/validity, safe return to editing, explicit category selection and confirmation with independent outcomes. The administration dashboard now shows real eligible/submitted counts, category and juror detail, pending assignments and factual problems. Open an event and choose **Průběh hlasování**. Refresh explicitly to load current data. Choose **Výsledky hlasování** for current submitted-only scores, shared ranks, multiwinner selection, unresolved cutoff ties and provisional/final labels. Choose **Stáhnout XLSX** on event results for a fresh workbook containing categories, team results, juror participation and export time. Existing admin interventions now have atomic audit records and session rechecks inside their transactions. See the implementation progress document for validation and limitations.
 
 Use Node.js 22.13+ within the 22.x line and Docker. First run, from this directory:
 
@@ -20,15 +20,26 @@ Preserve `.env` if it already exists. The password command prompts without echo;
 ```sh
 npm run check
 npm run test:db
+npx playwright install chromium
+npm run test:e2e
 ```
 
+- [Linux hosting, Render/Supabase testing and backups](docs/wiki/deployment.md)
+- [Operational hardening and XLSX export](docs/wiki/operational-hardening.md)
+- [Results and ranking](docs/wiki/results-ranking.md)
+- [Operational dashboard](docs/wiki/operational-dashboard.md)
 - [Project wiki](docs/wiki/README.md)
 - [Design reference and user guidance](docs/wiki/design-reference.md)
 - [Original implementation brief](docs/wiki/master-implementation-prompt.md)
+- [Event and jury management](docs/wiki/event-jury-management.md)
+- [Voting draft preparation and Phase 4 gates](docs/wiki/voting-configuration.md)
+- [Juror entry, link lifecycle and wizard](docs/wiki/juror-wizard.md)
+- [Multi-category review and final submission](docs/wiki/multi-category-review.md)
+- [Category submission and administrator unlocking](docs/wiki/ballot-submission.md)
 - [Authentication and password commands](docs/wiki/authentication.md)
 - [Local setup and validation](docs/wiki/local-development.md)
 - [Implementation plan](docs/implementation/plan.md)
 - [Current progress](docs/implementation/progress.md)
 - [Next-session handoff](docs/implementation/next-session.md)
 
-Development follows one phase per session. Phase 0 is approved. Phase 2 completion and Phase 3 decision gates are recorded in the progress and handoff documents. No commits have been made.
+Development follows one phase per session. Phase 12 is complete with approved existing-action hardening/audit, XLSX results/participation export, validation and review. Deadlines and alerts are explicitly excluded by the user. Phase 13 now adds a built same-origin web/API container, Linux Compose, Render configuration and repeatable Playwright/axe checks. Render + a separate Supabase test database is approved; account connection, final publishing approval and actual HTTPS/provider validation remain open. See the deployment guide and handoff. Git has an initial commit; no further commit is authorized.

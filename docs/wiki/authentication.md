@@ -1,20 +1,24 @@
 # Authentication and sessions
 
-Phase 2 implementation, updated 2026-10-16. The user's later password-only instruction supersedes the earlier email/password choice.
+Phases 2 and 5 implementation, updated 2026-10-17. The user's later password-only instruction supersedes the earlier email/password choice.
 
 ## Approved access model
 
 Administrators and guarantors share one administration password and identical permissions. No email, username, individual account, signup, invitation, or external identity provider is required. A single display identity (`Administrace`) represents all administration sessions. Individual attribution is therefore unavailable; future audit records must not imply that a named person was identified.
 
-Jurors will use unique organizer-issued secret links scoped to a juror and event. Names are display labels and may repeat. Phase 2 prepares hashed-secret storage, event-safe lookup, typed juror identities and session ownership. Issuance, link validity/expiry policy, delivery, redemption, category loading and functional link entry are not implemented. Confirm the remaining link lifecycle details before exposing them in Phases 3/5; no delivery mechanism or reusable-link policy has been silently selected.
+Jurors use unique organizer-issued secret links scoped to a juror and event. Names are display labels and may repeat. Phase 5 implements admin generation with manual private delivery, reusable links **without expiry**, 12-hour sessions, logout/recovery, regeneration and revocation. Regeneration/revocation invalidates all of that event juror’s links and sessions. The secret is shown once, stored only as a hash, and delivered in a URL fragment. See [juror entry and wizard](juror-wizard.md) for the approved lifecycle and complete workflow.
 
 ## Browser pages
 
-- `/` is the public juror landing page, explaining personal access links and organizer assistance. It has no administration link or password field.
+- `/` is the public juror entry page, accepting personal secret links and restoring an existing juror session. It has no administration link or password field.
+- `/wizard/review` and `/wizard/confirmation` show protected saved review and current confirmation; selected final submission remains independently authorized per category.
+- `/wizard` and `/wizard/steps/:stepId` provide protected welcome/category navigation with current T/V authorization. Draft categories are hidden; closed/archived authorized categories remain visible as unavailable.
 - `/admin/login` is the direct administration/guarantor login URL. Refresh and direct navigation work; the brand link returns to the juror home page.
+- `/admin/events` and `/admin/events/:eventId` expose the Phase 3 event/roster screens to administrators. Missing sessions use the same login form.
+- `/admin/votings/:votingId` exposes Phase 4 voting configuration, T/V permissions and guarded lifecycle actions, with the same session recovery. These APIs remain protected independently of browser routing.
 - Other paths show a not-found screen instead of the administration form.
 
-This routing follow-up was explicitly requested by the user. The juror landing is informational; secret-link redemption and the voting wizard remain later-phase work. The administrative API still requires an authenticated session independently of the browser URL.
+The root/admin separation was explicitly requested by the user. Phase 5 now provides secret-link redemption and the read-only wizard foundation. The administrative API still requires an authenticated session independently of the browser URL.
 
 ## Set or replace the shared password
 
@@ -46,7 +50,7 @@ Holders of the current password can sign in again. Replace the password to withd
 - Successful login replaces the browser's prior session. Logout revokes the current session and clears the cookie; repeated logout is safe. Password replacement serializes with login and invalidates previous sessions.
 - Administrative requests check database-backed authorization. Juror sessions receive 403 on administration routes. Expired, revoked or fabricated sessions receive 401. Session-store failures fail closed with a generic error.
 
-Future administrative modules must run within the `registerAuth` scope (to inherit cookie parsing and origin checks) and use `adminGuard`. UI visibility is not an authorization boundary. Juror voting authorization must still check the current allowed jury-group relationship in later phases.
+Future administrative modules must run within the `registerAuth` scope (to inherit cookie parsing and origin checks) and use `adminGuard`. UI visibility is not an authorization boundary. Phase 5 juror category reads check the current allowed jury-group relationship server-side. Later ballot operations must preserve and repeat that check.
 
 ## API
 
@@ -57,7 +61,7 @@ Future administrative modules must run within the `registerAuth` scope (to inher
 | `POST /auth/logout`      | Revokes current session, clears cookie, returns 204.                                                                                                                                |
 | `GET /admin/access`      | Guarded administration identity and `administer` permission; no placeholder event data.                                                                                             |
 
-Auth responses use `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. Public health/readiness endpoints are unchanged. `POST /auth/juror/start` remains Phase 5, where its wizard/category response can be implemented truthfully.
+Auth responses use `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. Public health/readiness endpoints are unchanged. `POST /auth/juror/start` is implemented in Phase 5 with strict `{eventId,token}`, a protected session cookie and `{session,wizard}` response. Issuance/revocation and wizard endpoints are documented in [juror entry](juror-wizard.md).
 
 ## Storage and validation
 
@@ -65,4 +69,16 @@ Auth responses use `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
 
 Tests cover credential verification and salts, bounded password work, contracts, failed dependencies, real login/logout, cookies, expiry, revocation, replacement/concurrent login, origin checks, throttling, duplicate-name jurors and event isolation. Integration tests create and drop only their own generated databases.
 
-Expired/revoked session rows are retained for now. Cleanup/retention, multi-instance rate limiting, hosting and operational auditing remain explicit future operations work. The basic authenticated screen confirms access; event management begins in Phase 3.
+Expired/revoked session rows are retained for now. Cleanup/retention, multi-instance rate limiting, hosting and operational auditing remain explicit future operations work. The authenticated workspace now provides [Phase 3 event and jury management](event-jury-management.md).
+
+Phase 5 requires no new migration. Its event-first link/session mutations and shared-event wizard reads preserve the existing storage and sticky roster lock. Session reads inside a transaction use statement-time expiry and the existing connection. Link/session revocation does not delete history or ballots.
+
+Phase 8 administrator ballot listing/unlock routes inherit the same guard/origin/no-store scope and recheck the admin session inside the event-first transaction after lock waits. Jurors cannot unlock through either UI or API. This uses the already approved shared administrator/guarantor identity, without individual attribution or expanded roles. [Submission/unlock details](ballot-submission.md).
+
+Phase 9 adds `/wizard/review` and `/wizard/confirmation` browser pages and protected review/final-submit APIs. They reuse current juror sessions/group checks and inherited no-store/origin/header guards. Review checks expiry after shared event-lock waits; each independently submitted category rechecks authorization after its exclusive event-lock wait. Global authorization loss stops later categories and clears protected UI. No identity/session-lifetime change. [Contract](multi-category-review.md).
+
+Phase 10 dashboard browser routes are `/admin/events/:eventId/dashboard` and `/admin/dashboard/votings/:votingId`; API `/dashboard/overview?eventId=...` and `/dashboard/votings/:votingId` inherit the existing administration guard/no-store scope and recheck session/expiry after shared event-lock waits. No new role, identity or lifetime. Dashboard expiry removes protected data. [Details](operational-dashboard.md).
+
+## Phase 12 — 2026-10-18
+
+Phase 12 binds event/roster/voting/team requests to the cookie and checks current shared-admin access after acquiring the event lock and before committing. Ballot administration/dashboard/results share this helper. Event creation/listing use an authorized transaction. Link mutations audit only counts/identities, never secrets. Export checks authorization again after ZIP generation. No session-lifetime or identity change. [Operational contract](operational-hardening.md).
