@@ -1,4 +1,12 @@
-export function AppHeader({ section }: { section?: string }) {
+import type { ReactNode } from 'react';
+
+export function AppHeader({
+  section,
+  actions,
+}: {
+  section?: string;
+  actions?: ReactNode;
+}) {
   return (
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-6">
@@ -12,9 +20,10 @@ export function AppHeader({ section }: { section?: string }) {
           </span>
           Hlasování
         </a>
-        {section && (
-          <span className="text-sm text-muted-foreground">{section}</span>
-        )}
+        {actions ??
+          (section && (
+            <span className="text-sm text-muted-foreground">{section}</span>
+          ))}
       </div>
     </header>
   );

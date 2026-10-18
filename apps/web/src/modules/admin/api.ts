@@ -3,6 +3,12 @@ export { apiRequest as adminRequest } from '@/lib/api';
 
 export function managementError(error: unknown) {
   if (error instanceof ApiError) {
+    if (error.code === 'LINK_STORAGE_UNAVAILABLE')
+      return 'Odkaz nelze načíst nebo vytvořit. Organizátor musí obnovit šifrovací klíče serveru. Stávající přístup zůstává zachován.';
+    if (error.code === 'LEGACY_LINK')
+      return 'Původní odkaz funguje, ale nelze jej obnovit. Pro budoucí kopírování výslovně vytvořte náhradní odkaz v Osobním přístupu; tím zrušíte dosavadní přihlášení.';
+    if (error.code === 'NO_ACTIVE_LINK')
+      return 'Porotce nemá aktivní osobní odkaz. Vytvořte jej v Osobním přístupu.';
     if (error.status === 401) return 'Přihlášení vypršelo. Přihlaste se znovu.';
     if (error.status === 403)
       return 'K této operaci nemáte přístup. Použijte adresu aplikace od organizátora.';

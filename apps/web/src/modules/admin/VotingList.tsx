@@ -25,15 +25,11 @@ export function VotingList({
   );
   const [creating, setCreating] = useState(false);
   return (
-    <section
-      className="mt-12 border-t border-border pt-8"
-      aria-labelledby="votings-heading"
-    >
+    <section className="mt-6" aria-labelledby="votings-heading">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="eyebrow">Příprava kategorií</p>
           <h2 id="votings-heading" className="mt-2 text-2xl font-semibold">
-            Hlasování
+            Kategorie hlasování
           </h2>
         </div>
         <div className="flex flex-wrap gap-2">

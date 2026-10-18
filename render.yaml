@@ -14,6 +14,11 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      # Supply privately; retain all keys needed by stored links/backups.
+      - key: JUROR_LINK_KEYS
+        sync: false
+      - key: JUROR_LINK_ACTIVE_KEY_ID
+        sync: false
       - key: APP_ORIGIN
         sync: false
       - key: API_PORT

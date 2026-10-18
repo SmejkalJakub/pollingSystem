@@ -29,7 +29,7 @@ function errorText(error: unknown) {
     if (error.code === 'INVALID_JUROR_LINK')
       return 'Osobní odkaz není platný nebo byl zrušen. Požádejte organizátora o nový.';
     if (error.status === 401)
-      return 'Přihlášení vypršelo nebo bylo zrušeno. Otevřete znovu svůj osobní odkaz od organizátora.';
+      return 'Přihlášení již není dostupné nebo bylo zrušeno. Otevřete znovu svůj osobní odkaz od organizátora.';
     if (error.status === 404)
       return 'Tato kategorie není dostupná. Vraťte se na přehled svých kategorií.';
     if (error.status === 403)
@@ -127,14 +127,15 @@ export function JurorPortal({
     else if (!loading) heading.current?.focus();
   }, [error, loading, link]);
   useEffect(() => {
-    if (!expiresAt) return;
-    const timer = window.setTimeout(
-      () => {
-        setData(undefined);
-        setError(new ApiError(401, 'UNAUTHENTICATED'));
-      },
-      Math.max(0, Date.parse(expiresAt) - Date.now()),
-    );
+    const timer = expiresAt
+      ? window.setTimeout(
+          () => {
+            setData(undefined);
+            setError(new ApiError(401, 'UNAUTHENTICATED'));
+          },
+          Math.max(0, Date.parse(expiresAt) - Date.now()),
+        )
+      : undefined;
     const refresh = () => {
       if (document.visibilityState === 'visible') {
         setAttempt((x) => x + 1);

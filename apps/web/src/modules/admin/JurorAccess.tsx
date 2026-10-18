@@ -15,10 +15,14 @@ export function JurorAccess({
   juror,
   onExpired,
   close,
+  onMutating,
+  onChanged,
 }: {
   juror: JurorRecord;
   onExpired: () => void;
   close: () => void;
+  onMutating: () => void;
+  onChanged: () => void;
 }) {
   const path = `/events/${juror.eventId}/jurors/${juror.id}/access`;
   const resource = useResource(path, jurorAccessStatusSchema, onExpired);
@@ -53,9 +57,9 @@ export function JurorAccess({
         ID {juror.id}
       </p>
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-        Odkaz nemá časové omezení. Přihlášení platí 12 hodin; stejný odkaz
-        umožňuje návrat i přístup z více zařízení. Odkaz doručte porotci
-        soukromě.
+        Odkaz i přihlášení nemají časové omezení. Stejný odkaz umožňuje návrat i
+        přístup z více zařízení. Prohlížeč může přihlášení zapomenout; v takovém
+        případě znovu otevřete osobní odkaz. Odkaz doručte porotci soukromě.
       </p>
       <ResourceState resource={resource} />
       {notice && (
@@ -66,11 +70,11 @@ export function JurorAccess({
       {url && (
         <div className="mt-6 border-l-2 border-primary pl-4">
           <label htmlFor="personal-link" className="block font-medium">
-            Nový osobní odkaz — zobrazen pouze nyní
+            Nový osobní odkaz
           </label>
           <p className="mt-2 text-sm text-muted-foreground">
-            Po zavření jej již nelze znovu zobrazit. Pokud jej ztratíte,
-            vytvořte nový.
+            Stejný aktivní odkaz lze kdykoli zkopírovat přímo u porotce v
+            seznamu. Kopírování nemění přihlášení.
           </p>
           <textarea
             id="personal-link"
@@ -153,6 +157,7 @@ export function JurorAccess({
             }
             save={async () => {
               setUrl('');
+              onMutating();
               if (action === 'issue') {
                 const result = await adminRequest(path, jurorLinkSchema, {
                   method: 'POST',
@@ -172,6 +177,7 @@ export function JurorAccess({
               }
               setAction(null);
               resource.reload();
+              onChanged();
             }}
           />
         </div>

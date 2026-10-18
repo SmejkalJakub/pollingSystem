@@ -4,7 +4,7 @@ Phase 4 is DONE as of 2026-10-17. Real-backend administration supports voting dr
 
 ## Configuration and teams
 
-Event detail manages shared teams and voting categories. `/admin/votings/:votingId` supports direct entry/refresh, draft metadata, explicit rule configuration, T/V permissions and entries.
+Event detail manages shared teams and voting categories. Stage 3 replaces per-team UI forms with an editable Teams table, spreadsheet paste preview and one atomic save; concurrent edits require explicit comparison. Existing individual team APIs remain available. [Current Teams contract](simplification-stage-3.md). `/admin/votings/:votingId` supports direct entry/refresh, draft metadata, explicit rule configuration, T/V permissions and entries.
 
 The user approved explicit administrator-entered limits without automatic formula/rounding. Each voting stores `selectedPlaces`, `maxPlusVotes`, `maxMinusVotes` and `allowNegativeVotes`; no cap defaults are inferred. Selection places are advancing teams/slots; final places are winners. Registered count is the actual entry count and non-advancing count is derived. No reversed elimination mode or results ranking is added.
 

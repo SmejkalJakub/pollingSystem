@@ -8,6 +8,7 @@ import { createDatabase } from './db/client';
 import { createEventService } from './modules/events/service';
 import { createVotingService } from './modules/votings/service';
 import { createWizardService } from './modules/wizard/service';
+import { createLinkVault } from './modules/auth/link-vault';
 import { createJurorAccessService } from './modules/auth/juror-access';
 import { fileURLToPath } from 'node:url';
 
@@ -30,7 +31,14 @@ const app = buildApp({
     ballotAdmin: createBallotAdminService(pool, auth),
     dashboard: createDashboardService(pool, auth),
     results: createResultsService(pool, auth),
-    jurorAccess: createJurorAccessService(pool, auth),
+    jurorAccess: createJurorAccessService(
+      pool,
+      auth,
+      createLinkVault(
+        environment.JUROR_LINK_KEYS,
+        environment.JUROR_LINK_ACTIVE_KEY_ID,
+      ),
+    ),
   },
   checkDatabase: async () => {
     await pool.query('select 1');

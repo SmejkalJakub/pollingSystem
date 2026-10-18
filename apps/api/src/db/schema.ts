@@ -312,11 +312,12 @@ export const adminAccess = pgTable(
   ],
 );
 
-// Backend preparation only. Public link redemption and wizard entry are Phase 5.
+// Link hashes authenticate; optional authenticated ciphertext enables admin copying.
 export const jurorAccess = pgTable(
   'juror_access',
   {
     tokenHash: text('token_hash').primaryKey(),
+    encryptedToken: text('encrypted_token'),
     eventId: uuid('event_id').notNull(),
     jurorId: uuid('juror_id').notNull(),
     createdAt: createdAt(),
@@ -346,7 +347,7 @@ export const sessions = pgTable(
     eventId: uuid('event_id'),
     jurorId: uuid('juror_id'),
     createdAt: createdAt(),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
   },
   (table) => [
@@ -359,7 +360,14 @@ export const sessions = pgTable(
       'sessions_one_actor',
       sql`(${table.adminUserId} IS NOT NULL AND ${table.eventId} IS NULL AND ${table.jurorId} IS NULL) OR (${table.adminUserId} IS NULL AND ${table.eventId} IS NOT NULL AND ${table.jurorId} IS NOT NULL)`,
     ),
-    check('sessions_expiry', sql`${table.expiresAt} > ${table.createdAt}`),
+    check(
+      'sessions_expiry',
+      sql`(${table.expiresAt} IS NULL AND ${table.adminUserId} IS NULL) OR ${table.expiresAt} > ${table.createdAt}`,
+    ),
+    check(
+      'sessions_admin_expiry',
+      sql`${table.adminUserId} IS NULL OR ${table.expiresAt} IS NOT NULL`,
+    ),
     check('sessions_hash_format', sql`${table.tokenHash} ~ '^[0-9a-f]{64}$'`),
     index('sessions_admin_idx').on(table.adminUserId),
     index('sessions_juror_idx').on(table.eventId, table.jurorId),

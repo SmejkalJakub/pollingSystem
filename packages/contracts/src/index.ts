@@ -68,11 +68,18 @@ export const principalSchema = z.discriminatedUnion('kind', [
   adminPrincipalSchema,
   jurorPrincipalSchema,
 ]);
-export const authenticatedSessionSchema = z.strictObject({
-  authenticated: z.literal(true),
-  principal: principalSchema,
-  expiresAt: z.iso.datetime(),
-});
+export const authenticatedSessionSchema = z.union([
+  z.strictObject({
+    authenticated: z.literal(true),
+    principal: adminPrincipalSchema,
+    expiresAt: z.iso.datetime(),
+  }),
+  z.strictObject({
+    authenticated: z.literal(true),
+    principal: jurorPrincipalSchema,
+    expiresAt: z.iso.datetime().nullable(),
+  }),
+]);
 export const sessionResponseSchema = z.union([
   z.strictObject({ authenticated: z.literal(false) }),
   authenticatedSessionSchema,
@@ -136,7 +143,9 @@ export const juryGroupListSchema = z.array(juryGroupSchema);
 export const jurorListSchema = z.array(jurorSchema);
 export const rosterSchema = z.strictObject({
   groups: juryGroupListSchema,
-  jurors: jurorListSchema,
+  jurors: z.array(
+    jurorSchema.extend({ access: z.enum(['none', 'legacy', 'stored']) }),
+  ),
   locked: z.boolean(),
 });
 export const groupParamsSchema = eventParamsSchema.extend({
@@ -157,7 +166,7 @@ export const wizardIdentitySchema = z.strictObject({
   principal: jurorPrincipalSchema,
   event: eventSchema,
   group: juryGroupSchema,
-  expiresAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime().nullable(),
 });
 export type WizardIdentity = z.infer<typeof wizardIdentitySchema>;
 
@@ -243,6 +252,43 @@ export const teamRecordSchema = teamInputSchema.extend({
   updatedAt: z.iso.datetime(),
 });
 export const teamListSchema = z.array(teamRecordSchema);
+// Client-generated row IDs make an uncertain save retry address the same teams.
+export const teamTableRowSchema = z.strictObject({
+  id: z.uuid().transform((id) => id.toLowerCase()),
+  name: z.string(),
+  description: z.string(),
+});
+export const teamTableInputSchema = z.strictObject({
+  baseVersion: z.string().regex(/^[a-f0-9]{64}$/),
+  rows: z
+    .array(teamTableRowSchema)
+    .refine(
+      (rows) => new Set(rows.map((row) => row.id)).size === rows.length,
+      'Each row ID must be unique.',
+    ),
+});
+export const teamTableSnapshotSchema = z.strictObject({
+  version: z.string().regex(/^[a-f0-9]{64}$/),
+  teams: teamListSchema,
+});
+export const teamTableIssueSchema = z.strictObject({
+  rowId: z.uuid(),
+  field: z.enum(['name', 'description']),
+});
+export const teamTableSaveSchema = z.discriminatedUnion('status', [
+  z.strictObject({
+    status: z.literal('saved'),
+    snapshot: teamTableSnapshotSchema,
+  }),
+  z.strictObject({
+    status: z.literal('invalid'),
+    issues: z.array(teamTableIssueSchema),
+  }),
+]);
+export type TeamTableRow = z.infer<typeof teamTableRowSchema>;
+export type TeamTableInput = z.infer<typeof teamTableInputSchema>;
+export type TeamTableSnapshot = z.infer<typeof teamTableSnapshotSchema>;
+export type TeamTableIssue = z.infer<typeof teamTableIssueSchema>;
 export const teamParamsSchema = eventParamsSchema.extend({ teamId: z.uuid() });
 const displayOrderSchema = z.number().int().min(0).max(2147483647);
 export const votingItemInputSchema = z.strictObject({

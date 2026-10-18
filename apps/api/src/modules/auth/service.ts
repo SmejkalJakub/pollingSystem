@@ -28,7 +28,7 @@ export function createAuthService(pool: Pool) {
        LEFT JOIN admin_access a ON a.user_id = s.admin_user_id
        LEFT JOIN users u ON u.id = a.user_id
        LEFT JOIN event_jurors j ON j.id = s.juror_id AND j.event_id = s.event_id
-       WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > statement_timestamp()`,
+       WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND (s.expires_at IS NULL OR s.expires_at > statement_timestamp())`,
       [secretHash(token)],
     );
     const row = result.rows[0];
@@ -45,7 +45,7 @@ export function createAuthService(pool: Pool) {
     return authenticatedSessionSchema.parse({
       authenticated: true,
       principal,
-      expiresAt: row.expires_at.toISOString(),
+      expiresAt: row.expires_at?.toISOString() ?? null,
     });
   }
 

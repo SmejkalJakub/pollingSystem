@@ -28,44 +28,39 @@ export function AdminWorkspace({
   const isVoting = window.location.pathname.startsWith('/admin/votings/');
   return (
     <>
-      <AppHeader section="Administrace" />
-      <div className="border-b border-border">
-        <nav
-          aria-label="Administrace"
-          className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6"
-        >
-          <a
-            href="/admin/events"
-            aria-current={
-              !isResults && !isDashboard && !dashboardCategoryId
-                ? 'page'
-                : undefined
-            }
-            className={`inline-flex min-h-14 items-center border-b-2 ${!isResults && !isDashboard && !dashboardCategoryId ? 'border-primary' : 'border-transparent'} text-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring`}
-          >
-            Eventy
-          </a>
-          {(isDashboard || dashboardCategoryId) && (
-            <span className="inline-flex min-h-14 items-center border-b-2 border-primary text-sm font-medium">
-              Průběh
-            </span>
-          )}
-          {isResults && (
-            <span className="inline-flex min-h-14 items-center border-b-2 border-primary text-sm font-medium">
-              Výsledky
-            </span>
-          )}
-          <Button
-            className="min-h-11"
-            variant="ghost"
-            onClick={logout}
-            disabled={busy}
-          >
-            {busy ? 'Odhlašování…' : 'Odhlásit se'}
-          </Button>
-        </nav>
-      </div>
-      <main id="main" className="mx-auto max-w-5xl px-6 py-8 sm:py-12">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:inline-flex focus:min-h-11 focus:items-center focus:px-6"
+      >
+        Přeskočit na obsah
+      </a>
+      <AppHeader
+        section="Administrace"
+        actions={
+          <nav aria-label="Administrace" className="flex items-center gap-2">
+            <a
+              className="wizard-link text-sm"
+              href="/admin/events"
+              aria-current={!eventId ? 'page' : undefined}
+            >
+              Eventy
+            </a>
+            <Button
+              className="min-h-11"
+              variant="ghost"
+              onClick={logout}
+              disabled={busy}
+            >
+              {busy ? 'Odhlašování…' : 'Odhlásit se'}
+            </Button>
+          </nav>
+        }
+      />
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-6"
+      >
         {error}
         {resultsCategoryId ? (
           <ResultsDetail

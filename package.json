@@ -19,7 +19,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --exclude '**/*.integration.test.ts'",
-    "test:db": "vitest run apps/api/src/db/schema.integration.test.ts apps/api/src/modules/auth/auth.integration.test.ts apps/api/src/modules/events/events.integration.test.ts apps/api/src/modules/votings/votings.integration.test.ts apps/api/src/modules/wizard/wizard.integration.test.ts apps/api/src/modules/dashboard/dashboard.integration.test.ts apps/api/src/modules/results/results.integration.test.ts apps/api/src/modules/results/operations.integration.test.ts",
+    "test:db": "vitest run apps/api/src/db/schema.integration.test.ts apps/api/src/modules/auth/auth.integration.test.ts apps/api/src/modules/events/events.integration.test.ts apps/api/src/modules/votings/votings.integration.test.ts apps/api/src/modules/teams/teams.integration.test.ts apps/api/src/modules/wizard/wizard.integration.test.ts apps/api/src/modules/dashboard/dashboard.integration.test.ts apps/api/src/modules/results/results.integration.test.ts apps/api/src/modules/results/operations.integration.test.ts",
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "db:generate": "npm run db:generate -w @d21/api",

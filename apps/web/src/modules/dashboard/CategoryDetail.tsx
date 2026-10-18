@@ -1,3 +1,4 @@
+import { EventHeading } from '../admin/EventNavigation';
 import { dashboardDetailSchema, type DashboardCategory } from '@d21/contracts';
 import { useResource } from '../admin/useResource';
 import { DashboardState } from './DashboardState';
@@ -70,28 +71,24 @@ export function CategoryDetail({
   const data = resource.data;
   return (
     <>
-      <a
-        className="wizard-link text-sm"
-        href={
-          data ? `/admin/events/${data.event.id}/dashboard` : '/admin/events'
-        }
-      >
-        ← {data ? 'Průběh eventu' : 'Všechny eventy'}
-      </a>
       <DashboardState resource={resource} />
       {data && (
         <>
-          <p className="eyebrow mt-6 break-words">
-            {data.event.name} / Detail kategorie
-          </p>
+          <EventHeading event={data.event} section="progress" />
+          <a
+            className="wizard-link mt-3 text-sm"
+            href={`/admin/events/${data.event.id}/dashboard`}
+          >
+            ← Průběh eventu
+          </a>
           <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <h1
+            <h2
               id="dashboard-heading"
               tabIndex={-1}
               className="outline-none min-w-0 break-words text-3xl font-semibold"
             >
               {data.category.name}
-            </h1>
+            </h2>
             <DashboardRefresh resource={resource} />
           </div>
           <p className="mt-4">

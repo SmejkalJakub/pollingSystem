@@ -8,7 +8,12 @@ import { readEnvironment } from '../../apps/api/src/config';
 import { setAdminPassword } from '../../apps/api/src/modules/auth/service';
 import { dropTestDatabase } from '../../apps/api/src/db/test-database';
 
-type Runtime = { origin: string; password: string; pool: pg.Pool };
+type Runtime = {
+  origin: string;
+  password: string;
+  pool: pg.Pool;
+  restart: () => Promise<void>;
+};
 
 async function freePort() {
   const server = createServer();
@@ -68,6 +73,10 @@ export const test = base.extend<object, { runtime: Runtime }>({
           API_HOST: '127.0.0.1',
           API_PORT: String(port),
           TRUSTED_PROXY_CIDRS: '',
+          JUROR_LINK_KEYS: JSON.stringify({
+            test: randomBytes(32).toString('hex'),
+          }),
+          JUROR_LINK_ACTIVE_KEY_ID: 'test',
         };
         // Exercise the exact compiled migration entry point twice, on this DB only.
         for (let i = 0; i < 2; i++) {
@@ -92,28 +101,39 @@ export const test = base.extend<object, { runtime: Runtime }>({
               'SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations',
             )
           ).rows[0].count,
-        ).toBe(5);
+        ).toBe(6);
         const password = `Disposable E2E ${randomBytes(16).toString('hex')}`;
         await setAdminPassword(pool, password);
-        server = spawn(process.execPath, ['apps/api/dist/server.js'], {
-          env,
-          stdio: 'ignore',
-        });
-        const until = Date.now() + 15_000;
-        while (true) {
-          if (server.exitCode !== null)
-            throw new Error('Built API exited before startup.');
-          if (
-            await fetch(`${origin}/api/ready`)
-              .then((r) => r.ok)
-              .catch(() => false)
-          )
-            break;
-          if (Date.now() > until)
-            throw new Error('Built API startup timed out.');
-          await new Promise((resolve) => setTimeout(resolve, 100));
+        async function start() {
+          server = spawn(process.execPath, ['apps/api/dist/server.js'], {
+            env,
+            stdio: 'ignore',
+          });
+          const until = Date.now() + 15_000;
+          while (true) {
+            if (server.exitCode !== null)
+              throw new Error('Built API exited before startup.');
+            if (
+              await fetch(`${origin}/api/ready`)
+                .then((r) => r.ok)
+                .catch(() => false)
+            )
+              break;
+            if (Date.now() > until)
+              throw new Error('Built API startup timed out.');
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
         }
-        await use({ origin, password, pool });
+        await start();
+        await use({
+          origin,
+          password,
+          pool,
+          restart: async () => {
+            await stop(server);
+            await start();
+          },
+        });
       } finally {
         await stop(server);
         await pool.end();

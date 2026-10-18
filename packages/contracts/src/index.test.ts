@@ -72,3 +72,29 @@ describe('shared administration authentication contracts', () => {
     ).toBe(false);
   });
 });
+
+it('allows null expiry only for a fully identified juror session', async () => {
+  const { authenticatedSessionSchema } = await import('./index');
+  const id = '445b63d5-b700-46dc-ae86-aad67986c815';
+  const principal = {
+    kind: 'juror',
+    id,
+    eventId: id,
+    juryGroupId: id,
+    displayName: 'Juror',
+  };
+  expect(
+    authenticatedSessionSchema.safeParse({
+      authenticated: true,
+      principal,
+      expiresAt: null,
+    }).success,
+  ).toBe(true);
+  expect(
+    authenticatedSessionSchema.safeParse({
+      authenticated: true,
+      principal: { kind: 'admin', id, displayName: 'Admin' },
+      expiresAt: null,
+    }).success,
+  ).toBe(false);
+});

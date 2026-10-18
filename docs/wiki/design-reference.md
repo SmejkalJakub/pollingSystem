@@ -62,3 +62,11 @@ Used the recorded restrained surfaces/current tokens for the export panel. Real-
 ## Phase 13 — 2026-10-18
 
 Existing visual tokens/layout were retained. Built-app Chromium checks cover 1280×900 desktop, 375×812 phone and 812×375 landscape with dark browser preference/reduced motion; the app keeps its designed light palette. Automated WCAG A/AA scans pass across tested admin/juror/results states, sign controls measure at least 44×44, and tested pages have no horizontal overflow. Generated phone/landscape results screenshots were visually inspected. No full screen-reader/native-device/dark-theme certification is claimed. See progress.md for the isolated earlier uncertain submission response and final diagnostic/full-suite results.
+
+## Simplification Stage 2 — 2026-10-18
+
+Preview reinspection returned inaccessible through the web tool. Reused the recorded warm light palette, restrained surfaces and existing tokens for shared event navigation and focused preparation. Final local desktop/phone/landscape browser checks pass keyboard navigation/history/direct links, Axe A/AA, 44px primary navigation and no-overflow checks. Final screenshots visually inspected; source review tightened metadata/roster-refresh placement and retained global error escape navigation. This is not full screen-reader/native-device or a new dark theme certification. See [workspace guide](simplification-stage-2.md) and progress.
+
+## Simplification Stage 3 — 2026-10-18
+
+Preview reinspection remained inaccessible. Retained the recorded warm light surfaces/tokens for the Teams editor, with desktop columns and labelled phone rows. Final fixed-build browser checks cover desktop 1280×900, phone 375×812 and landscape 812×375 with dark preference/reduced motion: keyboard/error-summary and field focus, preview, conflict review, exact retries, Axe A/AA, 44px controls and no measured overflow. Source/visual review fixed undersized new buttons, focus restoration, stale removal feedback and duplicate-name comparison IDs. All three final Teams screenshots were visually inspected outside the checkout. This is not full screen-reader/native-device/all-browser certification; see progress and the [Teams guide](simplification-stage-3.md).

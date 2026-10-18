@@ -127,7 +127,7 @@ export async function registerAuth(
       reply.setCookie(cookieName, result.token, {
         ...cookieOptions,
         maxAge: SESSION_SECONDS,
-        expires: new Date(result.session.expiresAt),
+        expires: new Date(result.session.expiresAt!),
       });
       return result.session;
     },
@@ -159,11 +159,8 @@ export async function registerAuth(
           request.cookies[cookieName],
         );
         const welcome = await wizard.current(result.token);
-        reply.setCookie(cookieName, result.token, {
-          ...cookieOptions,
-          maxAge: SESSION_SECONDS,
-          expires: new Date(result.session.expiresAt),
-        });
+        // A browser-session cookie imposes no application-selected retention timeout.
+        reply.setCookie(cookieName, result.token, cookieOptions);
         return jurorStartResponseSchema.parse({
           session: result.session,
           wizard: welcome,
@@ -200,6 +197,26 @@ export async function registerAuth(
           jurorId,
         );
         // Fragments are not sent in HTTP URLs, server access logs or referrers.
+        return jurorLinkSchema.parse({
+          url: `${origin}/#event=${eventId}&key=${token}`,
+        });
+      },
+    );
+    app.post(
+      '/events/:eventId/jurors/:jurorId/access/copy',
+      { preHandler: requireAdmin },
+      async (request) => {
+        const { eventId, jurorId } = parseInput(
+          jurorParamsSchema,
+          request.params,
+        );
+        parseInput(z.strictObject({}), request.body);
+        parseInput(z.strictObject({}), request.query);
+        const token = await jurorAccess.copy(
+          request.cookies[cookieName],
+          eventId,
+          jurorId,
+        );
         return jurorLinkSchema.parse({
           url: `${origin}/#event=${eventId}&key=${token}`,
         });

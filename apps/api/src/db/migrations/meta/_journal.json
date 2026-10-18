@@ -36,6 +36,13 @@
       "when": 1792328826771,
       "tag": "0004_freeze_roster_search_path",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792342445391,
+      "tag": "0005_chief_pretty_boy",
+      "breakpoints": true
     }
   ]
 }

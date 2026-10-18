@@ -1,8 +1,16 @@
 # Implementation plan
 
+**Deployment update, 2026-10-18: IN_PROGRESS.** User now authorizes deploying Stages 1–3 to the existing free test instance and explicitly approves commit/push to main. Earlier local-only statements below are historical release boundaries. Fresh hosted backup is taken before migration; external key setup and verified deployment remain in progress. Stage 4 implementation has not started.
+
 Updated 2026-10-18. Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
-Phases 0–11 are DONE. Phase 11 results API/UI, approved Q06 rules, final source/database/browser validation, review, documentation and cleanup are complete. Phase 12 is DONE after final source/PostgreSQL/browser validation, review, documentation and cleanup. Phase 13 is DONE after local and live end-to-end validation, controlled recovery, review and documentation. The user excludes deadlines and alerts and approves XLSX results/participation exports plus hardening/auditing existing admin actions. Multiple Conventional Commits/push are now explicitly authorized for the free test deployment.
+**Simplification Stage 3: DONE locally.** Teams-only editable names/descriptions/new rows, tab-separated spreadsheet preview, one atomic table save, retained inline errors, explicit stale-edit comparison and safe retries without duplicate additions. Duplicate names stay distinct; no deletion. Source checks (68 fast tests), PostgreSQL 265/265, full fixed-build browser 15/15, source/visual/accessibility review, preservation/cleanup and documentation/handoff are complete. No commit/push/deploy/cloud/live change. Stop after Stage 3; broader table/bulk/category work requires a new user-started session.
+
+**Simplification Stage 2: DONE.** Compact event workspace with Preparation, Voting progress and Results; focused juror/team/category preparation; existing Stage 1 and voting behavior preserved. Local only, without commit, push, deployment or live/cloud changes. Source/PostgreSQL/browser validation, source review, documentation and handoff are complete. Stage 3 adds Teams-only table work; broader later-stage work remains unimplemented.
+
+**Simplification Stage 1: DONE.** Prior local untimed juror sessions, safe migration/transition, encrypted repeatable personal-link retrieval and direct roster copying remain preserved. Read the Stage 1 key/transition guide before operating this version.
+
+Historical programme completion: Phases 0–11 are DONE. Phase 11 results API/UI, approved Q06 rules, final source/database/browser validation, review, documentation and cleanup are complete. Phase 12 is DONE after final source/PostgreSQL/browser validation, review, documentation and cleanup. Phase 13 is DONE after local and live end-to-end validation, controlled recovery, review and documentation. The user excludes deadlines and alerts and approves XLSX results/participation exports plus hardening/auditing existing admin actions. Historical Phase 13 authorized Conventional Commits/push for its free test deployment; Stage 1 does not inherit that authorization.
 
 The [original brief, section 18](../wiki/master-implementation-prompt.md) defines the full scope and acceptance criteria for every phase. The table below is a navigation summary, not a replacement for those criteria. All phases also require applicable typecheck/lint/tests, review, accurate documentation, and handoff.
 
@@ -277,3 +285,37 @@ User continues from the Phase 12 handoff, requests local Linux hosting and a liv
 - [x] Complete technical review and final documentation/handoff within the unpaid testing and portable-Linux scope. No new product rules or paid resources.
 
 Phase 13 is DONE within the approved free colleague-testing and portable Linux hosting scope. The live address and recovery evidence are recorded in progress and deployment documentation. No automatic next phase. Native Linux x86, load/multi-instance work, full screen-reader/native spreadsheet audits and a restore into managed Supabase remain explicit limitations, not passing claims. Provisioning the future physical Linux host requires its actual machine/origin and a user request. Authorized commits/push use short Conventional Commits without co-author trailers.
+
+## Simplification Stage 1 — 2026-10-18
+
+- [x] Inspect AGENTS/README/all implementation docs/relevant wiki, actual source and clean Git on main at 38112f4.
+- [x] Untimed juror sessions/contracts/cookies/UI, unchanged admin expiry, current authorization/logout/revocation/closure semantics and safe existing-session transition.
+- [x] Additive 0005 with ballot/history/credential preservation; immutable earlier SQL and migration repeat/no drift.
+- [x] Secure encrypted repeatable retrieval with external versioned keys, safe missing-key failure/rollback, preserved legacy hash-only entry and explicit replacement.
+- [x] Direct roster Copy, accessible success/fallback/keyboard behavior, explicit absent/legacy labels and retained consequential confirmations.
+- [x] Meaningful initial source/PostgreSQL/desktop-browser validation and source self-review.
+- [x] Final corrected source check (60 fast tests/typechecks/lint/format/builds), PostgreSQL 252/252 with two workers, full desktop/phone/landscape browser 9/9, preservation/cleanup, review, documentation and completion handoff.
+
+Stop after Stage 1; no subsequent-stage implementation or publication.
+
+## Simplification Stage 2 — 2026-10-18
+
+- [x] Read continuity documentation/reference and inspect actual source, Git and local services; preserve uncommitted Stage 1.
+- [x] Shared event heading and Preparation / Voting progress / Results navigation across event and category screens, existing URLs retained.
+- [x] Focused Porotci / Týmy / Kategorie preparation using refreshable query links, compact header/spacing and disclosed event metadata.
+- [x] Preserve Stage 1 copying/access, existing forms/confirmations, endpoints, rules, locks, revisions, history and results/export semantics.
+- [x] Source checks (60 fast tests, typechecks, lint, format, builds), PostgreSQL 252/252, built-app desktop/phone/landscape browser 12/12 and schema no drift.
+- [x] Source/visual/accessibility review, development data/configuration/migration preservation, generated-resource cleanup, documentation and handoff.
+
+Stop after Stage 2. Later tables/batch/category/bulk/readiness work needs a new user-started session with exact scope. No commit/push/deploy.
+
+## Simplification Stage 3 — 2026-10-18
+
+- [x] Read required continuity/reference documents, inspect actual Git/source, preserve all uncommitted Stage 1/2 work and obtain exact scope/save-semantics approval before affected implementation.
+- [x] Teams-only inline editable rows and spreadsheet preview; labelled fields, retained errors/values, explicit save, comparison and cancellation, 44px controls and phone reflow.
+- [x] Strict same-event/admin guarded table API, event-first atomic save with post-lock/completion authorization, precise snapshot conflicts, stable UUID additions and no-write exact replay.
+- [x] No deletion/name merging, unchanged shared-team descriptive propagation and preserved snapshots/ballots/history/freezes/access/domain rules. No schema/migration/dependency change.
+- [x] Final source check (68 fast tests/typechecks/lint/format/builds), PostgreSQL 265/265, final fixed-build browser 15/15 without retries, Axe/keyboard/no-overflow/44px and source/visual review.
+- [x] No schema drift, unchanged development public-table/configuration/all-six-SQL fingerprints, earlier source preservation, zero generated databases, fixture/helper cleanup, all four implementation docs plus README/wiki/module updates and handoff.
+
+Stage 3 is DONE locally. Stop here. Jurors/categories tables, automatic T/V, combined category setup, bulk assignment/copy/duplication and readiness remain later direction with scope to be approved in a new user-started session. No commit/push/deploy/cloud/live operation.

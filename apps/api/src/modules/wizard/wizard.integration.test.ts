@@ -7,6 +7,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   jurorStartResponseSchema,
+  jurorListSchema,
   wizardCurrentSchema,
   wizardStepDetailSchema,
   wizardReviewSchema,
@@ -16,6 +17,8 @@ import { readEnvironment } from '../../config';
 import { dropTestDatabase } from '../../db/test-database';
 import { buildApp } from '../../app';
 import { createAuthService, setAdminPassword } from '../auth/service';
+import { randomBytes } from 'node:crypto';
+import { createLinkVault } from '../auth/link-vault';
 import { createJurorAccessService } from '../auth/juror-access';
 import { createWizardService } from './service';
 import { newSecret, secretHash } from '../auth/crypto';
@@ -37,7 +40,14 @@ const pool = new pg.Pool({
   connectionTimeoutMillis: 3000,
 });
 const auth = createAuthService(pool);
-const access = createJurorAccessService(pool, auth);
+const access = createJurorAccessService(
+  pool,
+  auth,
+  createLinkVault(
+    JSON.stringify({ test: randomBytes(32).toString('hex') }),
+    'test',
+  ),
+);
 let app: ReturnType<typeof buildApp>;
 let cookie: string;
 let created = false;
@@ -180,7 +190,7 @@ afterAll(async () => {
 });
 
 describe('juror access and wizard', () => {
-  it('issues fragment-only links, stores only hashes, and returns no secret in status', async () => {
+  it('issues fragment-only links and returns no secret in status', async () => {
     const f = await fixture();
     expect((await request('GET', f.path)).json()).toEqual({ issued: false });
     const link = await issue(f.event, f.jurors[0]);
@@ -194,14 +204,19 @@ describe('juror access and wizard', () => {
     expect(result.body).not.toContain(link.token);
     expect(result.headers['cache-control']).toBe('no-store');
   });
-  it('creates an HttpOnly absolute 12-hour session and restores it', async () => {
+  it('creates an HttpOnly untimed session and restores it beyond 12 hours', async () => {
     const f = await fixture();
     const result = await enter(await issue(f.event, f.jurors[0]));
     expect(result.statusCode).toBe(200);
     const body = jurorStartResponseSchema.parse(result.json());
     expect(body.session.principal.id).toBe(f.jurors[0]);
-    expect(Date.parse(body.session.expiresAt) - Date.now()).toBeGreaterThan(
-      43190000,
+    expect(body.session.expiresAt).toBeNull();
+    expect(String(result.headers['set-cookie'])).not.toMatch(
+      /Max-Age|Expires=/,
+    );
+    await pool.query(
+      "UPDATE sessions SET created_at=now()-interval '30 days' WHERE token_hash=$1",
+      [secretHash(sessionCookie(result).split('=')[1]!)],
     );
     expect(String(result.headers['set-cookie'])).toMatch(
       /HttpOnly.*SameSite=Strict/,
@@ -211,6 +226,277 @@ describe('juror access and wizard', () => {
         await request('GET', '/auth/session', undefined, sessionCookie(result))
       ).json(),
     ).toEqual(body.session);
+  });
+  it('restores an untimed session through a new pool, service and application instance', async () => {
+    const f = await fixture();
+    const session = sessionCookie(
+      await enter(await issue(f.event, f.jurors[0])),
+    );
+    await pool.query(
+      "UPDATE sessions SET created_at=now()-interval '60 days' WHERE token_hash=$1",
+      [secretHash(session.split('=')[1]!)],
+    );
+    const restartedPool = new pg.Pool({
+      connectionString: url.toString(),
+      max: 2,
+    });
+    const restartedAuth = createAuthService(restartedPool);
+    const restarted = buildApp({
+      checkDatabase: async () => {},
+      auth: {
+        service: restartedAuth,
+        origin: headers.origin,
+        wizard: createWizardService(restartedPool, restartedAuth),
+      },
+    });
+    try {
+      const restored = await restarted.inject({
+        url: '/wizard/current',
+        headers: { cookie: session },
+      });
+      expect(restored.statusCode).toBe(200);
+      expect(restored.json().expiresAt).toBeNull();
+      expect(restored.json().principal.id).toBe(f.jurors[0]);
+    } finally {
+      await restarted.close();
+      await restartedPool.end();
+    }
+  });
+  it('repeated copying returns the same active link without writes, session invalidation or metadata leaks', async () => {
+    const f = await fixture();
+    const link = await issue(f.event, f.jurors[0]);
+    const session = sessionCookie(await enter(link));
+    await pool.query(
+      `INSERT INTO ballots(event_id,voting_id,juror_id,status,submitted_at)
+      VALUES ($1,$2,$3,'submitted',now())`,
+      [f.event, f.t, f.jurors[0]],
+    );
+    await pool.query(
+      `INSERT INTO ballot_entries(event_id,voting_id,ballot_id,voting_item_id,vote_value)
+      SELECT $1,$2,b.id,i.id,1 FROM ballots b JOIN voting_items i ON i.voting_id=b.voting_id WHERE b.voting_id=$2`,
+      [f.event, f.t],
+    );
+    await pool.query(
+      `INSERT INTO audit_logs(event_id,actor_juror_id,action,target_type,target_id,context)
+      SELECT $1,$2,'ballot.submitted','ballot',id,'{"original":true}'::jsonb FROM ballots WHERE voting_id=$3`,
+      [f.event, f.jurors[0], f.t],
+    );
+    const snapshot = async () => {
+      const tables = [
+        'juror_access',
+        'sessions',
+        'ballots',
+        'ballot_entries',
+        'audit_logs',
+      ];
+      return Promise.all(
+        tables.map(
+          async (table) =>
+            (
+              await pool.query(
+                `SELECT row_to_json(t) AS value FROM ${table} t WHERE event_id=$1 ORDER BY row_to_json(t)::text`,
+                [f.event],
+              )
+            ).rows,
+        ),
+      );
+    };
+    const before = await snapshot();
+    for (let i = 0; i < 3; i++) {
+      const result = await request('POST', `${f.path}/copy`, {});
+      expect(result.statusCode).toBe(200);
+      expect(result.json().url).toBe(
+        `${headers.origin}/#event=${f.event}&key=${link.token}`,
+      );
+      expect(result.headers['cache-control']).toBe('no-store');
+      expect(result.headers['referrer-policy']).toBe('no-referrer');
+      expect(
+        (await request('GET', '/wizard/current', undefined, session))
+          .statusCode,
+      ).toBe(200);
+    }
+    expect(await snapshot()).toEqual(before);
+    const row = (
+      await pool.query('SELECT * FROM juror_access WHERE token_hash=$1', [
+        secretHash(link.token),
+      ])
+    ).rows[0];
+    expect(row.encrypted_token).toMatch(/^v1.test\./);
+    expect(JSON.stringify(row)).not.toContain(link.token);
+    const list = await request('GET', `/events/${f.event}/jurors`);
+    expect(jurorListSchema.parse(list.json())).toHaveLength(2);
+    const roster = await request('GET', `/events/${f.event}/roster`);
+    expect(
+      roster.json().jurors.find((j: { id: string }) => j.id === f.jurors[0])
+        .access,
+    ).toBe('stored');
+    for (const path of [
+      f.path,
+      `/events/${f.event}/roster`,
+      `/events/${f.event}/jurors`,
+      '/wizard/current',
+    ]) {
+      const result = await request(
+        'GET',
+        path,
+        undefined,
+        path.startsWith('/wizard') ? session : cookie,
+      );
+      expect(result.body).not.toContain(link.token);
+      expect(result.body).not.toContain(row.encrypted_token);
+    }
+  });
+  it('retains legacy hash-only links until explicit replacement enables copying', async () => {
+    const f = await fixture();
+    const token = newSecret();
+    await pool.query(
+      'INSERT INTO juror_access(token_hash,event_id,juror_id) VALUES ($1,$2,$3)',
+      [secretHash(token), f.event, f.jurors[0]],
+    );
+    const link = { eventId: f.event, token };
+    const session = sessionCookie(await enter(link));
+    expect(
+      (await request('POST', `${f.path}/copy`, {})).json().error.code,
+    ).toBe('LEGACY_LINK');
+    expect(
+      (await request('GET', `/events/${f.event}/roster`))
+        .json()
+        .jurors.find((j: { id: string }) => j.id === f.jurors[0]).access,
+    ).toBe('legacy');
+    expect((await enter(link)).statusCode).toBe(200);
+    expect(
+      (await request('GET', '/wizard/current', undefined, session)).statusCode,
+    ).toBe(200);
+    const next = await issue(f.event, f.jurors[0]);
+    expect((await enter(link)).statusCode).toBe(401);
+    expect(
+      (await request('GET', '/wizard/current', undefined, session)).statusCode,
+    ).toBe(401);
+    expect((await request('POST', `${f.path}/copy`, {})).json().url).toContain(
+      next.token,
+    );
+  });
+  it('fails safely without keys and never replaces access on a failed generation', async () => {
+    const f = await fixture();
+    const link = await issue(f.event, f.jurors[0]);
+    const session = sessionCookie(await enter(link));
+    const unavailable = createJurorAccessService(pool, auth);
+    const adminToken = cookie.split('=')[1]!;
+    await expect(
+      unavailable.copy(adminToken, f.event, f.jurors[0]),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    await expect(
+      unavailable.issue(adminToken, f.event, f.jurors[0]),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    expect((await request('POST', `${f.path}/copy`, {})).json().url).toContain(
+      link.token,
+    );
+    expect((await enter(link)).statusCode).toBe(200);
+    expect(
+      (await request('GET', '/wizard/current', undefined, session)).statusCode,
+    ).toBe(200);
+    await unavailable.revoke(adminToken, f.event, f.jurors[0]);
+    expect((await enter(link)).statusCode).toBe(401);
+    expect(
+      (await request('POST', `${f.path}/copy`, {})).json().error.code,
+    ).toBe('NO_ACTIVE_LINK');
+  });
+  it('protects secret retrieval with admin, origin, strict claims and event/juror checks', async () => {
+    const f = await fixture();
+    const session = sessionCookie(
+      await enter(await issue(f.event, f.jurors[0])),
+    );
+    for (const [s, status] of [
+      ['', 401],
+      [session, 403],
+      ['d21-session=' + newSecret(), 401],
+    ] as const)
+      expect((await request('POST', `${f.path}/copy`, {}, s)).statusCode).toBe(
+        status,
+      );
+    for (const invalid of [
+      {},
+      { ...headers, origin: 'https://attacker.test' },
+      { ...headers, 'sec-fetch-site': 'cross-site' },
+    ])
+      expect(
+        (await request('POST', `${f.path}/copy`, {}, cookie, invalid))
+          .statusCode,
+      ).toBe(403);
+    for (const payload of [{ jurorId: f.jurors[1] }, { token: newSecret() }])
+      expect(
+        (await request('POST', `${f.path}/copy`, payload)).statusCode,
+      ).toBe(400);
+    expect(
+      (await request('POST', `${f.path}/copy?eventId=${f.event}`, {}))
+        .statusCode,
+    ).toBe(400);
+    expect((await request('GET', `${f.path}/copy`)).statusCode).toBe(404);
+    const g = await fixture();
+    expect(
+      (
+        await request(
+          'POST',
+          `/events/${g.event}/jurors/${f.jurors[0]}/access/copy`,
+          {},
+        )
+      ).statusCode,
+    ).toBe(404);
+    expect(
+      (
+        await request(
+          'POST',
+          `/events/${f.event}/jurors/${f.jurors[1]}/access/copy`,
+          {},
+        )
+      ).json().error.code,
+    ).toBe('NO_ACTIVE_LINK');
+  });
+  it('rechecks admin revocation after a real lock wait before decrypting a link', async () => {
+    const f = await fixture();
+    await issue(f.event, f.jurors[0]);
+    const login = await request(
+      'POST',
+      '/auth/admin/login',
+      { password: 'Disposable Phase Five password' },
+      '',
+    );
+    const ownCookie = sessionCookie(login);
+    const client = await pool.connect();
+    await client.query('BEGIN');
+    await client.query('SELECT id FROM events WHERE id=$1 FOR UPDATE', [
+      f.event,
+    ]);
+    const pending = Promise.resolve(
+      request('POST', `${f.path}/copy`, {}, ownCookie),
+    );
+    try {
+      const until = Date.now() + 3000;
+      let waiting = false;
+      while (Date.now() < until) {
+        waiting = Boolean(
+          (
+            await pool.query(
+              "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%roster_locked_at%'",
+            )
+          ).rowCount,
+        );
+        if (waiting) break;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(waiting).toBe(true);
+      await pool.query(
+        'UPDATE sessions SET revoked_at=now() WHERE token_hash=$1',
+        [secretHash(ownCookie.split('=')[1]!)],
+      );
+      await client.query('COMMIT');
+      const result = await pending;
+      expect(result.statusCode).toBe(401);
+      expect(result.body).not.toContain('#event=');
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+    }
   });
   it('allows reusable old links, multiple devices, logout and recovery without expiring the link', async () => {
     const f = await fixture();
@@ -280,7 +566,7 @@ describe('juror access and wizard', () => {
       200,
     );
   });
-  it('expires sessions without expiring or consuming the reusable link', async () => {
+  it('rejects a legacy timed session that expired without consuming the reusable link', async () => {
     const f = await fixture();
     const link = await issue(f.event, f.jurors[0]);
     const s = sessionCookie(await enter(link));

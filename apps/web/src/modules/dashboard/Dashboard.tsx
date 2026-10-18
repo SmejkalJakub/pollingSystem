@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { EventHeading } from '../admin/EventNavigation';
 import {
   dashboardOverviewSchema,
   type DashboardCategory,
@@ -143,27 +144,24 @@ export function Dashboard({
   const data = resource.data;
   return (
     <>
-      <a className="wizard-link text-sm" href={`/admin/events/${eventId}`}>
-        ← Správa eventu
-      </a>
       <DashboardState resource={resource} />
       {data && (
         <>
-          <p className="eyebrow mt-6">Průběh hlasování</p>
+          <EventHeading event={data.event} section="progress" />
           <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <h1
+            <h2
               id="dashboard-heading"
               tabIndex={-1}
-              className="outline-none min-w-0 break-words text-3xl font-semibold tracking-tight sm:text-4xl"
+              className="outline-none min-w-0 break-words text-xl font-semibold tracking-tight sm:text-2xl"
             >
-              {data.event.name}
-            </h1>
+              Průběh hlasování
+            </h2>
             <DashboardRefresh resource={resource} />
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
             Data k {timestamp(data.asOf)}. Obnovte přehled pro aktuální stav.
           </p>
-          <dl className="mt-8 grid grid-cols-2 gap-px border border-border bg-border lg:grid-cols-4">
+          <dl className="mt-5 grid grid-cols-2 gap-px border border-border bg-border lg:grid-cols-4">
             {[
               [
                 'Odevzdané lístky',
@@ -176,7 +174,7 @@ export function Dashboard({
               ['Čekající porotci', data.totals.pendingJurors],
               ['Kategorie ke kontrole', data.totals.problemCategories],
             ].map(([label, value]) => (
-              <div key={label} className="min-w-0 bg-card p-4 sm:p-6">
+              <div key={label} className="min-w-0 bg-card p-4">
                 <dt className="text-sm text-muted-foreground">{label}</dt>
                 <dd className="mt-3 break-words font-mono text-2xl font-medium sm:text-3xl">
                   {value}
@@ -241,7 +239,8 @@ export function Dashboard({
               </div>
             ) : (
               <p className="mt-5 text-muted-foreground">
-                Zatím nejsou vytvořené kategorie. Připravte je ve správě eventu.
+                Zatím nejsou vytvořené kategorie. Připravte je v části Příprava
+                → Kategorie.
               </p>
             )}
           </section>

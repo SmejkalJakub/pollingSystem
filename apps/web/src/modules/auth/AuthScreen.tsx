@@ -199,12 +199,18 @@ export function AuthScreen() {
                 : 'Přístup porotce je aktivní. Administrace je dostupná pouze organizátorům.'}
             </p>
             <p className="mt-4 text-sm text-muted-foreground">
-              Přihlášení platí do{' '}
-              {new Intl.DateTimeFormat('cs-CZ', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              }).format(new Date(state.expiresAt))}
-              .
+              {state.expiresAt ? (
+                <>
+                  Přihlášení platí do{' '}
+                  {new Intl.DateTimeFormat('cs-CZ', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  }).format(new Date(state.expiresAt))}
+                  .{' '}
+                </>
+              ) : (
+                'Přihlášení nemá časové omezení.'
+              )}
             </p>
             <Button
               className="mt-6 min-h-11 w-full"

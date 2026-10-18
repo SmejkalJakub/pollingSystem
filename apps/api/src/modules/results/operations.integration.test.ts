@@ -13,6 +13,8 @@ import { newSecret, secretHash } from '../auth/crypto';
 import { createEventService } from '../events/service';
 import { createVotingService } from '../votings/service';
 import { createWizardService } from '../wizard/service';
+import { randomBytes } from 'node:crypto';
+import { createLinkVault } from '../auth/link-vault';
 import { createJurorAccessService } from '../auth/juror-access';
 import { createBallotAdminService } from '../ballots/admin';
 import { createResultsService } from './service';
@@ -171,7 +173,14 @@ beforeAll(async () => {
       votings: createVotingService(pool, auth),
       results,
       wizard,
-      jurorAccess: createJurorAccessService(pool, auth),
+      jurorAccess: createJurorAccessService(
+        pool,
+        auth,
+        createLinkVault(
+          JSON.stringify({ test: randomBytes(32).toString('hex') }),
+          'test',
+        ),
+      ),
       ballotAdmin: createBallotAdminService(pool, auth),
     },
   });

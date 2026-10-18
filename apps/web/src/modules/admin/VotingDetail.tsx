@@ -1,6 +1,8 @@
+import { EventHeading } from './EventNavigation';
 import { BallotUnlock } from './BallotUnlock';
 import { useState } from 'react';
 import {
+  eventSchema,
   votingRecordSchema,
   votingDraftInputSchema,
   votingActionSchema,
@@ -37,11 +39,15 @@ export function VotingDetail({
       <ResourceState resource={resource} />
       {resource.data && (
         <>
+          <VotingEventHeading
+            eventId={resource.data.eventId}
+            onExpired={onExpired}
+          />
           <a
-            href={`/admin/events/${resource.data.eventId}`}
+            href={`/admin/events/${resource.data.eventId}?setup=categories`}
             className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
           >
-            ← Zpět na event
+            ← Všechny kategorie
           </a>
           <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:justify-between">
             <div className="min-w-0 flex-1">
@@ -51,9 +57,9 @@ export function VotingDetail({
                   : 'Finálová kategorie'}{' '}
                 · {votingStatusLabels[resource.data.status]}
               </p>
-              <h1 className="mt-3 break-words text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h2 className="mt-2 break-words text-2xl font-semibold tracking-tight">
                 {resource.data.name}
-              </h1>
+              </h2>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild className="min-h-11" variant="outline">
@@ -254,6 +260,24 @@ export function VotingDetail({
             </p>
           )}
         </>
+      )}
+    </>
+  );
+}
+
+function VotingEventHeading({
+  eventId,
+  onExpired,
+}: {
+  eventId: string;
+  onExpired: () => void;
+}) {
+  const resource = useResource(`/events/${eventId}`, eventSchema, onExpired);
+  return (
+    <>
+      <ResourceState resource={resource} />
+      {resource.data && (
+        <EventHeading event={resource.data} section="preparation" />
       )}
     </>
   );

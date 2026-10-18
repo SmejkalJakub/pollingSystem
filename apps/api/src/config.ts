@@ -14,6 +14,8 @@ const postgresUrl = z
 const environmentSchema = z.object({
   DATABASE_URL: postgresUrl,
   MIGRATION_DATABASE_URL: postgresUrl.optional(),
+  JUROR_LINK_KEYS: z.string().optional(),
+  JUROR_LINK_ACTIVE_KEY_ID: z.string().optional(),
   APP_ORIGIN: z
     .url()
     .refine((value) => {

@@ -196,8 +196,82 @@ describe('event and jury management against PostgreSQL', () => {
         "INSERT INTO admin_access (user_id,password_hash) VALUES ($1,'preserve-existing-hash')",
         [user],
       );
+      const validToken = newSecret(),
+        expiredToken = newSecret(),
+        revokedToken = newSecret();
+      const valid = secretHash(validToken),
+        expired = secretHash(expiredToken),
+        revoked = secretHash(revokedToken),
+        adminSession = secretHash(newSecret());
+      await upgrade.query(
+        `INSERT INTO sessions(token_hash,event_id,juror_id,created_at,expires_at,revoked_at) VALUES
+        ($1,$4,$5,now()-interval '1 hour',now()+interval '11 hours',NULL),
+        ($2,$4,$5,now()-interval '13 hours',now()-interval '1 hour',NULL),
+        ($3,$4,$5,now()-interval '1 hour',now()+interval '11 hours',now())`,
+        [valid, expired, revoked, hasBallot, juror],
+      );
+      await upgrade.query(
+        "INSERT INTO sessions(token_hash,admin_user_id,expires_at) VALUES ($1,$2,now()+interval '12 hours')",
+        [adminSession, user],
+      );
+      const legacyHash = secretHash(newSecret());
+      await upgrade.query(
+        'INSERT INTO juror_access(token_hash,event_id,juror_id) VALUES ($1,$2,$3)',
+        [legacyHash, hasBallot, juror],
+      );
+      await upgrade.query(
+        "INSERT INTO audit_logs(event_id,actor_juror_id,action,target_type,target_id,context) SELECT $1,$2,'ballot.submitted','ballot',id,'{\"original\":true}'::jsonb FROM ballots WHERE voting_id=$3",
+        [hasBallot, juror, voting],
+      );
+      const preserved = async () =>
+        Promise.all(
+          ['ballots', 'ballot_entries', 'audit_logs', 'admin_access'].map(
+            async (table) =>
+              (
+                await upgrade.query(
+                  `SELECT row_to_json(t) AS value FROM ${table} t ORDER BY row_to_json(t)::text`,
+                )
+              ).rows,
+          ),
+        );
+      const beforeUpgrade = await preserved();
+      const beforeSessions = (
+        await upgrade.query('SELECT * FROM sessions ORDER BY token_hash')
+      ).rows;
       await migrate(drizzle(upgrade), { migrationsFolder: original });
       await migrate(drizzle(upgrade), { migrationsFolder: original });
+      expect(await preserved()).toEqual(beforeUpgrade);
+      for (const row of (
+        await upgrade.query('SELECT * FROM sessions ORDER BY token_hash')
+      ).rows) {
+        const before = beforeSessions.find(
+          (value) => value.token_hash === row.token_hash,
+        );
+        expect(row).toEqual({
+          ...before,
+          expires_at: row.token_hash === valid ? null : before.expires_at,
+        });
+      }
+      const upgradedAuth = createAuthService(upgrade);
+      expect(
+        (await upgradedAuth.readSession(validToken))?.expiresAt,
+      ).toBeNull();
+      expect(await upgradedAuth.readSession(expiredToken)).toBeNull();
+      expect(await upgradedAuth.readSession(revokedToken)).toBeNull();
+      expect(
+        (
+          await upgrade.query(
+            'SELECT encrypted_token FROM juror_access WHERE token_hash=$1',
+            [legacyHash],
+          )
+        ).rows[0].encrypted_token,
+      ).toBeNull();
+      await expect(
+        upgrade.query(
+          'UPDATE sessions SET expires_at=NULL WHERE token_hash=$1',
+          [adminSession],
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
       const events = await upgrade.query(
         'SELECT id,roster_locked_at FROM events',
       );
@@ -225,7 +299,7 @@ describe('event and jury management against PostgreSQL', () => {
             'SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations',
           )
         ).rows[0].count,
-      ).toBe(5);
+      ).toBe(6);
       const migratedItems = await upgrade.query(
         'SELECT id,team_id,name,description FROM voting_items ORDER BY id',
       );
@@ -308,7 +382,7 @@ describe('event and jury management against PostgreSQL', () => {
     expect(roster.locked).toBe(false);
     expect(roster.jurors).toHaveLength(2);
     expect((await request('GET', `${f.base}/jurors`)).json()).toEqual(
-      roster.jurors,
+      roster.jurors.map((juror) => jurorSchema.strip().parse(juror)),
     );
     expect((await request('GET', `${f.base}/jury-groups`)).json()).toEqual(
       roster.groups,
@@ -477,7 +551,7 @@ describe('event and jury management against PostgreSQL', () => {
       ).statusCode,
     ).toBe(400);
     const roster = (await request('GET', `${b.base}/roster`)).json();
-    expect(roster.jurors).toEqual([b.juror]);
+    expect(roster.jurors).toEqual([{ ...b.juror, access: 'none' }]);
     expect(roster.groups[0].name).toBe('Technical');
     await expect(
       pool.query('UPDATE event_jurors SET jury_group_id=$1 WHERE id=$2', [

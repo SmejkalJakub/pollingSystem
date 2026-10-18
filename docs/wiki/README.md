@@ -30,3 +30,9 @@ Use the user's explicit instructions and approved decisions as authority. Treat 
 [Operational hardening and XLSX export](operational-hardening.md) records Phase 12 scope, audit, transaction authorization, error handling and workbook/API semantics.
 
 [Linux hosting and colleague testing](deployment.md) describes the Phase 13 container, Render/Supabase setup, backup/restore, local/live E2E and recovery evidence, owner operations and explicit pilot limitations.
+
+- [Simplification Stage 1: untimed juror access, one-click copying and external keys](simplification-stage-1.md)
+
+- [Simplification Stage 2: compact event workspace and focused preparation](simplification-stage-2.md)
+
+- [Simplification Stage 3: editable Teams table, spreadsheet preview and atomic saving](simplification-stage-3.md)

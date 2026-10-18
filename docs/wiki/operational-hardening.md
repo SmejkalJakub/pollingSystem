@@ -28,7 +28,7 @@ Successful changes append records to existing `audit_logs` atomically with the c
 | `juror_access.issued`  | Event juror UUID | `replacedLinks`, `revokedSessions` counts |
 | `juror_access.revoked` | Event juror UUID | `links`, `sessions` counts                |
 
-All carry event UUID and the server-resolved shared administrator identity. These new records contain no link tokens, token hashes, passwords or vote choices. Already-active activation/reopening and already-closed closure create no additional audit record. Revocation with no remaining live links/sessions is a no-op. Each regeneration actually replaces the secret and records that action; lost responses require issuing a new link, as before.
+All carry event UUID and the server-resolved shared administrator identity. These new records contain no link tokens, token hashes, passwords or vote choices. Already-active activation/reopening and already-closed closure create no additional audit record. Revocation with no remaining live links/sessions is a no-op. Each regeneration actually replaces the secret and records that action; Stage 1 encrypted links can be retrieved again after a lost issuance response; copying is read-only and appends no audit record. Legacy hash-only links need an explicit replacement to enable copying. [Details](simplification-stage-1.md).
 
 Existing `ballot.submitted` and `ballot.unlocked` snapshots are preserved unchanged, including their deliberately approved original vote history. They never contribute to current result totals and are not exported. No history-edit endpoint or audit browsing UI is introduced. Older actions are not backfilled or attributed to invented actors.
 

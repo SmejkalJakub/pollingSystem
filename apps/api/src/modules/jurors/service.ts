@@ -50,9 +50,19 @@ export function createJuryService(
             `SELECT ${jurorColumns} FROM event_jurors WHERE event_id = $1 ORDER BY display_name, id`,
             [eventId],
           );
+          const access = await client.query(
+            `SELECT DISTINCT ON (juror_id) juror_id, CASE WHEN encrypted_token IS NOT NULL THEN 'stored' ELSE 'legacy' END AS access
+             FROM juror_access WHERE event_id=$1 AND revoked_at IS NULL ORDER BY juror_id, created_at DESC, token_hash`,
+            [eventId],
+          );
           return rosterSchema.parse({
             groups: groups.rows,
-            jurors: jurors.rows.map(serializeJuror),
+            jurors: jurors.rows.map((row) => ({
+              ...serializeJuror(row),
+              access:
+                access.rows.find((value) => value.juror_id === row.id)
+                  ?.access ?? 'none',
+            })),
             locked,
           });
         },

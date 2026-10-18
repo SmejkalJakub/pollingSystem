@@ -1,12 +1,12 @@
 # Authentication and sessions
 
-Phases 2 and 5 implementation, updated 2026-10-17. The user's later password-only instruction supersedes the earlier email/password choice.
+Current behavior includes simplification Stage 1, updated 2026-10-18. The Phase 2/5 records below are superseded only where noted. The user's later password-only instruction supersedes the earlier email/password choice.
 
 ## Approved access model
 
 Administrators and guarantors share one administration password and identical permissions. No email, username, individual account, signup, invitation, or external identity provider is required. A single display identity (`Administrace`) represents all administration sessions. Individual attribution is therefore unavailable; future audit records must not imply that a named person was identified.
 
-Jurors use unique organizer-issued secret links scoped to a juror and event. Names are display labels and may repeat. Phase 5 implements admin generation with manual private delivery, reusable links **without expiry**, 12-hour sessions, logout/recovery, regeneration and revocation. Regeneration/revocation invalidates all of that event juror’s links and sessions. The secret is shown once, stored only as a hash, and delivered in a URL fragment. See [juror entry and wizard](juror-wizard.md) for the approved lifecycle and complete workflow.
+Jurors use unique organizer-issued secret links scoped to a juror and event. Names are display labels and may repeat. Phases 5 and Stage 1 implement admin generation with manual private delivery, reusable links **without expiry**, juror sessions **without application-imposed timed expiry**, logout/recovery, regeneration and revocation. Regeneration/revocation invalidates all of that event juror’s links and sessions. The secret is delivered in a URL fragment; new links store an authentication hash plus an encrypted recoverable token for authorized one-click copying. Legacy hash-only links remain usable. See [Stage 1 migration, cookies, keys and backup requirements](simplification-stage-1.md). See [juror entry and wizard](juror-wizard.md) for the approved lifecycle and complete workflow.
 
 ## Browser pages
 
@@ -41,8 +41,8 @@ Holders of the current password can sign in again. Replace the password to withd
 ## Sessions and authorization
 
 - 32 random bytes form each opaque browser session token. Only its SHA-256 hash is stored in PostgreSQL; tokens are not returned in JSON or stored in browser JavaScript storage.
-- Each session has exactly one administration or event/juror owner, database-enforced references, creation time, 12-hour absolute expiry and optional revocation time. Reads do not extend expiry.
-- Cookies use `HttpOnly`, `SameSite=Strict`, `Path=/`, and a 12-hour lifetime. HTTPS uses `Secure` and the `__Host-d21-session` name without a Domain attribute. Local HTTP uses `d21-session`.
+- Each session has exactly one administration or event/juror owner, database-enforced references, creation time and optional revocation time. Administration has a 12-hour absolute expiry; new juror sessions have null expiry. Migration extends only currently valid, unrevoked juror sessions. Expired/revoked sessions stay invalid. Reads do not extend expiry.
+- Cookies use `HttpOnly`, `SameSite=Strict`, `Path=/`, and a 12-hour lifetime for administration. Juror cookies omit Max-Age/Expires; browsers control retention and personal links allow re-entry. HTTPS uses `Secure` and the `__Host-d21-session` name without a Domain attribute. Local HTTP uses `d21-session`.
 - `APP_ORIGIN` is the exact browser origin, without a trailing slash. Default: `http://127.0.0.1:5173`. HTTP configuration is restricted to localhost/127.0.0.1. Use an HTTPS origin outside local development.
 - State-changing requests require `X-D21-Request: 1`. A supplied Origin must exactly match APP_ORIGIN, and cross-site Fetch Metadata is rejected. No cross-origin CORS access is enabled. This applies to login and logout too. JSON requests through the web client include the required header.
 - Login is limited to 10 requests per minute per IP per API process. Password work is capped at two concurrent derivations to bound memory; overload returns a retryable 503. The rate-limit cache is bounded. Shared multi-instance limits and trusted-proxy configuration remain deployment work.
@@ -57,7 +57,7 @@ Future administrative modules must run within the `registerAuth` scope (to inher
 | Route                    | Result                                                                                                                                                                              |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POST /auth/admin/login` | Strict `{ password }` body; sets cookie and returns authenticated session. Incorrect password: 401; invalid body: 400; disallowed origin: 403; throttling: 429; hash capacity: 503. |
-| `GET /auth/session`      | Authenticated principal and absolute expiry, or `{ authenticated: false }`; invalid cookies are cleared.                                                                            |
+| `GET /auth/session`      | Authenticated principal and `expiresAt` (absolute administration date, null for untimed jurors), or `{ authenticated: false }`; invalid cookies are cleared.                        |
 | `POST /auth/logout`      | Revokes current session, clears cookie, returns 204.                                                                                                                                |
 | `GET /admin/access`      | Guarded administration identity and `administer` permission; no placeholder event data.                                                                                             |
 

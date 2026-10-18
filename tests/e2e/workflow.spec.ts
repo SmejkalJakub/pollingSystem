@@ -112,14 +112,20 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
   const jurors = jurorListSchema.parse(
     await api(page.request, 'GET', `/events/${eventId}/jurors`),
   );
-  await page.getByRole('button', { name: 'Nový tým', exact: true }).click();
-  await page.getByLabel('Název týmu', { exact: true }).fill('Tým 1');
   await page
-    .getByLabel('Popis (nepovinný)', { exact: true })
+    .getByRole('navigation', { name: 'Příprava', exact: true })
+    .getByRole('link', { name: 'Týmy', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Nový tým', exact: true }).click();
+  await page.getByLabel('Název týmu, řádek 1', { exact: true }).fill('Tým 1');
+  await page
+    .getByLabel('Popis týmu, řádek 1', { exact: true })
     .fill('Popis týmu 1');
-  await saveForm(page, 'Nový tým');
+  await page
+    .getByRole('button', { name: 'Uložit tabulku', exact: true })
+    .click();
   await expect(
-    page.getByText('Tým byl uložen.', { exact: true }),
+    page.getByText('Tabulka týmů byla uložena.', { exact: true }),
   ).toBeVisible();
   for (let i = 2; i <= 8; i++)
     await api(page.request, 'POST', `/events/${eventId}/teams`, {
@@ -129,6 +135,10 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
   const teams = teamListSchema.parse(
     await api(page.request, 'GET', `/events/${eventId}/teams`),
   );
+  await page
+    .getByRole('navigation', { name: 'Příprava', exact: true })
+    .getByRole('link', { name: 'Kategorie', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Nové hlasování', exact: true })
     .click();

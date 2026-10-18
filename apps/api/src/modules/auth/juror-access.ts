@@ -1,3 +1,4 @@
+import { createLinkVault, type LinkVault } from './link-vault';
 import { adminEventLock } from './admin-transaction';
 import { auditAdminAction } from '../events/audit';
 import type { Pool } from 'pg';
@@ -13,7 +14,11 @@ const invalidLink = () =>
     'This personal link is invalid or revoked. Ask the organizer for a new link.',
   );
 
-export function createJurorAccessService(pool: Pool, auth: AuthService) {
+export function createJurorAccessService(
+  pool: Pool,
+  auth: AuthService,
+  vault: LinkVault = createLinkVault(),
+) {
   async function manage(
     token: string | undefined,
     eventId: string,
@@ -57,8 +62,17 @@ export function createJurorAccessService(pool: Pool, auth: AuthService) {
       }
       const linkToken = newSecret();
       await client.query(
-        'INSERT INTO juror_access(token_hash,event_id,juror_id) VALUES ($1,$2,$3)',
-        [secretHash(linkToken), eventId, jurorId],
+        'INSERT INTO juror_access(token_hash,event_id,juror_id,encrypted_token) VALUES ($1,$2,$3,$4)',
+        [
+          secretHash(linkToken),
+          eventId,
+          jurorId,
+          vault.encrypt(linkToken, {
+            eventId,
+            jurorId,
+            tokenHash: secretHash(linkToken),
+          }),
+        ],
       );
       await auditAdminAction(
         client,
@@ -76,6 +90,41 @@ export function createJurorAccessService(pool: Pool, auth: AuthService) {
     });
   }
   return {
+    async copy(token: string | undefined, eventId: string, jurorId: string) {
+      return adminEventLock(pool, auth, token)(
+        eventId,
+        async (client) => {
+          const juror = await client.query(
+            'SELECT id FROM event_jurors WHERE event_id=$1 AND id=$2',
+            [eventId, jurorId],
+          );
+          if (!juror.rowCount) throw notFound();
+          const result = await client.query(
+            'SELECT token_hash, encrypted_token FROM juror_access WHERE event_id=$1 AND juror_id=$2 AND revoked_at IS NULL ORDER BY created_at DESC, token_hash LIMIT 1',
+            [eventId, jurorId],
+          );
+          const row = result.rows[0];
+          if (!row)
+            throw new AppError(
+              409,
+              'NO_ACTIVE_LINK',
+              'This juror has no active personal link.',
+            );
+          if (!row.encrypted_token)
+            throw new AppError(
+              409,
+              'LEGACY_LINK',
+              'This legacy link still works but cannot be recovered. Explicit replacement is required to enable copying.',
+            );
+          return vault.decrypt(row.encrypted_token, {
+            eventId,
+            jurorId,
+            tokenHash: row.token_hash,
+          });
+        },
+        true,
+      );
+    },
     issue: (token: string | undefined, eventId: string, jurorId: string) =>
       manage(token, eventId, jurorId, true),
     revoke: (token: string | undefined, eventId: string, jurorId: string) =>
@@ -116,7 +165,7 @@ export function createJurorAccessService(pool: Pool, auth: AuthService) {
             [secretHash(previousToken)],
           );
         await client.query(
-          `INSERT INTO sessions(token_hash,event_id,juror_id,expires_at) VALUES ($1,$2,$3,now()+interval '12 hours')`,
+          `INSERT INTO sessions(token_hash,event_id,juror_id,expires_at) VALUES ($1,$2,$3,NULL)`,
           [secretHash(token), eventId, access.rows[0].juror_id],
         );
       });

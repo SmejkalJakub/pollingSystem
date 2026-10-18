@@ -4,6 +4,9 @@ import {
   teamParamsSchema,
   teamInputSchema,
   teamPatchSchema,
+  teamTableInputSchema,
+  teamTableSaveSchema,
+  votingActionSchema,
 } from '@d21/contracts';
 import { parseInput } from '../../validation';
 import type { TeamService } from './service';
@@ -18,6 +21,21 @@ export async function registerTeams(
     cookieName: string;
   },
 ) {
+  app.get('/events/:eventId/teams/table', (request) => {
+    parseInput(votingActionSchema, request.query);
+    return service(request.cookies[cookieName]).table(
+      parseInput(eventParamsSchema, request.params).eventId,
+    );
+  });
+  app.put('/events/:eventId/teams/table', async (request) => {
+    parseInput(votingActionSchema, request.query);
+    return teamTableSaveSchema.parse(
+      await service(request.cookies[cookieName]).saveTable(
+        parseInput(eventParamsSchema, request.params).eventId,
+        parseInput(teamTableInputSchema, request.body),
+      ),
+    );
+  });
   app.get('/events/:eventId/teams', (request) =>
     service(request.cookies[cookieName]).list(
       parseInput(eventParamsSchema, request.params).eventId,

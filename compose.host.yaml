@@ -10,6 +10,8 @@ x-app: &app
     API_HOST: 0.0.0.0
     API_PORT: 3001
     TRUSTED_PROXY_CIDRS: ''
+    JUROR_LINK_KEYS: ${JUROR_LINK_KEYS:-}
+    JUROR_LINK_ACTIVE_KEY_ID: ${JUROR_LINK_ACTIVE_KEY_ID:-}
 
 services:
   postgres:

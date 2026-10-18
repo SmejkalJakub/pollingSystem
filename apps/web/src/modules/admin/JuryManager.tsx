@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { adminRequest } from './api';
 import { MutationForm } from './MutationForm';
+import { CopyJurorLink } from './CopyJurorLink';
 import { JurorAccess } from './JurorAccess';
 
 export function JuryManager({
@@ -33,6 +34,7 @@ export function JuryManager({
   const [removing, setRemoving] = useState<JurorRecord | null>(null);
   const [accessJuror, setAccessJuror] = useState<JurorRecord | null>(null);
   const accessOpener = useRef<HTMLButtonElement | null>(null);
+  const [copyEpoch, setCopyEpoch] = useState(0);
   const [query, setQuery] = useState('');
   const [notice, setNotice] = useState('');
   function saved(message: string) {
@@ -64,10 +66,18 @@ export function JuryManager({
   const base = `/events/${eventId}`;
   return (
     <>
-      <section className="mt-12" aria-labelledby="groups-title">
-        <h2 id="groups-title" className="text-2xl font-semibold tracking-tight">
-          Části poroty
-        </h2>
+      <section className="mt-6" aria-labelledby="groups-title">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2
+            id="groups-title"
+            className="text-xl font-semibold tracking-tight"
+          >
+            Části poroty
+          </h2>
+          <Button className="min-h-11" variant="ghost" onClick={reload}>
+            Obnovit porotu
+          </Button>
+        </div>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Při přípravě může být porota neúplná. Před aktivací hlasování musí mít
           T i V stejný počet členů: 5, 7 nebo 9.
@@ -91,7 +101,7 @@ export function JuryManager({
             return (
               <div
                 key={code}
-                className="min-w-0 border border-border bg-card p-5"
+                className="min-w-0 border border-border bg-card px-4 py-3"
               >
                 <div className="flex items-start justify-between gap-4">
                   <span className="font-mono text-sm font-semibold">
@@ -101,11 +111,11 @@ export function JuryManager({
                     {count} členů
                   </span>
                 </div>
-                <h3 className="mt-4 break-words text-lg font-semibold">
+                <h3 className="mt-2 break-words text-base font-semibold">
                   {group?.name ?? 'Zatím nevytvořena'}
                 </h3>
                 <Button
-                  className="mt-5 min-h-11"
+                  className="mt-3 min-h-11"
                   variant="outline"
                   onClick={() => {
                     setGroupEditor(code);
@@ -155,7 +165,7 @@ export function JuryManager({
           </div>
         )}
       </section>
-      <section className="mt-12" aria-labelledby="jurors-title">
+      <section className="mt-6" aria-labelledby="jurors-title">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2
@@ -231,6 +241,8 @@ export function JuryManager({
             key={accessJuror.id}
             juror={accessJuror}
             onExpired={onExpired}
+            onMutating={() => setCopyEpoch((value) => value + 1)}
+            onChanged={reload}
             close={() => {
               setAccessJuror(null);
               requestAnimationFrame(() => accessOpener.current?.focus());
@@ -279,7 +291,13 @@ export function JuryManager({
                   ID {juror.id.slice(0, 8)}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex min-w-0 max-w-full flex-wrap items-start gap-2">
+                <CopyJurorLink
+                  key={`${juror.id}-${copyEpoch}`}
+                  juror={juror}
+                  access={juror.access}
+                  onExpired={onExpired}
+                />
                 <Button
                   className="min-h-11"
                   variant="outline"

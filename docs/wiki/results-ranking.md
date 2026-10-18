@@ -38,3 +38,5 @@ No per-juror identity, choices, ballot/revision/timestamps, secrets or audit con
 A snapshot timestamp and explicit **Obnovit data** describe freshness; there is no live/polling claim. Pending refresh retains the previous snapshot/time. A failure removes values and focuses retry feedback; recovery focuses the heading; successful keyboard refresh returns focus to the refresh button. Session loss removes protected results. Empty event/category, zero eligibility, unconfigured draft, unavailable category, error/retry and expired-session states are explicit.
 
 Phase 12 excludes deadlines and alerts by user decision and adds the approved existing-action audit/hardening and XLSX event export. The shared administrative transaction helper now rechecks authorization at the end of results reads. [Operational contract and export contents](operational-hardening.md). Deployment/hosting remain Phase 13.
+
+Stage 2 places event/category results in the shared event workspace with **Výsledky** active, alongside same-event **Příprava** and **Průběh hlasování** links. Results, export, refresh and ranking rules above remain unchanged. [Workspace guide](simplification-stage-2.md).

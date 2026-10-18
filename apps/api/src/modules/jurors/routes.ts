@@ -7,6 +7,7 @@ import {
   juryGroupPatchSchema,
   jurorInputSchema,
   jurorPatchSchema,
+  jurorSchema,
 } from '@d21/contracts';
 import { parseInput } from '../../validation';
 import type { createJuryService } from './service';
@@ -38,15 +39,13 @@ export async function registerJurors(
         )
       ).groups,
   );
-  app.get(
-    '/events/:eventId/jurors',
-    async (request) =>
-      (
-        await service(request.cookies[cookieName]).roster(
-          parseInput(eventParamsSchema, request.params).eventId,
-        )
-      ).jurors,
-  );
+  app.get('/events/:eventId/jurors', async (request) => {
+    const { jurors } = await service(request.cookies[cookieName]).roster(
+      parseInput(eventParamsSchema, request.params).eventId,
+    );
+    // Keep access metadata confined to the roster response.
+    return jurors.map((juror) => jurorSchema.strip().parse(juror));
+  });
   app.post('/events/:eventId/jury-groups', async (request, reply) => {
     const { eventId } = parseInput(eventParamsSchema, request.params);
     return reply

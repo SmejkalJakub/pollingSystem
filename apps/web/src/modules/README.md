@@ -27,3 +27,11 @@ Phase 11 `results/{Results,ResultCategory,ResultsState}` presents server-calcula
 ## Phase 12 — 2026-10-18
 
 Phase 12 adds `results/ExportResults.tsx` on event results: XLSX download of category/results/participation snapshots, pending/success/focused error/retry, keyboard focus restoration and authorization-loss clearing. The spreadsheet writer remains server-only. Existing semantic tokens and shadcn Button are reused.
+
+## Simplification Stages 1–2 — 2026-10-18
+
+Stage 1 supersedes the historical one-time-copy and timed-juror-session descriptions above; `CopyJurorLink` retrieves an existing encrypted link directly with accessible clipboard fallback. Stage 2 adds `admin/EventNavigation.tsx` for shared event context and Preparation/Progress/Results links, reused by event/category administration, dashboard and results. EventDetail selects existing juror/team/category components using `setup` query parameters; only that collection mounts. Existing forms, API guards and server calculations remain in their established modules. See the Stage 1/2 wiki guides.
+
+## Simplification Stage 3 — 2026-10-18
+
+`admin/TeamsManager` loads the Teams snapshot. `TeamTable` keeps local edits and handles atomic saving/retry/comparison; `TeamRows` renders labelled fields and retained row errors; `TeamPaste` previews tab-separated clipboard text using `team-table-utils`. Shared contracts validate both the client and server. No identity matching, browser storage, automatic save, table deletion or voting logic. See the Stage 3 wiki guide.

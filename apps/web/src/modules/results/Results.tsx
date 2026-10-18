@@ -1,3 +1,4 @@
+import { EventHeading } from '../admin/EventNavigation';
 import { resultsOverviewSchema, resultsDetailSchema } from '@d21/contracts';
 import { useResource } from '../admin/useResource';
 import { DashboardRefresh } from '../dashboard/DashboardRefresh';
@@ -25,26 +26,18 @@ function ResultsContent({
 }) {
   return (
     <>
-      <a
-        className="wizard-link text-sm"
-        href={data ? `/admin/events/${data.event.id}` : '/admin/events'}
-      >
-        ← {data ? 'Správa eventu' : 'Všechny eventy'}
-      </a>
       <ResultsState resource={resource} />
       {data && (
         <>
-          <p className="eyebrow mt-6 break-words">
-            {data.event.name} / Výsledky
-          </p>
+          <EventHeading event={data.event} section="results" />
           <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <h1
+            <h2
               id="results-heading"
               tabIndex={-1}
-              className="min-w-0 break-words text-3xl font-semibold outline-none"
+              className="min-w-0 break-words text-xl font-semibold outline-none sm:text-2xl"
             >
               Výsledky hlasování
-            </h1>
+            </h2>
             <DashboardRefresh resource={resource} />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">

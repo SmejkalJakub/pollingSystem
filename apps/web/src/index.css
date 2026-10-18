@@ -52,6 +52,24 @@
   .wizard-link {
     @apply inline-flex min-h-11 min-w-11 items-center underline underline-offset-4 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
   }
+  .event-navigation {
+    @apply mt-4 flex flex-wrap gap-x-5 border-b border-border;
+  }
+  .event-navigation a {
+    @apply inline-flex min-h-11 items-center border-b-2 border-transparent py-2 text-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
+  }
+  .event-navigation a[aria-current='page'] {
+    @apply border-primary;
+  }
+  .preparation-navigation {
+    @apply mt-5 flex flex-wrap gap-2;
+  }
+  .preparation-navigation a {
+    @apply inline-flex min-h-11 items-center rounded-sm border border-transparent px-4 text-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
+  }
+  .preparation-navigation a[aria-current='page'] {
+    @apply border-border bg-card;
+  }
 }
 
 @media (max-width: 639px) {
@@ -149,5 +167,34 @@
   }
   .results-table .results-score {
     grid-column: 3;
+  }
+}
+
+/* Keep editable team rows readable without horizontal scrolling on phones. */
+.team-table th,
+.team-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 639px) {
+  .team-table,
+  .team-table tbody,
+  .team-table tr,
+  .team-table td,
+  .team-table th {
+    display: block;
+    width: 100%;
+  }
+  .team-table thead {
+    display: none;
+  }
+  .team-table tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .team-table td,
+  .team-table th {
+    border: 0;
+    padding: 0.5rem 0;
   }
 }
