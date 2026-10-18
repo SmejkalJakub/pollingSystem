@@ -207,3 +207,10 @@ Consequences: store explicit integer limits and number of advancing teams/winner
 
 - Direct MCP creation provisioned only the new free Render service, with manual deploys. The first build passed; inline Docker command quoting failed at startup. Use an executable startup script, with migration failure stopping startup and exec preserving signals.
 - Provider advisor exposed a mutable lookup path on the existing invoker roster trigger. Fix portably with additive Drizzle migration 0004, preserving applied SQL 0000–0003. Pin `public, pg_temp`; do not grant definer privileges or change voting/roster behavior. Hosted security advisor is clear after applying it.
+
+## Phase 13 live deployment and credential handoff — 2026-10-18
+
+- Only the new Free/Frankfurt Render service is live, manual deploys, exact app source `901c63b`, readiness `/api/ready`, explicit provider HTTPS origin. Original projects/billing are unchanged. No automatic Blueprint synchronization.
+- User chooses the shared admin password privately through the existing operator, using only the ignored test env file. No default password, password in chat or reused development credential. Authenticated live verification waits for this input.
+- Initial hosted-app backup is retained privately on the owner's Mac and verified by an isolated local restore with exact 15-table equality. It predates admin/event/voting data. Owner manually backs up before/after test sessions and before deployment; no automatic deletion, paid backup service or managed-provider restore claim.
+- Proxy trust stays disabled until authoritative inbound configuration is verified. Shared login throttling is a documented pilot limitation; do not claim independent clients are distinguished. Phase 13 remains in progress despite successful free publication.

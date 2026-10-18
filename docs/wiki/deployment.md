@@ -1,6 +1,6 @@
 # Linux hosting and colleague testing
 
-Phase 13, 2026-10-18. The user approved Linux hosting plus a separate Render/Supabase test instance, with no automatic data deletion. The account owner owns backups/restores. The later user instruction requires **unpaid minor testing only**: Render Free + Supabase Free, without paid upgrades or add-ons. Actual validation and remaining deployment gates are in [progress](../implementation/progress.md). The separate Supabase test database and free Render service are provisioned. The corrected deployment and live validation are in progress.
+Phase 13, 2026-10-18. The user approved Linux hosting plus a separate Render/Supabase test instance, with no automatic data deletion. The account owner owns backups/restores. The later user instruction requires **unpaid minor testing only**: Render Free + Supabase Free, without paid upgrades or add-ons. Actual validation and remaining deployment gates are in [progress](../implementation/progress.md). The separate Supabase test database and free Render service are provisioned. The corrected deployment is live; private administrator password setup and authenticated colleague workflows remain.
 
 ## One application image
 
@@ -48,6 +48,23 @@ Normal `down` retains the named database volume. Do not use `down -v` for retain
 
 Remote/LAN access needs an approved HTTPS reverse proxy and matching `APP_ORIGIN`. Do not expose local HTTP with session-security workarounds. No arbitrary-domain TLS/proxy deployment is claimed by this local setup.
 
+## Current free test instance
+
+- App: [d21-voting-test.onrender.com](https://d21-voting-test.onrender.com); [administration](https://d21-voting-test.onrender.com/admin/login).
+- Render service `srv-dbac88eq1p3s73b4jqm0`, Frankfurt, **Free**, manual deployments. Live deploy `dep-dbacbn6q1p3s73b4uqj0` runs source commit `901c63b` and health path `/api/ready`. Settings match the Blueprint; the service was created directly, without Blueprint synchronization.
+- Supabase `d21-polling-test`, ref `ieqmrqctivjiljzyyucn`, Frankfurt, **Free**. SSL enforcement enabled, verified-TLS session pooling, Data API disabled, GraphQL extension absent, no provider-role app-table grants, security advisors clear. Five Drizzle migrations, 14 application tables. The original four SQL files remain immutable; additive 0004 pins the invoker trigger search path.
+- Render billing was checked: Hobby, no card, $0 charges and available free allowances. No paid resource/upgrade or shared billing change. Existing projects were inspected only and left unchanged.
+- **Before colleague use:** privately choose the shared administration password with the existing hidden operator. No password has been seeded or requested in chat. From this repository's terminal:
+
+  ```sh
+  NODE_EXTRA_CA_CERTS=deploy/supabase-root.crt node --env-file=deploy/.env.test apps/api/dist/operator.js set-password
+  ```
+
+  The private mode-0600 ignored env file targets only this Supabase project. Then log in through the HTTPS admin address and run the authenticated live checklist below. Do not copy development credentials.
+
+- Current backup: ignored mode-0600 `backups/d21-polling-test-20261018.dump`, with a mode-0700 parent directory on the owner's current Mac. A PostgreSQL 17 custom-format dump of only `public` and `drizzle` was restored into a generated local PostgreSQL database; all 15 tables matched exactly, including five migration records. The generated restore DB and temporary connection file were removed. This is a pre-colleague snapshot, before admin password/event/ballot setup; it does not prove managed-Supabase restore or contain future test data. The owner must refresh the backup before/after each planned test session and before deployments, using the procedure below. No automatic deletion or paid backup service is configured.
+- Verified publicly: root/admin HTML navigation, database readiness, no-store/no-referrer/nosniff, protected event API, unknown API/assets JSON 404, wrong-origin login/logout 403, and Secure/HttpOnly/SameSite=Strict host-only logout cookie attributes. The browser displays the live Czech admin page. Authenticated cookie issuance, T/V voting/results/export, provider restart/restore and two-client throttling still await live verification. Proxy trust remains empty; clients may share the proxy's login rate limit. Local E2E passes do not establish these live outcomes.
+
 ## Render + separate Supabase test database
 
 This is the approved colleague-testing target. The Blueprint uses one **Free** web instance in Frankfurt and a **Free** Supabase project. Paid instances, add-ons and upgrades are outside the user’s authorization. Confirm a $0 setup and available free quotas before provisioning. Use an account/workspace without a payment method to avoid Render bandwidth/build overage charges; if an existing billing configuration can charge overages, resolve that before deploying. Quota exhaustion should stop testing, not trigger a paid upgrade. Render sleeps after 15 minutes idle and typically takes about a minute to wake; Supabase Free may pause after a week idle and allows two active free projects. These limits fit a planned small testing session, not a production availability promise. [Render free limits](https://render.com/docs/free), [Supabase pricing](https://supabase.com/pricing). Supabase is a **new project**, separate from Story Teller and local development. No Supabase Auth, anon key, service-role key or browser database access is used. The user explicitly authorized the named accounts, multiple Conventional Commits and pushing this repository for the unpaid test deployment. Other projects must remain unchanged.
@@ -86,7 +103,7 @@ docker compose --env-file deploy/.env.host -f compose.host.yaml exec -T postgres
 docker compose --env-file deploy/.env.host -f compose.host.yaml exec -T postgres pg_restore -U d21 -d d21_restore_check --no-owner --no-privileges --exit-on-error < d21-backup.dump
 ```
 
-Verify the restored tables, four migration-history records, current ballots/entries, audit history and counts before relying on a backup. The example restores into a **new** database and does not switch or overwrite the running one. A restored copy contains usable credential/session data; do not expose it as another live instance unintentionally.
+Verify the restored tables, five migration-history records, current ballots/entries, audit history and counts before relying on a backup. The example restores into a **new** database and does not switch or overwrite the running one. A restored copy contains usable credential/session data; do not expose it as another live instance unintentionally.
 
 For Supabase, follow its [backup guidance](https://supabase.com/docs/guides/platform/backups). Use a version-compatible PostgreSQL client with certificate-verified TLS and `pg_dump -Fc --no-owner --no-privileges`; supply connection details through a private PostgreSQL service file or non-secret PGHOST/PGPORT/PGDATABASE/PGUSER settings with a hidden password prompt. Do not paste database URLs into command arguments or chat. Supabase-managed schemas require provider-specific restore handling: verify an application-schema dump and restore into a separate test project/database, without overwriting provider-managed schemas. A local PostgreSQL restore check does not prove a Supabase restore.
 
