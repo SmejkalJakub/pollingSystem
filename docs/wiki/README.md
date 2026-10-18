@@ -1,6 +1,6 @@
 # Project wiki
 
-Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–12 are complete: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Consult progress for current validation and completion status.
+Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–13 are complete within the approved scope: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Consult progress for current validation and completion status.
 
 | Page                                                    | Purpose                                                                                                                                            |
 | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,4 +29,4 @@ Use the user's explicit instructions and approved decisions as authority. Treat 
 
 [Operational hardening and XLSX export](operational-hardening.md) records Phase 12 scope, audit, transaction authorization, error handling and workbook/API semantics.
 
-[Linux hosting and colleague testing](deployment.md) describes the Phase 13 container, Render/Supabase setup, backup/restore, E2E checks and remaining live validation gates.
+[Linux hosting and colleague testing](deployment.md) describes the Phase 13 container, Render/Supabase setup, backup/restore, local/live E2E and recovery evidence, owner operations and explicit pilot limitations.

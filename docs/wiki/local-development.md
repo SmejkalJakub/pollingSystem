@@ -77,7 +77,7 @@ The foundation migration contains events, users, jury groups, event jurors, voti
 - `GET /ready`: checks PostgreSQL with a bounded connection/query timeout; returns 200 when connected or 503 when unavailable. This is connection readiness, not a check for migration completeness or production readiness.
 - Both endpoints expose stable shared schemas and no database details.
 
-`npm run build` emits the API to `apps/api/dist` and the web assets to `apps/web/dist`. Start the built API using `npm run start -w @d21/api`; `npm run preview -w @d21/web` previews the built frontend locally. Phase 13 adds compiled `apps/api/dist/migrate.js` and `operator.js`, bundled workspace packages and opt-in same-origin built hosting. See the [deployment guide](deployment.md) for Linux containers and the approved Render/Supabase test target; live provider checks are still pending.
+`npm run build` emits the API to `apps/api/dist` and the web assets to `apps/web/dist`. Start the built API using `npm run start -w @d21/api`; `npm run preview -w @d21/web` previews the built frontend locally. Phase 13 adds compiled `apps/api/dist/migrate.js` and `operator.js`, bundled workspace packages and opt-in same-origin built hosting. See the [deployment guide](deployment.md) for Linux containers and the approved Render/Supabase test target; the free pilot has passed authenticated live workflows and controlled recovery, with explicit limits in that guide.
 
 `npm run db:down` stops/removes this project's containers and network while retaining its named data volume. No reset or volume-deletion command is provided.
 
