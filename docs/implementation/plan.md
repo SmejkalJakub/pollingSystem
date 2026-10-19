@@ -1,10 +1,40 @@
 # Implementation plan
 
-**Deployment update, 2026-10-18: DONE.** Stages 1–3 are live on the existing [free test service](https://d21-voting-test.onrender.com), source `a79338c`, Render deploy `dep-dbaimoeq1p3s73bqt4sg`. Six migrations, hosted preservation, authenticated workspace/Teams and test-link revocation checks pass. Clipboard success was announced twice; the browser connector returned an empty clipboard, so live copied-text equality is unverified (local automated copying/fallback passed). Earlier local-only statements below describe historical stage boundaries. User explicitly approves a new Stage 4 chat for the Jurors table, including automatic T/V groups; no Stage 4 implementation occurs here.
+## Stages 4–5 release — IN_PROGRESS, 2026-10-19
+
+The user requests “please deploy it and then tell me what remains”. Prepare publication of the completed Stages 4–5 to the existing Render Free/Frankfurt service `srv-dbac88eq1p3s73b4jqm0` in the confirmed workspace, using its linked main branch; automatic deployment remains off. This is a release operation, not a new implementation stage. Necessary Git publication will use Conventional Commits with no co-author trailers. No credentials/key rotation, paid resources, other-project change or new feature scope.
+
+The current service is verified as source `a79338c` / deploy `dep-dbaimoeq1p3s73bqt4sg`; remote main still matches `21aae5c`. Local release Docker build PASS (zero reported dependency vulnerabilities); publication scan PASS across 213 non-ignored files with no hosted database credential or external link-key values found. Existing local Stage 4/5 validation remains as recorded below; no application source was changed for this release preparation. The user restored the expired hosted admin session for post-deployment verification.
+
+The user explicitly approved private pre/post backups and then explicitly approved committing/pushing the prepared changes to main and deploying them. The earlier automatic-review transfer block is resolved by that approval. Pre-deployment backup PASS: `backups/d21-polling-test-20261019T081831Z-pre-stages45.dump` (82,019 bytes, private 0600 under 0700, manifest validated). A private baseline records row hashes for all 15 public/drizzle tables: six migrations, six events, 91 ballots and existing access/history/session rows. Two initial empty backup attempts failed on private service-file quoting; corrected before publication, empty owned artifacts removed. No database mutation from these reads/backup. Git publication, deploy and hosted verification remain pending.
+
+## Simplification Stage 5 — DONE locally, 2026-10-19
+
+User continuation adopts the concrete recommended scope after inspection: one combined create/edit form per category, atomic saving, retained field errors, stable IDs/exact retries and explicit stale comparison. Preserve incomplete drafts and existing entry IDs, with no removal, inferred limits or automatic credentials. Lifecycle actions stay separate. All work stays local; preserve uncommitted Stage 4 on main after `21aae5c`.
+
+- [x] Read programme/continuity/reference and actual Git/source; establish the bounded scope and resolve combined-save/retry behavior through the user's continuation.
+- [x] Strict setup snapshot/save contracts and guarded event-first all-or-nothing persistence; no-write exact replay and precise fingerprint conflicts; preserve legacy incomplete data, entry identities and domain/history rules.
+- [x] Combined create/edit form, labelled fields/T-V controls/entries, retained errors/values, explicit comparison/discard, separate lifecycle confirmation and keyboard recovery.
+- [x] Source checks PASS (77 fast tests/typechecks/lint/format/builds), full PostgreSQL 297/297 plus final focused category 17/17, full fixed-build browser 21/21 plus final category 3/3 after the blank-order correction; source/visual/Axe/keyboard/44px/no-overflow review.
+- [x] Exact development/configuration/all-six-SQL preservation, unchanged initial source outside the Stage 5 allowlist, no schema drift, zero generated DBs/fixture APIs, owned helper cleanup and all four documents.
+
+Bulk personal-link copying, duplication, category tables/import and new readiness tools remain later work. Stop after Stage 5. No commit/push/deploy/cloud/live operation.
+
+## Simplification Stage 4 — DONE locally, 2026-10-18
+
+User explicitly starts this new session for the Jurors table and automatic T/V groups. Scope: inline names/assignments, spreadsheet preview, one atomic save, retained field errors, explicit stale comparison and stable-ID retries. Missing groups are created only by successful explicit table saves on unfrozen events; preserve existing names/IDs and every freeze/access/history/voting rule. No publication or later-stage work.
+
+- [x] Read continuity/reference and actual source/Git; inspect group creation, membership and sticky-freeze constraints.
+- [x] Implement strict guarded atomic table API, automatic missing groups and no-write exact replay without migration/dependency.
+- [x] Implement editable rows, preview/errors/comparison and existing personal access/removal/group rename controls.
+- [x] Final source checks (73 fast tests/typechecks/lint/format/builds), PostgreSQL 280/280, final fixed-build browser 18/18 without retries, keyboard/Axe/44px/no-overflow and source/visual review.
+- [x] Exact development public-table/configuration/all-six-SQL preservation; 14 tables/no schema drift; zero generated databases/no fixture API servers, owned helper cleanup and all four handoff documents.
+
+**Deployment update, 2026-10-18: DONE.** Stages 1–3 are live on the existing [free test service](https://d21-voting-test.onrender.com), source `a79338c`, Render deploy `dep-dbaimoeq1p3s73bqt4sg`. Six migrations, hosted preservation, authenticated workspace/Teams and test-link revocation checks pass. Clipboard success was announced twice; the browser connector returned an empty clipboard, so live copied-text equality is unverified (local automated copying/fallback passed). Earlier local-only statements below describe historical stage boundaries. User explicitly approves a new Stage 4 chat for the Jurors table, including automatic T/V groups. That release session did not implement Stage 4; current local completion is recorded above.
 
 Updated 2026-10-18. Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
-**Simplification Stage 3: DONE and deployed.** Teams-only editable names/descriptions/new rows, tab-separated spreadsheet preview, one atomic table save, retained inline errors, explicit stale-edit comparison and safe retries without duplicate additions. Duplicate names stay distinct; no deletion. Source checks (68 fast tests), PostgreSQL 265/265, full fixed-build browser 15/15, source/visual/accessibility review, preservation/cleanup and documentation/handoff are complete. The separately authorized release above is complete. Stage 4 is approved only in a new chat: Jurors table and automatic T/V groups; broader category/bulk work remains later.
+**Simplification Stage 3: DONE and deployed.** Teams-only editable names/descriptions/new rows, tab-separated spreadsheet preview, one atomic table save, retained inline errors, explicit stale-edit comparison and safe retries without duplicate additions. Duplicate names stay distinct; no deletion. Source checks (68 fast tests), PostgreSQL 265/265, full fixed-build browser 15/15, source/visual/accessibility review, preservation/cleanup and documentation/handoff are complete. The separately authorized release above is complete. Stage 4 subsequently completed locally in its approved new chat (see above); broader category/bulk work remains later.
 
 **Simplification Stage 2: DONE.** Compact event workspace with Preparation, Voting progress and Results; focused juror/team/category preparation; existing Stage 1 and voting behavior preserved. Local only, without commit, push, deployment or live/cloud changes. Source/PostgreSQL/browser validation, source review, documentation and handoff are complete. Stage 3 adds Teams-only table work; broader later-stage work remains unimplemented.
 

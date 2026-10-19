@@ -1,10 +1,9 @@
 import { EventHeading } from './EventNavigation';
 import { BallotUnlock } from './BallotUnlock';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import {
   eventSchema,
   votingRecordSchema,
-  votingDraftInputSchema,
   votingActionSchema,
 } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
@@ -12,10 +11,14 @@ import { useResource } from './useResource';
 import { ResourceState } from './ResourceState';
 import { MutationForm } from './MutationForm';
 import { adminRequest } from './api';
-import { votingFields, votingStatusLabels } from './votingFields';
+import { votingStatusLabels } from './votingFields';
 import { VotingGroups } from './VotingGroups';
 import { VotingItems } from './VotingItems';
 import { VotingConfiguration } from './VotingConfiguration';
+
+const VotingSetup = lazy(() =>
+  import('./VotingSetup').then((module) => ({ default: module.VotingSetup })),
+);
 
 export function VotingDetail({
   votingId,
@@ -29,7 +32,7 @@ export function VotingDetail({
     votingRecordSchema,
     onExpired,
   );
-  const [editing, setEditing] = useState(false);
+  const [setupBlocked, setSetupBlocked] = useState(false);
   const [closing, setClosing] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [activating, setActivating] = useState(false);
@@ -70,7 +73,7 @@ export function VotingDetail({
               {resource.data.status === 'draft' && (
                 <Button
                   className="min-h-11"
-                  disabled={activating}
+                  disabled={activating || setupBlocked}
                   onClick={() => {
                     setActivating(true);
                     setNotice('');
@@ -106,22 +109,10 @@ export function VotingDetail({
                   Uzavřít hlasování
                 </Button>
               )}
-              {resource.data.status === 'draft' && (
-                <Button
-                  className="min-h-11"
-                  variant="outline"
-                  disabled={editing}
-                  onClick={() => {
-                    setEditing(true);
-                    setNotice('');
-                  }}
-                >
-                  Upravit koncept
-                </Button>
-              )}
               <Button
                 className="min-h-11"
                 variant="ghost"
+                disabled={setupBlocked}
                 onClick={resource.reload}
               >
                 Obnovit přehled
@@ -151,7 +142,6 @@ export function VotingDetail({
                     { method: 'POST', body: {} },
                   );
                   setActivating(false);
-                  setEditing(false);
                   setNotice('Hlasování bylo aktivováno.');
                   resource.reload();
                 }}
@@ -208,51 +198,43 @@ export function VotingDetail({
                 />
               </div>
             )}
-          {editing && resource.data.status === 'draft' && (
-            <div className="mt-6">
-              <MutationForm
-                title="Upravit koncept"
-                initial={{
-                  name: resource.data.name,
-                  instructions: resource.data.instructions,
-                  kind: resource.data.kind,
-                }}
-                fields={votingFields}
-                schema={votingDraftInputSchema}
-                onExpired={onExpired}
-                cancel={() => setEditing(false)}
-                save={async (input) => {
-                  await adminRequest(
-                    `/votings/${votingId}`,
-                    votingRecordSchema,
-                    { method: 'PATCH', body: input },
-                  );
-                  setEditing(false);
-                  setNotice('Koncept byl uložen.');
-                  resource.reload();
-                }}
-              />
-            </div>
+          {resource.data.status !== 'draft' && (
+            <section
+              className="mt-8 border-t border-border pt-6"
+              aria-labelledby="instructions-heading"
+            >
+              <h2 id="instructions-heading" className="text-lg font-semibold">
+                Instrukce pro porotu
+              </h2>
+              <p className="mt-3 whitespace-pre-wrap break-words leading-relaxed text-muted-foreground">
+                {resource.data.instructions ||
+                  'Instrukce zatím nejsou vyplněné.'}
+              </p>
+            </section>
           )}
-          <section
-            className="mt-8 border-t border-border pt-6"
-            aria-labelledby="instructions-heading"
-          >
-            <h2 id="instructions-heading" className="text-lg font-semibold">
-              Instrukce pro porotu
-            </h2>
-            <p className="mt-3 whitespace-pre-wrap break-words leading-relaxed text-muted-foreground">
-              {resource.data.instructions || 'Instrukce zatím nejsou vyplněné.'}
-            </p>
-          </section>
-          <VotingGroups voting={resource.data} onExpired={onExpired} />
-          <VotingConfiguration
-            voting={resource.data}
-            onSaved={resource.reload}
-            onExpired={onExpired}
-          />
+          {resource.data.status === 'draft' ? (
+            <Suspense fallback={<p role="status">Načítání přípravy…</p>}>
+              <VotingSetup
+                eventId={resource.data.eventId}
+                votingId={votingId}
+                onExpired={onExpired}
+                onSaved={resource.reload}
+                onBlocked={setSetupBlocked}
+                paused={activating || closing || reopening}
+              />
+            </Suspense>
+          ) : (
+            <>
+              <VotingGroups voting={resource.data} onExpired={onExpired} />
+              <VotingConfiguration
+                voting={resource.data}
+                onSaved={resource.reload}
+                onExpired={onExpired}
+              />
+              <VotingItems voting={resource.data} onExpired={onExpired} />
+            </>
+          )}
           <BallotUnlock votingId={votingId} onExpired={onExpired} />
-          <VotingItems voting={resource.data} onExpired={onExpired} />
           {resource.data.status === 'draft' && (
             <p className="mt-8 border border-dashed border-border p-5 text-sm leading-relaxed text-muted-foreground">
               Toto hlasování je koncept. Před aktivací je potřeba dokončit

@@ -35,3 +35,9 @@ Stage 1 supersedes the historical one-time-copy and timed-juror-session descript
 ## Simplification Stage 3 — 2026-10-18
 
 `admin/TeamsManager` loads the Teams snapshot. `TeamTable` keeps local edits and handles atomic saving/retry/comparison; `TeamRows` renders labelled fields and retained row errors; `TeamPaste` previews tab-separated clipboard text using `team-table-utils`. Shared contracts validate both the client and server. No identity matching, browser storage, automatic save, table deletion or voting logic. See the Stage 3 wiki guide.
+
+## Simplification Stage 4 — 2026-10-18
+
+`EventDetail/JurorPreparation` loads the versioned juror snapshot. `JurorTable` owns rows, atomic save/retry, retained errors and explicit current-data comparison. `JurorRows` renders labelled responsive fields with `JurorControls` for existing Copy/personal access/confirmed removal; `JuryGroups` retains group-name corrections. Auxiliary panels pause table editing; a current dirty-state ref also protects delayed refreshes. `JurorPaste`/`juror-table-utils` reuse the quoted TSV lexer with explicit name/T/V validation and freeze/removal-aware comparison. No name matching, credential creation, automatic save or table deletion. See the Stage 4 wiki guide.
+
+Stage 5 combines one category's draft metadata, explicit rules, permissions and entries under strict setup snapshot/save contracts. `votings/setup.ts` owns guarded event-first atomic persistence, exact no-write replay and precise conflicts. Web `VotingSetup`, `VotingSetupFields`, `VotingSetupComparison` and `voting-setup-utils` own retained form values, linked errors and explicit comparison. Existing lifecycle/ballot/history rules remain separate; no migration or dependency. See the [Stage 5 guide](../../../../docs/wiki/simplification-stage-5.md).

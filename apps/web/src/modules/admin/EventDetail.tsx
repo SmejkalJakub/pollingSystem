@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { eventSchema, eventInputSchema, rosterSchema } from '@d21/contracts';
+import {
+  eventSchema,
+  eventInputSchema,
+  jurorTableSnapshotSchema,
+} from '@d21/contracts';
 import { Button } from '@/components/ui/button';
 import { useResource } from './useResource';
 import { ResourceState } from './ResourceState';
 import { MutationForm } from './MutationForm';
 import { adminRequest } from './api';
-import { JuryManager } from './JuryManager';
+import { JurorTable } from './JurorTable';
 import { eventFields } from './formFields';
 import { VotingList } from './VotingList';
 import { TeamsManager } from './TeamsManager';
@@ -113,18 +117,17 @@ function JurorPreparation({
   onExpired: () => void;
 }) {
   const roster = useResource(
-    `/events/${eventId}/roster`,
-    rosterSchema,
+    `/events/${eventId}/jurors/table`,
+    jurorTableSnapshotSchema,
     onExpired,
   );
   return (
     <>
       <ResourceState resource={roster} />
       {roster.data && (
-        <JuryManager
+        <JurorTable
           eventId={eventId}
-          roster={roster.data}
-          reload={roster.reload}
+          initial={roster.data}
           onExpired={onExpired}
         />
       )}

@@ -33,6 +33,14 @@ test('team table saves atomically with preview, retained errors, conflicts and r
       )
     ).rows;
   async function audit() {
+    // Enabled controls can still be fading in after the save response.
+    await page.evaluate(async () => {
+      await Promise.all(
+        document
+          .getAnimations()
+          .map((animation) => animation.finished.catch(() => {})),
+      );
+    });
     expect(
       (
         await new AxeBuilder({ page })

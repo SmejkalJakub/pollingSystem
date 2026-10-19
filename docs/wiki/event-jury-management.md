@@ -1,6 +1,6 @@
 # Event and jury management
 
-Phase 3 implementation, with Stage 1 access, Stage 2 workspace and Stage 3 Teams updates on 2026-10-18. See [progress](../implementation/progress.md) for actual validation and completion status.
+Phase 3 implementation, with Stage 1 access, Stage 2 workspace Stage 3 Teams and Stage 4 Jurors updates on 2026-10-18. See [progress](../implementation/progress.md) for actual validation and completion status.
 
 ## Approved behavior
 
@@ -56,3 +56,5 @@ Phase 4 must preserve this lock protocol. Activation must lock the parent event 
 Phase 4 first activation now implements the event-first validation protocol above and is covered by real activation/roster concurrency tests. Admin reopening preserves the sticky roster marker without readiness checks and never reopens roster editing.
 
 Stage 3 changes only **Týmy** to an editable table with spreadsheet paste preview and atomic saving. Juror/group forms, access controls and roster freezes above remain unchanged. [Teams guide](simplification-stage-3.md).
+
+Stage 4 replaces the juror create/edit forms with an [editable Jurors table](simplification-stage-4.md), headerless name/T/V paste preview and atomic saving. Its explicit save fills only missing T/V groups on unfrozen events using the existing defaults, preserving current group names/IDs. Event creation and reads still do not create groups. Frozen historical rosters are never filled or unfrozen automatically; descriptive corrections and personal access remain available. Existing membership removal remains separately confirmed and RESTRICT-bound. Strict GET/PUT `/events/:eventId/jurors/table` adds snapshot conflicts and stable-ID retries; old routes above remain compatible.

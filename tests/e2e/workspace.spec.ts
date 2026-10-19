@@ -69,7 +69,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
   }
   await page.goto(base);
   await expect(
-    page.getByRole('button', { name: 'Přidat porotce', exact: true }),
+    page.getByRole('button', { name: 'Nový porotce', exact: true }),
   ).toBeVisible();
   await expect(
     preparation.getByRole('link', { name: 'Porotci', exact: true }),
@@ -125,7 +125,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
     page.getByRole('button', { name: 'Nový tým', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Přidat porotce', exact: true }),
+    page.getByRole('button', { name: 'Nový porotce', exact: true }),
   ).toHaveCount(0);
   await page.reload();
   await expect(

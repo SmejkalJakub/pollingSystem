@@ -78,29 +78,23 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
   await expect(page).toHaveURL(/\/admin\/events\/[0-9a-f-]+$/);
   const eventId = page.url().split('/').at(-1)!;
   eventSchema.parse(await api(page.request, 'GET', `/events/${eventId}`));
-  for (const code of ['T', 'V']) {
-    await page
-      .getByRole('button', { name: `Vytvořit část ${code}`, exact: true })
-      .click();
-    await saveForm(page, `Vytvořit část ${code}`);
-    await expect(
-      page.getByRole('button', { name: `Upravit část ${code}`, exact: true }),
-    ).toBeVisible();
-  }
+  await page.getByRole('button', { name: 'Nový porotce', exact: true }).click();
+  await page
+    .getByLabel('Jméno porotce, řádek 1', { exact: true })
+    .fill('Porotce T1');
+  await page
+    .getByLabel('Část poroty, řádek 1', { exact: true })
+    .selectOption('T');
+  await page
+    .getByRole('button', { name: 'Uložit tabulku', exact: true })
+    .click();
+  await expect(
+    page.getByText('Tabulka porotců byla uložena.', { exact: true }),
+  ).toBeVisible();
   const groups = juryGroupListSchema.parse(
     await api(page.request, 'GET', `/events/${eventId}/jury-groups`),
   );
-  await page
-    .getByRole('button', { name: 'Přidat porotce', exact: true })
-    .click();
-  await page.getByLabel('Jméno porotce', { exact: true }).fill('Porotce T1');
-  await page
-    .getByLabel('Část poroty', { exact: true })
-    .selectOption(groups.find((g) => g.code === 'T')!.id);
-  await saveForm(page, 'Přidat porotce');
-  await expect(
-    page.getByText('Porotce byl uložen.', { exact: true }),
-  ).toBeVisible();
+  expect(groups.map((group) => group.code)).toEqual(['T', 'V']);
   // Repetitive roster entries use the real guarded HTTP API; no SQL setup bypasses activation.
   for (const group of groups)
     for (let i = group.code === 'T' ? 2 : 1; i <= 5; i++) {
@@ -143,22 +137,25 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     .getByRole('button', { name: 'Nové hlasování', exact: true })
     .click();
   await page.getByLabel('Název hlasování', { exact: true }).fill('Výběr');
-  await page.getByLabel('Kolo', { exact: true }).selectOption('selection');
-  await saveForm(page, 'Nové hlasování');
+  await page
+    .getByLabel('Typ hlasování', { exact: true })
+    .selectOption('selection');
+  await page
+    .getByRole('button', { name: 'Uložit kategorii', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/admin\/votings\/[0-9a-f-]+$/);
   const selection = page.url().split('/').at(-1)!;
-  await page
-    .getByRole('button', { name: 'Nastavit pravidla', exact: true })
-    .click();
   await page
     .getByLabel('Počet postupujících týmů (slotů)', { exact: true })
     .fill('1');
   await page.getByLabel('Maximum kladných hlasů', { exact: true }).fill('2');
   await page.getByLabel('Maximum záporných hlasů', { exact: true }).fill('1');
   await page.getByLabel('Záporné hlasy', { exact: true }).selectOption('yes');
-  await saveForm(page, 'Nastavit pravidla');
+  await page
+    .getByRole('button', { name: 'Uložit kategorii', exact: true })
+    .click();
   await expect(
-    page.getByText('Pravidla byla uložena.', { exact: true }),
+    page.getByText('Kategorie byla uložena.', { exact: true }),
   ).toBeVisible();
   const candidates = new Map<string, string[]>();
   async function entries(id: string, allowed: string[]) {

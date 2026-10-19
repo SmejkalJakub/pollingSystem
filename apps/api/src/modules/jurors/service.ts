@@ -3,6 +3,7 @@ import { adminEventLock } from '../auth/admin-transaction';
 import type { Pool, PoolClient } from 'pg';
 import type { JuryGroupInput, JurorInput, JurorPatch } from '@d21/contracts';
 import { juryGroupSchema, jurorSchema, rosterSchema } from '@d21/contracts';
+import { readRoster, createJurorTable } from './table';
 import { AppError } from '../../errors';
 import { notFound, rosterLocked } from '../events/locking';
 
@@ -41,34 +42,15 @@ export function createJuryService(
     async roster(eventId: string) {
       return withLock(
         eventId,
-        async (client, locked) => {
-          const groups = await client.query(
-            `SELECT ${groupColumns} FROM jury_groups WHERE event_id = $1 ORDER BY code`,
-            [eventId],
-          );
-          const jurors = await client.query(
-            `SELECT ${jurorColumns} FROM event_jurors WHERE event_id = $1 ORDER BY display_name, id`,
-            [eventId],
-          );
-          const access = await client.query(
-            `SELECT DISTINCT ON (juror_id) juror_id, CASE WHEN encrypted_token IS NOT NULL THEN 'stored' ELSE 'legacy' END AS access
-             FROM juror_access WHERE event_id=$1 AND revoked_at IS NULL ORDER BY juror_id, created_at DESC, token_hash`,
-            [eventId],
-          );
-          return rosterSchema.parse({
-            groups: groups.rows,
-            jurors: jurors.rows.map((row) => ({
-              ...serializeJuror(row),
-              access:
-                access.rows.find((value) => value.juror_id === row.id)
-                  ?.access ?? 'none',
-            })),
-            locked,
-          });
-        },
+        (client, locked) =>
+          readRoster(client, eventId, locked, true).then(
+            ({ groups, jurors, locked }) =>
+              rosterSchema.parse({ groups, jurors, locked }),
+          ),
         true,
       );
     },
+    ...createJurorTable(withLock),
     async createGroup(eventId: string, input: JuryGroupInput) {
       return withLock(eventId, async (client, locked) => {
         if (locked) throw rosterLocked();

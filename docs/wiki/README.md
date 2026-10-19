@@ -1,6 +1,6 @@
 # Project wiki
 
-Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–13 are complete within the approved scope: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Stages 1–3 are deployed; Stage 4 (Jurors table and automatic T/V groups) is approved for a new chat. Consult progress for current validation and completion status.
+Persistent project knowledge for independent sessions. Updated 2026-10-18. Phases 0–13 are complete within the approved scope: existing administration is hardened, lifecycle/link changes have atomic audit, and XLSX exports include results/participation. Deadlines and alerts are excluded by user decision. Stages 1–3 are deployed; Stage 4 adds the Jurors table and automatic missing T/V groups locally; it has not been published. Consult progress for current validation and completion status.
 
 | Page                                                    | Purpose                                                                                                                                            |
 | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,3 +36,7 @@ Use the user's explicit instructions and approved decisions as authority. Treat 
 - [Simplification Stage 2: compact event workspace and focused preparation](simplification-stage-2.md)
 
 - [Simplification Stage 3: editable Teams table, spreadsheet preview and atomic saving](simplification-stage-3.md)
+
+- [Simplification Stage 4: editable Jurors table, automatic missing T/V groups and freeze-safe atomic saving](simplification-stage-4.md)
+
+- [Simplification Stage 5 — combined category preparation](simplification-stage-5.md)

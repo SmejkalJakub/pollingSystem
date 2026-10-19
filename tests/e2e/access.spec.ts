@@ -46,19 +46,22 @@ test('roster copies existing links in one click with keyboard, fallback and unti
   );
   await page.goto(`/admin/events/${event.id}`);
   const row = page
-    .getByRole('listitem')
+    .getByRole('row')
     .filter({ has: page.getByText('Kopírování', { exact: true }) });
   const copy = row.getByRole('button', { name: /Kopírovat odkaz/ });
   await expect(copy).toBeDisabled();
   await expect(row.getByText('Bez aktivního odkazu.')).toBeVisible();
   const legacyRow = page
-    .getByRole('listitem')
+    .getByRole('row')
     .filter({ has: page.getByText('Původní odkaz', { exact: true }) });
   await expect(
     legacyRow.getByRole('button', { name: /Kopírovat odkaz/ }),
   ).toBeDisabled();
   await expect(legacyRow.getByText(/Původní odkaz funguje/)).toBeVisible();
   await row.getByRole('button', { name: /Osobní přístup/ }).press('Enter');
+  await expect(
+    row.getByRole('textbox', { name: 'Jméno porotce, řádek 1', exact: true }),
+  ).toBeDisabled();
   await page
     .getByRole('button', { name: 'Vytvořit osobní odkaz', exact: true })
     .click();
@@ -154,7 +157,10 @@ test('roster copies existing links in one click with keyboard, fallback and unti
       }),
     );
     await copy.press('Enter');
-    const fallback = row.getByRole('textbox');
+    const fallback = row.getByRole('textbox', {
+      name: 'Osobní odkaz pro Kopírování',
+      exact: true,
+    });
     await expect(fallback).toBeFocused();
     expect(await fallback.inputValue().then((value) => value === link)).toBe(
       true,

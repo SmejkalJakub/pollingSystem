@@ -30,3 +30,9 @@ Phase 11 `results/` adds current eligible submitted-only vote totals and pure sh
 ## Phase 12 — 2026-10-18
 
 Phase 12 adds `auth/admin-transaction.ts` for shared in-transaction authorization, actual lifecycle/link audit in existing audit_logs, sanitized retryable dependency errors, and `results/workbook.ts` plus guarded XLSX download. Results and participation reuse one event-locked projection; ZIP generation releases the lock and rechecks authorization. Existing intervention/history/rule/freeze semantics are preserved. No deadline/alert/new intervention or migration.
+
+## Simplification Stage 4 — 2026-10-18
+
+`jurors/table.ts` shares the public roster projection with the legacy service and adds strict GET/PUT `/events/:eventId/jurors/table`. Versioned snapshots include precise stored timestamps, groups and sticky freeze state; access metadata alone does not invalidate a version. Saves use existing administration/event transaction locks, collect field errors, preserve IDs, reject omission/foreign identities, create only missing T/V groups on unfrozen events and perform exact desired-state no-write retries. Frozen name corrections remain allowed. No link/session/ballot/history writes or migration/dependency. Legacy roster/list response shapes and alphabetical ordering remain compatible.
+
+Stage 5 combines one category's draft metadata, explicit rules, permissions and entries under strict setup snapshot/save contracts. `votings/setup.ts` owns guarded event-first atomic persistence, exact no-write replay and precise conflicts. Web `VotingSetup`, `VotingSetupFields`, `VotingSetupComparison` and `voting-setup-utils` own retained form values, linked errors and explicit comparison. Existing lifecycle/ballot/history rules remain separate; no migration or dependency. See the [Stage 5 guide](../../../../docs/wiki/simplification-stage-5.md).

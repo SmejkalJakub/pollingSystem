@@ -38,3 +38,5 @@ Editable tables, batch/spreadsheet preview, one-save-per-table workflows, automa
 See [progress](../implementation/progress.md) for actual source, PostgreSQL and browser results, review, preservation and limitations. Browser cases use generated local databases and compiled local servers. Stages 1–3 are now deployed as recorded above; the original local validation remains separate from hosted release checks.
 
 Stage 3 subsequently introduces the approved [Teams-only editable table, paste preview and atomic save](simplification-stage-3.md). Other later-stage work listed above remains unimplemented.
+
+Stage 4 subsequently implements the approved local [Jurors table and automatic missing T/V groups](simplification-stage-4.md). Earlier later-stage boundary statements above describe the original session only.

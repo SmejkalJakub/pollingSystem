@@ -19,6 +19,7 @@ import { AppError } from '../../errors';
 import { notFound } from '../events/locking';
 import { createTeamService } from '../teams/service';
 import { requireReadyRoster } from './readiness';
+import { createVotingSetupService } from './setup';
 import { auditAdminAction } from '../events/audit';
 
 const columns = `id, event_id AS "eventId", name, instructions, kind, status,
@@ -155,6 +156,7 @@ export function createVotingService(pool: Pool, auth: AuthService) {
     }
     return {
       teams: createTeamService(pool, auth, token),
+      setup: createVotingSetupService(pool, auth, token),
       async configure(votingId: string, input: VotingConfiguration) {
         return editDraft(votingId, async (client) => {
           const result = await client.query(

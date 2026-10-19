@@ -1,15 +1,13 @@
-import { useState } from 'react';
-import {
-  votingDraftInputSchema,
-  votingListSchema,
-  votingRecordSchema,
-} from '@d21/contracts';
+import { lazy, Suspense, useState } from 'react';
+import { votingListSchema } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
-import { adminRequest } from './api';
 import { useResource } from './useResource';
-import { MutationForm } from './MutationForm';
 import { ResourceState } from './ResourceState';
-import { votingFields, votingStatusLabels } from './votingFields';
+import { votingStatusLabels } from './votingFields';
+
+const VotingSetup = lazy(() =>
+  import('./VotingSetup').then((module) => ({ default: module.VotingSetup })),
+);
 
 export function VotingList({
   eventId,
@@ -23,7 +21,7 @@ export function VotingList({
     votingListSchema,
     onExpired,
   );
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<string | null>(null);
   return (
     <section className="mt-6" aria-labelledby="votings-heading">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -42,8 +40,8 @@ export function VotingList({
           </Button>
           <Button
             className="min-h-11"
-            disabled={creating}
-            onClick={() => setCreating(true)}
+            disabled={Boolean(creating)}
+            onClick={() => setCreating(crypto.randomUUID())}
           >
             Nové hlasování
           </Button>
@@ -51,23 +49,17 @@ export function VotingList({
       </div>
       {creating && (
         <div className="mt-6">
-          <MutationForm
-            title="Nové hlasování"
-            headingLevel={3}
-            initial={{ name: '', instructions: '', kind: '' }}
-            fields={votingFields}
-            schema={votingDraftInputSchema}
-            onExpired={onExpired}
-            cancel={() => setCreating(false)}
-            save={async (input) => {
-              const created = await adminRequest(
-                `/events/${eventId}/votings`,
-                votingRecordSchema,
-                { method: 'POST', body: input },
-              );
-              window.location.assign(`/admin/votings/${created.id}`);
-            }}
-          />
+          <Suspense fallback={<p role="status">Načítání přípravy…</p>}>
+            <VotingSetup
+              eventId={eventId}
+              votingId={creating}
+              onExpired={onExpired}
+              onCancel={() => setCreating(null)}
+              onSaved={() =>
+                window.location.assign(`/admin/votings/${creating}`)
+              }
+            />
+          </Suspense>
         </div>
       )}
       <ResourceState resource={resource} />

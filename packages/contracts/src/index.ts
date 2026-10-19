@@ -161,6 +161,47 @@ export type JurorPatch = z.infer<typeof jurorPatchSchema>;
 export type JurorRecord = z.infer<typeof jurorSchema>;
 export type Roster = z.infer<typeof rosterSchema>;
 
+// IDs belong to event memberships; display names never establish identity.
+export const jurorTableRowSchema = z.strictObject({
+  id: z.uuid().transform((id) => id.toLowerCase()),
+  displayName: z.string(),
+  groupCode: z.string(),
+});
+export const jurorTableFieldsSchema = z.strictObject({
+  displayName: nameSchema,
+  groupCode: juryGroupCodeSchema,
+});
+export const jurorTableInputSchema = z.strictObject({
+  baseVersion: z.string().regex(/^[a-f0-9]{64}$/),
+  rows: z
+    .array(jurorTableRowSchema)
+    .refine(
+      (rows) => new Set(rows.map((row) => row.id)).size === rows.length,
+      'Each row ID must be unique.',
+    ),
+});
+export const jurorTableSnapshotSchema = rosterSchema.extend({
+  version: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export const jurorTableIssueSchema = z.strictObject({
+  rowId: z.uuid(),
+  field: z.enum(['displayName', 'groupCode']),
+});
+export const jurorTableSaveSchema = z.discriminatedUnion('status', [
+  z.strictObject({
+    status: z.literal('saved'),
+    snapshot: jurorTableSnapshotSchema,
+  }),
+  z.strictObject({
+    status: z.literal('invalid'),
+    issues: z.array(jurorTableIssueSchema),
+  }),
+]);
+export type JurorTableRow = z.infer<typeof jurorTableRowSchema>;
+export type JurorTableInput = z.infer<typeof jurorTableInputSchema>;
+export type JurorTableSnapshot = z.infer<typeof jurorTableSnapshotSchema>;
+export type JurorTableIssue = z.infer<typeof jurorTableIssueSchema>;
+
 // The server resolves these identities from the session, never from browser claims.
 export const wizardIdentitySchema = z.strictObject({
   principal: jurorPrincipalSchema,
@@ -320,6 +361,64 @@ export type TeamRecord = z.infer<typeof teamRecordSchema>;
 export type VotingItemInput = z.infer<typeof votingItemInputSchema>;
 export type VotingItemPatch = z.infer<typeof votingItemPatchSchema>;
 export const votingActionSchema = z.strictObject({});
+
+// A category save carries explicit values; domain/field errors are reported together.
+const setupUuid = z.uuid().transform((id) => id.toLowerCase());
+export const votingSetupValuesSchema = z.strictObject({
+  name: z.string(),
+  instructions: z.string(),
+  kind: z.string(),
+  configuration: z.strictObject({
+    selectedPlaces: z.number().nullable(),
+    maxPlusVotes: z.number().nullable(),
+    maxMinusVotes: z.number().nullable(),
+    allowNegativeVotes: z.boolean().nullable(),
+  }),
+  juryGroupIds: z
+    .array(setupUuid)
+    .max(2)
+    .refine((ids) => new Set(ids).size === ids.length),
+  items: z
+    .array(
+      z.strictObject({
+        id: setupUuid,
+        teamId: setupUuid.nullable(),
+        displayOrder: z.number().nullable(),
+      }),
+    )
+    .refine(
+      (items) => new Set(items.map((item) => item.id)).size === items.length,
+    ),
+});
+export const votingSetupParamsSchema = eventParamsSchema.extend({
+  votingId: setupUuid,
+});
+export const votingSetupInputSchema = z.strictObject({
+  baseVersion: z.string().regex(/^[a-f0-9]{64}$/),
+  values: votingSetupValuesSchema,
+});
+export const votingSetupSnapshotSchema = z.strictObject({
+  version: z.string().regex(/^[a-f0-9]{64}$/),
+  voting: votingRecordSchema.nullable(),
+  editable: z.boolean(),
+  groups: juryGroupListSchema,
+  teams: teamListSchema,
+  juryGroupIds: z.array(z.uuid()),
+  items: votingItemListSchema,
+});
+export const votingSetupSaveSchema = z.discriminatedUnion('status', [
+  z.strictObject({
+    status: z.literal('saved'),
+    snapshot: votingSetupSnapshotSchema,
+  }),
+  z.strictObject({
+    status: z.literal('invalid'),
+    issues: z.array(z.strictObject({ field: z.string() })),
+  }),
+]);
+export type VotingSetupValues = z.infer<typeof votingSetupValuesSchema>;
+export type VotingSetupInput = z.infer<typeof votingSetupInputSchema>;
+export type VotingSetupSnapshot = z.infer<typeof votingSetupSnapshotSchema>;
 
 export const jurorStartSchema = z.strictObject({
   eventId: z.uuid(),

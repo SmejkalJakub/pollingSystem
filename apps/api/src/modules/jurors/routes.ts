@@ -8,6 +8,9 @@ import {
   jurorInputSchema,
   jurorPatchSchema,
   jurorSchema,
+  jurorTableInputSchema,
+  jurorTableSaveSchema,
+  votingActionSchema,
 } from '@d21/contracts';
 import { parseInput } from '../../validation';
 import type { createJuryService } from './service';
@@ -25,6 +28,21 @@ export async function registerJurors(
     cookieName: string;
   },
 ) {
+  app.get('/events/:eventId/jurors/table', (request) => {
+    parseInput(votingActionSchema, request.query);
+    return service(request.cookies[cookieName]).table(
+      parseInput(eventParamsSchema, request.params).eventId,
+    );
+  });
+  app.put('/events/:eventId/jurors/table', async (request) => {
+    parseInput(votingActionSchema, request.query);
+    return jurorTableSaveSchema.parse(
+      await service(request.cookies[cookieName]).saveTable(
+        parseInput(eventParamsSchema, request.params).eventId,
+        parseInput(jurorTableInputSchema, request.body),
+      ),
+    );
+  });
   app.get('/events/:eventId/roster', async (request) =>
     service(request.cookies[cookieName]).roster(
       parseInput(eventParamsSchema, request.params).eventId,

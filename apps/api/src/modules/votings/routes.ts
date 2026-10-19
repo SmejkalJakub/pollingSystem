@@ -1,5 +1,8 @@
 import type { FastifyInstance, preHandlerHookHandler } from 'fastify';
 import {
+  votingSetupParamsSchema,
+  votingSetupInputSchema,
+  votingSetupSaveSchema,
   eventParamsSchema,
   votingParamsSchema,
   votingDraftInputSchema,
@@ -27,6 +30,32 @@ export async function registerVotings(
   await app.register(registerTeams, {
     service: (token: string | undefined) => options.service(token).teams,
     cookieName: options.cookieName,
+  });
+  app.get('/events/:eventId/votings/:votingId/setup', (request) => {
+    parseInput(votingActionSchema, request.query);
+    const { eventId, votingId } = parseInput(
+      votingSetupParamsSchema,
+      request.params,
+    );
+    return options
+      .service(request.cookies[options.cookieName])
+      .setup.read(eventId, votingId);
+  });
+  app.put('/events/:eventId/votings/:votingId/setup', async (request) => {
+    parseInput(votingActionSchema, request.query);
+    const { eventId, votingId } = parseInput(
+      votingSetupParamsSchema,
+      request.params,
+    );
+    return votingSetupSaveSchema.parse(
+      await options
+        .service(request.cookies[options.cookieName])
+        .setup.save(
+          eventId,
+          votingId,
+          parseInput(votingSetupInputSchema, request.body),
+        ),
+    );
   });
   app.put('/votings/:votingId/configuration', (request) => {
     const { votingId } = parseInput(votingParamsSchema, request.params);
