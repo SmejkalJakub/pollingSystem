@@ -2,6 +2,8 @@
 
 **DONE locally, 2026-10-19.** Stage 5 replaces the separate draft metadata, rule, permission and entry forms with **Příprava kategorie**. The user continued with this concrete recommended scope on 2026-10-19, after inspection on 2026-10-18. Work is local and uncommitted; Stages 1–3 remain the deployed version. See [progress](../implementation/progress.md) for actual validation and completion status.
 
+**Deployment update, 2026-10-19:** published in separately approved release `4995a2d`, Render deploy `dep-dbat50dg1s2s73dec4a0` (live). Hosted Jurors save/automatic groups and combined-category save/reload checks pass; private pre/post backups and exact original-row preservation pass. Local-only authorization statements describe the original implementation boundary; see the current [release record](../implementation/progress.md#stages-45-release--done-2026-10-19).
+
 ## Organizer workflow
 
 Open **Příprava → Kategorie → Nové hlasování**, or open an existing draft. One form contains name/instructions, selection/final type, explicit D21 limits, T/V checkboxes and voting entries. **Uložit kategorii** saves all sections together in one transaction. Any error saves none of that attempt. Inputs and field errors remain available, with a focused linked summary. Pending saves/refreshes pause editing. Authorization loss clears protected content.

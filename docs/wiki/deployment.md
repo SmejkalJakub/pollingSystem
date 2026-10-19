@@ -1,5 +1,7 @@
 # Linux hosting and colleague testing
 
+**Current release, 2026-10-19:** Stages 1–5 run source `4995a2d`, Render deploy `dep-dbat50dg1s2s73dec4a0` (live). Same Free service/project, six migrations and automatic deployment off. Private pre/post backups, authenticated Jurors/group creation, combined category save/reload and exact preservation of every original database row PASS. The labelled new test event has no credentials or votes. [Current release evidence and remaining work](../implementation/progress.md#stages-45-release--done-2026-10-19). The Stages 1–3 and Phase 13 records below are historical.
+
 ## Current Stages 1–3 release — 2026-10-18
 
 [Free test service](https://d21-voting-test.onrender.com) runs source `a79338c`, deploy `dep-dbaimoeq1p3s73bqt4sg` (live). Migration 0005 brings hosted history to six entries. Pre/post private custom-format dumps are retained in the ignored backup directory; the owner external key ring is `/Users/jakubsmejkal/.config/d21/link-keys.env` (0600 outside the checkout). Keep both the key backup and dumps; no key value belongs in documentation. Existing service/database/TLS/password/proxy settings and original hosted records are preserved. Only the two missing key variables were added. Auto-deployment remains off.

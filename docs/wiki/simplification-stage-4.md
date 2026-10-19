@@ -2,6 +2,8 @@
 
 **DONE locally.** Authorized 2026-10-18 for local implementation, validation, review and handoff, including automatic T/V groups. Stages 1–3 remain deployed as `a79338c`; Stage 4 has no publication authorization. Actual completion evidence is in [progress](../implementation/progress.md).
 
+**Deployment update, 2026-10-19:** published in separately approved release `4995a2d`, Render deploy `dep-dbat50dg1s2s73dec4a0` (live). Hosted Jurors save/automatic groups and combined-category save/reload checks pass; private pre/post backups and exact original-row preservation pass. Local-only authorization statements describe the original implementation boundary; see the current [release record](../implementation/progress.md#stages-45-release--done-2026-10-19).
+
 ## Organizer workflow
 
 Open **Příprava → Porotci**. Edit names and T/V assignments inline, add **Nový porotce**, or use **Vložit ze spreadsheetu**. Each new row receives one random stable membership UUID. Duplicate names remain distinct people in the roster; names never authenticate or match identities. Choose T or V explicitly. New rows can be removed locally; existing memberships are never removed by omitting a table row.
