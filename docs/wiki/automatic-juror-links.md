@@ -1,6 +1,8 @@
 # Automatic juror links
 
-Authorized bounded implementation session, 2026-10-19. This supersedes the manual generation/panel workflow in Stages 1 and 4. See [current validation and publication status](../implementation/progress.md). No subsequent phase or publication is authorized.
+**Deployment update, 2026-10-20:** published as `3f36f83`, Render deploy `dep-dbbhqagm7kps73f1svr0` (live), with full jury labels. Readiness, exact served bundle, original-row preservation and private backup manifests pass; authenticated hosted save/copy was not rerun because the user session expired overnight. [Release record and limits](../implementation/progress.md#automatic-links-release--deployed-2026-10-20).
+
+Authorized bounded implementation session, 2026-10-19. This supersedes the manual generation/panel workflow in Stages 1 and 4. See [current validation and publication status](../implementation/progress.md). No subsequent implementation phase is authorized.
 
 ## Organizer workflow
 

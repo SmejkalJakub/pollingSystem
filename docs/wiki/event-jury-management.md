@@ -4,7 +4,7 @@ Phase 3 implementation, with Stage 1 access, Stage 2 workspace Stage 3 Teams and
 
 ## Jury labels — 2026-10-19 correction
 
-The interface and XLSX display **Technická** for stored code T and **Veřejná** for V. This changes presentation only; codes, group IDs, existing custom descriptive names and voting policies stay unchanged. Juror spreadsheet paste accepts these exact names and legacy T/V. The correction is currently local; see the latest progress/handoff for validation and publication status.
+The interface and XLSX display **Technická** for stored code T and **Veřejná** for V. This changes presentation only; codes, group IDs, existing custom descriptive names and voting policies stay unchanged. Juror spreadsheet paste accepts these exact names and legacy T/V. The correction is deployed in release `3f36f83` on 2026-10-20; see the latest progress/handoff for validation and limits.
 
 ## Approved behavior
 
@@ -24,7 +24,7 @@ These Q05/Q10 roster decisions and the limited removal policy were explicitly co
 
 Stage 2 keeps these URLs and places event administration in **Příprava / Průběh hlasování / Výsledky**. Preparation defaults to **Porotci**; `?setup=teams` and `?setup=categories` open the other focused management views. T/V controls and direct Stage 1 copying stay in Porotci; event metadata/editing is under **Nastavení eventu** below the selected view. [Current workspace guide](simplification-stage-2.md).
 
-`/` remains the juror entry surface with no administration link. Stage 1 adds direct **Kopírovat odkaz** actions and explicit absent/legacy-link labels; [configuration and transition](simplification-stage-1.md). The current local update removes the Phase 5 **Osobní přístup** panel and automatically creates first links during explicit saves; direct exceptional replacement/revocation remains confirmed. See [automatic links](automatic-juror-links.md) and [juror entry](juror-wizard.md). Voting configuration is Phase 4; results/dashboard remain later work.
+`/` remains the juror entry surface with no administration link. Stage 1 adds direct **Kopírovat odkaz** actions and explicit absent/legacy-link labels; [configuration and transition](simplification-stage-1.md). The current deployed update removes the Phase 5 **Osobní přístup** panel and automatically creates first links during explicit saves; direct exceptional replacement/revocation remains confirmed. See [automatic links](automatic-juror-links.md) and [juror entry](juror-wizard.md). Voting configuration is Phase 4; results/dashboard remain later work.
 
 The screens use existing Tailwind tokens and shadcn Button/Input controls, labeled native selects/textareas, keyboard focus, pending/empty/error/retry states and preserved form values on failed mutations. Roster lock information comes from the backend; every write rechecks the lock authoritatively.
 
