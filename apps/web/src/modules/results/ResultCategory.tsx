@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import type { ResultsCategory, ResultsReason, ResultRow } from '@d21/contracts';
 import { lifecycleLabels, problemLabels } from '../dashboard/presentation';
 
@@ -31,7 +32,8 @@ export function ResultCategory({
     >
       <p className="eyebrow">
         {c.kind === 'selection' ? 'Výběrové kolo' : 'Finálová kategorie'} ·{' '}
-        {c.groups.map((g) => g.code).join(' + ') || 'Bez poroty'}
+        {c.groups.map((g) => juryGroupLabel(g.code)).join(' + ') ||
+          'Bez poroty'}
       </p>
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <h2

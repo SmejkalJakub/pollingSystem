@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useEffect, useRef, useState } from 'react';
 import type { JurorTableRow } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
@@ -29,9 +30,9 @@ export function JurorPaste({
         Vložit ze spreadsheetu
       </summary>
       <p id="juror-paste-help" className="my-3 text-sm text-muted-foreground">
-        Vložte řádky bez záhlaví: první sloupec jméno, druhý T nebo V. Sloupce
-        oddělte tabulátorem. Vložené řádky vytvoří nové porotce, včetně stejných
-        jmen. Náhled nic neukládá.
+        Vložte řádky bez záhlaví: první sloupec jméno, druhý Technická nebo
+        Veřejná (přijímáme také T nebo V). Sloupce oddělte tabulátorem. Vložené
+        řádky vytvoří nové porotce, včetně stejných jmen. Náhled nic neukládá.
       </p>
       <label htmlFor="juror-paste" className="mb-2 block text-sm font-medium">
         Řádky z tabulky
@@ -97,7 +98,7 @@ export function JurorPaste({
                   {index + 1}. {row.displayName || 'Chybí jméno'}
                 </p>
                 <p className="whitespace-pre-wrap text-sm">
-                  {row.groupCode || 'Chybí T/V'}
+                  {juryGroupLabel(row.groupCode) || 'Chybí část poroty'}
                 </p>
                 {issues
                   .filter((issue) => issue.rowId === row.id)

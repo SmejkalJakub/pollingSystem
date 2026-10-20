@@ -24,9 +24,9 @@ Apply it before starting the updated API. Do not roll back to code that requires
 
 Every roster row has **Kopírovat odkaz** directly beside the juror. One activation fetches and copies the current active link, without opening a panel or confirmation. Repeating it returns the same secret and makes no writes, audit additions or session changes. Success is announced through an atomic status message; clipboard failure exposes, focuses and selects a labelled read-only link for Ctrl+C/⌘C. **Skrýt odkaz** clears it and returns focus. Links remain in transient memory only; no automatic link-bearing screenshots, telemetry or browser storage.
 
-Rows clearly distinguish no active link, a legacy hash-only link and a stored copyable link. **Osobní přístup** still owns generation, confirmed replacement and confirmed revocation. Opening/cancelling a confirmation changes nothing. Starting a mutation clears any displayed earlier link; failed generation rolls back access/session/audit changes.
+Current local update: explicit juror saves automatically create only first links; the **Osobní přístup** panel is removed. Rows distinguish never-issued, legacy, stored and revoked access. Replacement/restoration and revocation use direct confirmed row actions. Opening/cancelling changes nothing; failed writes roll back the complete transaction. See [automatic links and transition](automatic-juror-links.md).
 
-Legacy hash-only links keep working for entry and recovery. Their original secrets cannot be reconstructed. To enable future copying, an organizer must explicitly choose **Vytvořit náhradní odkaz**, confirm that earlier links/sessions will stop working, and privately deliver the replacement. No copy action silently upgrades/replaces a link. A lost new-issuance response can now be recovered through Copy; do not replace access merely to copy it.
+Legacy hash-only links keep working for entry and recovery. Their original secrets cannot be reconstructed. To enable future copying, an organizer must explicitly choose **Nahradit odkaz**, confirm that earlier links/sessions will stop working, and privately deliver the replacement. No copy action silently upgrades/replaces a link. A lost new-issuance response can now be recovered through Copy; do not replace access merely to copy it.
 
 ## Encryption configuration and backup
 
@@ -58,7 +58,7 @@ Personal links grant juror access. Deliver them privately. Keys, plaintext token
 
 `POST /events/:eventId/jurors/:jurorId/access/copy`, strict `{}` body and empty query, returns strict `{url}`. It requires the current administration cookie, same-origin/custom-header checks, scoped event/juror lookup and fresh administration authorization after the shared event lock and before transaction completion. Missing session: 401; juror: 403; wrong origin/header: 403; malformed/extra claims: 400; wrong-event/missing membership: 404; no active link: `409 NO_ACTIVE_LINK`; legacy hash-only: `409 LEGACY_LINK`; unavailable keys/corrupt ciphertext: sanitized `503 LINK_STORAGE_UNAVAILABLE`. GET is unavailable. The read shares the existing event-lock boundary with replacement/revocation, returns no stale pre-lock secret and changes no data.
 
-Roster jurors add metadata `access: none | legacy | stored`; individual juror create/edit/list contracts remain unchanged and contain no secret. `stored` means ciphertext exists, not that the deployment has its required decryption key; key availability is checked by the protected copy operation.
+Roster jurors add metadata `access: none | legacy | stored | revoked`; individual juror create/edit/list contracts remain unchanged and contain no secret. `stored` means ciphertext exists, not that the deployment has its required decryption key; key availability is checked by the protected copy operation.
 
 ## Validation and limits
 

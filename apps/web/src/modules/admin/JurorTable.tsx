@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   jurorTableSnapshotSchema,
@@ -54,6 +55,7 @@ export function JurorTable({
     draftDirty.current = dirty || conflict;
   }, [dirty, conflict]);
   const missingGroups = !base.locked && base.groups.length < 2;
+  const missingLinks = base.jurors.some((juror) => juror.access === 'none');
   const path = `/events/${eventId}/jurors/table`;
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
@@ -98,7 +100,7 @@ export function JurorTable({
           : managementError(cause),
       );
   }
-  async function loadLatest() {
+  async function loadLatest(focusFeedback = true) {
     if (busy) return;
     setBusy(true);
     setError('');
@@ -119,7 +121,7 @@ export function JurorTable({
       } else {
         reset(snapshot);
         setNotice('Porotci byli obnoveni.');
-        setFocusTarget({ id: 'jurors-status' });
+        if (focusFeedback) setFocusTarget({ id: 'jurors-status' });
       }
     } catch (cause) {
       if (!request.signal.aborted) fail(cause);
@@ -204,13 +206,13 @@ export function JurorTable({
     <>
       <h2 className="mt-6 text-2xl font-semibold">Porotci</h2>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        Upravte jména a přiřazení T/V a uložte celou tabulku najednou. Stejná
-        jména označují samostatná členství.
+        Upravte jména a přiřazení k Technické či Veřejné porotě a uložte celou
+        tabulku najednou. Stejná jména označují samostatná členství.
       </p>
       {missingGroups && (
         <p className="mt-4 text-sm text-muted-foreground">
-          Uložení tabulky automaticky vytvoří chybějící části T/V. Existující
-          názvy a členové zůstanou zachováni.
+          Uložení tabulky automaticky vytvoří chybějící Technickou či Veřejnou
+          porotu. Existující názvy a členové zůstanou zachováni.
         </p>
       )}
       {base.locked && (
@@ -218,8 +220,8 @@ export function JurorTable({
           role="status"
           className="mt-4 border-l-2 border-primary bg-secondary p-4 text-sm"
         >
-          Složení poroty je uzamčeno. Jména lze opravit; členství a přiřazení
-          T/V měnit nelze.
+          Složení poroty je uzamčeno. Jména lze opravit; členství a přiřazení k
+          Technické či Veřejné porotě měnit nelze.
         </p>
       )}
       <div
@@ -323,7 +325,7 @@ export function JurorTable({
             query={query}
             snapshot={base}
             disabled={busy || auxiliary || dirty || conflict}
-            reload={() => void loadLatest()}
+            reload={(focusFeedback = true) => void loadLatest(focusFeedback)}
             onExpired={onExpired}
             showIds={conflict}
             rows={rows}
@@ -372,7 +374,8 @@ export function JurorTable({
                   Aktuální části:{' '}
                   {latest.groups
                     .map(
-                      (group) => `${group.code} — ${group.name} (${group.id})`,
+                      (group) =>
+                        `${juryGroupLabel(group.code)} — ${group.name} (${group.id})`,
                     )
                     .join('; ') || 'Zatím žádné'}
                   .{' '}
@@ -382,7 +385,9 @@ export function JurorTable({
                   {tableRows(latest).map((juror) => (
                     <li className="break-words py-3" key={juror.id}>
                       <p className="font-medium">{juror.displayName}</p>
-                      <p className="whitespace-pre-wrap">{juror.groupCode}</p>
+                      <p className="whitespace-pre-wrap">
+                        {juryGroupLabel(juror.groupCode)}
+                      </p>
                       <p className="mt-1 break-all text-xs text-muted-foreground">
                         ID: {juror.id}
                       </p>
@@ -424,7 +429,10 @@ export function JurorTable({
             type="button"
             onClick={() => void save()}
             disabled={
-              busy || auxiliary || (!dirty && !missingGroups) || conflict
+              busy ||
+              auxiliary ||
+              (!dirty && !missingGroups && !missingLinks) ||
+              conflict
             }
           >
             {busy ? 'Probíhá požadavek…' : 'Uložit tabulku'}

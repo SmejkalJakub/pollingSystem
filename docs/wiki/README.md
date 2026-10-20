@@ -40,3 +40,5 @@ Use the user's explicit instructions and approved decisions as authority. Treat 
 - [Simplification Stage 4: editable Jurors table, automatic missing T/V groups and freeze-safe atomic saving](simplification-stage-4.md)
 
 - [Simplification Stage 5 — combined category preparation](simplification-stage-5.md)
+
+- [Automatic juror links, safe retries and legacy/revoked transition](automatic-juror-links.md)

@@ -10,6 +10,8 @@ import {
 import type { adminEventLock } from '../auth/admin-transaction';
 import { rosterLocked } from '../events/locking';
 import { AppError } from '../../errors';
+import { ensureInitialJurorLink } from '../auth/automatic-juror-link';
+import type { LinkVault } from '../auth/link-vault';
 
 export async function readRoster(
   client: PoolClient,
@@ -27,8 +29,8 @@ export async function readRoster(
     [eventId],
   );
   const access = await client.query(
-    `SELECT DISTINCT ON (juror_id) juror_id,CASE WHEN encrypted_token IS NOT NULL THEN 'stored' ELSE 'legacy' END AS access
-    FROM juror_access WHERE event_id=$1 AND revoked_at IS NULL ORDER BY juror_id,created_at DESC,token_hash`,
+    `SELECT DISTINCT ON (juror_id) juror_id,CASE WHEN revoked_at IS NOT NULL THEN 'revoked' WHEN encrypted_token IS NOT NULL THEN 'stored' ELSE 'legacy' END AS access
+    FROM juror_access WHERE event_id=$1 ORDER BY juror_id,(revoked_at IS NULL) DESC,created_at DESC,token_hash`,
     [eventId],
   );
   return {
@@ -58,7 +60,10 @@ const conflict = () =>
     'JUROR_TABLE_CONFLICT',
     'The roster changed. Review the current roster before saving again.',
   );
-export function createJurorTable(withLock: ReturnType<typeof adminEventLock>) {
+export function createJurorTable(
+  withLock: ReturnType<typeof adminEventLock>,
+  vault: LinkVault,
+) {
   return {
     table(eventId: string) {
       return withLock(
@@ -71,7 +76,7 @@ export function createJurorTable(withLock: ReturnType<typeof adminEventLock>) {
       );
     },
     saveTable(eventId: string, input: JurorTableInput) {
-      return withLock(eventId, async (client, locked) => {
+      return withLock(eventId, async (client, locked, adminId) => {
         const issues: JurorTableIssue[] = [];
         const rows = input.rows.map((row) => {
           const parsed = jurorTableFieldsSchema.safeParse({
@@ -93,7 +98,7 @@ export function createJurorTable(withLock: ReturnType<typeof adminEventLock>) {
         const groupByCode = new Map(
           current.groups.map((group) => [String(group.code), group.id]),
         );
-        // Replay exact desired state without timestamps, credentials or membership writes.
+        // Exact replay preserves memberships and all previously issued access.
         if (
           rows.length === byId.size &&
           rows.every((row) => {
@@ -104,8 +109,20 @@ export function createJurorTable(withLock: ReturnType<typeof adminEventLock>) {
             );
           }) &&
           (locked || groupByCode.size === 2)
-        )
-          return { status: 'saved' as const, snapshot: current };
+        ) {
+          for (const row of rows)
+            await ensureInitialJurorLink(
+              client,
+              vault,
+              eventId,
+              row.id,
+              adminId,
+            );
+          return {
+            status: 'saved' as const,
+            snapshot: await readRoster(client, eventId, locked),
+          };
+        }
         if (input.baseVersion !== current.version) throw conflict();
         const ids = new Set(rows.map((row) => row.id));
         if (current.jurors.some((juror) => !ids.has(juror.id)))
@@ -153,6 +170,7 @@ export function createJurorTable(withLock: ReturnType<typeof adminEventLock>) {
             );
             if (!added.rowCount) throw conflict();
           }
+          await ensureInitialJurorLink(client, vault, eventId, row.id, adminId);
         }
         return {
           status: 'saved' as const,

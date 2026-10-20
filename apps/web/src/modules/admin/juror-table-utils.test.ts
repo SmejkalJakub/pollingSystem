@@ -32,13 +32,14 @@ const base: JurorTableSnapshot = {
 describe('juror paste and stale-roster safety', () => {
   it('preserves duplicate names, Unicode, quoted cells and literal formulas without identity matching', () => {
     const parsed = parseJurorPaste(
-      'Žofie\tT\r\nŽofie\t V \r\n"=Name\nwith ""quotes"""\tT\n',
+      'Žofie\tTechnická\r\nŽofie\t Veřejná \r\n"=Name\nwith ""quotes"""\tT\nLegacy\tV\n',
     );
     expect(parsed.error).toBeUndefined();
     expect(parsed.rows).toEqual([
       { displayName: 'Žofie', groupCode: 'T' },
       { displayName: 'Žofie', groupCode: 'V' },
       { displayName: '=Name\nwith "quotes"', groupCode: 'T' },
+      { displayName: 'Legacy', groupCode: 'V' },
     ]);
   });
   it('rejects extra columns/malformed quotes and reports missing/invalid assignments and empty interior names', () => {

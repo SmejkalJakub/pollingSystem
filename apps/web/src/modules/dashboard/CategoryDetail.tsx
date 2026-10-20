@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { EventHeading } from '../admin/EventNavigation';
 import { dashboardDetailSchema, type DashboardCategory } from '@d21/contracts';
 import { useResource } from '../admin/useResource';
@@ -24,7 +25,8 @@ export function JurorRows({ category: c }: { category: DashboardCategory }) {
             <p className="break-words font-medium">
               {j.displayName}{' '}
               <span className="text-sm text-muted-foreground">
-                · {c.groups.find((g) => g.id === j.groupId)?.code}
+                ·{' '}
+                {juryGroupLabel(c.groups.find((g) => g.id === j.groupId)?.code)}
               </span>
             </p>
             <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
@@ -108,7 +110,7 @@ export function CategoryDetail({
                 <Progress
                   key={g.groupId}
                   {...g.counts}
-                  label={`Porota ${data.category.groups.find((group) => group.id === g.groupId)?.code}`}
+                  label={`Porota ${juryGroupLabel(data.category.groups.find((group) => group.id === g.groupId)?.code)}`}
                 />
               ))}
             </div>

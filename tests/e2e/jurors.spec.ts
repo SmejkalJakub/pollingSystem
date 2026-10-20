@@ -75,14 +75,14 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
     page.getByText('Tabulka porotců byla uložena.', { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole('button', { name: 'Upravit část T', exact: true })
+    .getByRole('button', { name: 'Upravit část Technická', exact: true })
     .click();
   await expect(field(1)).toBeDisabled();
   await page
     .getByLabel('Název části poroty', { exact: true })
     .fill('Moje technická porota');
   await page
-    .getByRole('form', { name: 'Upravit část T', exact: true })
+    .getByRole('form', { name: 'Upravit část Technická', exact: true })
     .getByRole('button', { name: 'Uložit', exact: true })
     .click();
   await expect(
@@ -135,6 +135,23 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
   await save.click();
   await expect(page.getByRole('alert')).toBeVisible();
   const committed = await values();
+  const credentialState = async () =>
+    (
+      await runtime.pool.query(
+        `SELECT
+    (SELECT json_agg(t ORDER BY token_hash) FROM juror_access t WHERE event_id=$1) AS links,
+    (SELECT json_agg(t ORDER BY id) FROM audit_logs t WHERE event_id=$1) AS audit`,
+        [event.id],
+      )
+    ).rows;
+  const committedAccess = await credentialState();
+  expect(committedAccess[0].links).toHaveLength(3);
+  expect(
+    committedAccess[0].links.every(
+      (link: { encrypted_token: string; revoked_at: unknown }) =>
+        link.encrypted_token.startsWith('v1.') && link.revoked_at === null,
+    ),
+  ).toBe(true);
   expect(committed).toHaveLength(3);
   expect(
     committed.filter((row) => row.display_name === 'Stejný porotce'),
@@ -145,6 +162,13 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
     page.getByText('Tabulka porotců byla uložena.', { exact: true }),
   ).toBeVisible();
   expect(await values()).toEqual(committed);
+  expect(await credentialState()).toEqual(committedAccess);
+  await expect(
+    page.getByRole('button', { name: /Osobní přístup/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: /Kopírovat odkaz/ }).first(),
+  ).toBeEnabled();
   await expect(
     page.getByText('Tabulka porotců byla uložena.', { exact: true }),
   ).toBeFocused();

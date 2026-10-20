@@ -6,6 +6,8 @@ import { juryGroupSchema, jurorSchema, rosterSchema } from '@d21/contracts';
 import { readRoster, createJurorTable } from './table';
 import { AppError } from '../../errors';
 import { notFound, rosterLocked } from '../events/locking';
+import { createLinkVault, type LinkVault } from '../auth/link-vault';
+import { ensureInitialJurorLink } from '../auth/automatic-juror-link';
 
 const groupColumns = `id, event_id AS "eventId", code, name`;
 const jurorColumns = `id, event_id AS "eventId", jury_group_id AS "juryGroupId", display_name AS "displayName", created_at AS "createdAt", updated_at AS "updatedAt"`;
@@ -36,6 +38,7 @@ export function createJuryService(
   pool: Pool,
   auth: AuthService,
   token: string | undefined,
+  vault: LinkVault = createLinkVault(),
 ) {
   const withLock = adminEventLock(pool, auth, token);
   return {
@@ -50,7 +53,7 @@ export function createJuryService(
         true,
       );
     },
-    ...createJurorTable(withLock),
+    ...createJurorTable(withLock, vault),
     async createGroup(eventId: string, input: JuryGroupInput) {
       return withLock(eventId, async (client, locked) => {
         if (locked) throw rosterLocked();
@@ -72,12 +75,52 @@ export function createJuryService(
       });
     },
     async createJuror(eventId: string, input: JurorInput) {
-      return withLock(eventId, async (client, locked) => {
+      return withLock(eventId, async (client, locked, adminId) => {
+        if (input.id) {
+          const existing = await client.query(
+            `SELECT ${jurorColumns} FROM event_jurors WHERE id=$1`,
+            [input.id],
+          );
+          const row = existing.rows[0];
+          if (row) {
+            if (
+              row.eventId !== eventId.toLowerCase() ||
+              row.juryGroupId !== input.juryGroupId.toLowerCase() ||
+              row.displayName !== input.displayName
+            )
+              throw new AppError(
+                409,
+                'JUROR_CREATE_CONFLICT',
+                'This membership ID is already in use. Review the current roster.',
+              );
+            await ensureInitialJurorLink(
+              client,
+              vault,
+              eventId,
+              row.id,
+              adminId,
+            );
+            return serializeJuror(row);
+          }
+        }
         if (locked) throw rosterLocked();
         await requireGroup(client, eventId, input.juryGroupId);
         const result = await client.query(
-          `INSERT INTO event_jurors (event_id, jury_group_id, display_name) VALUES ($1, $2, $3) RETURNING ${jurorColumns}`,
-          [eventId, input.juryGroupId, input.displayName],
+          `INSERT INTO event_jurors (event_id, jury_group_id, display_name, id) VALUES ($1, $2, $3, coalesce($4::uuid,gen_random_uuid())) ON CONFLICT(id) DO NOTHING RETURNING ${jurorColumns}`,
+          [eventId, input.juryGroupId, input.displayName, input.id],
+        );
+        if (!result.rowCount)
+          throw new AppError(
+            409,
+            'JUROR_CREATE_CONFLICT',
+            'This membership ID is already in use. Review the current roster.',
+          );
+        await ensureInitialJurorLink(
+          client,
+          vault,
+          eventId,
+          result.rows[0].id,
+          adminId,
         );
         return serializeJuror(result.rows[0]);
       });

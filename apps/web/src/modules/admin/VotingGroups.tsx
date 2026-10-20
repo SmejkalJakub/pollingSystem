@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useId, useState } from 'react';
 import { z } from 'zod';
 import {
@@ -41,7 +42,7 @@ export function VotingGroups({
   const groups = available.data ?? [];
   const options = groups.map((group) => ({
     value: group.id,
-    label: `${group.code} — ${group.name}`,
+    label: `${juryGroupLabel(group.code)} — ${group.name}`,
   }));
   if (groups.length === 2)
     options.push({
@@ -91,7 +92,7 @@ export function VotingGroups({
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {selected.data.length
             ? selected.data
-                .map((group) => `${group.code} — ${group.name}`)
+                .map((group) => `${juryGroupLabel(group.code)} — ${group.name}`)
                 .join('; ')
             : 'Oprávněná porota zatím není určena.'}
         </p>
@@ -111,7 +112,7 @@ export function VotingGroups({
           <MutationForm
             title="Upravit oprávnění"
             headingLevel={3}
-            description="V konceptu může porota zůstat neurčená. Vyberte T, V nebo obě části tohoto eventu."
+            description="V konceptu může porota zůstat neurčená. Vyberte Technickou, Veřejnou nebo obě části tohoto eventu."
             initial={{
               groups: selected.data.map((group) => group.id).join(','),
             }}

@@ -128,7 +128,7 @@ export function VotingDetail({
             <div className="mt-6">
               <MutationForm
                 title="Aktivovat hlasování"
-                description="Server ověří pravidla, týmy, oprávnění a stejně velké poroty T/V po 5, 7 nebo 9 členech. Úspěšná aktivace uzamkne konfiguraci i složení poroty eventu."
+                description="Server ověří pravidla, týmy, oprávnění a stejný počet členů Technické i Veřejné poroty: 5, 7 nebo 9 v každé. Úspěšná aktivace uzamkne konfiguraci i složení poroty eventu."
                 initial={{}}
                 fields={[]}
                 schema={votingActionSchema}

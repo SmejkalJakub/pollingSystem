@@ -170,7 +170,14 @@ beforeAll(async () => {
       jurorAccess: access,
       wizard: createWizardService(pool, auth),
       ballotAdmin: createBallotAdminService(pool, auth),
-      events: createEventService(pool, auth),
+      events: createEventService(
+        pool,
+        auth,
+        createLinkVault(
+          JSON.stringify({ test: randomBytes(32).toString('hex') }),
+          'test',
+        ),
+      ),
       votings: createVotingService(pool, auth),
     },
   });

@@ -15,6 +15,10 @@ import { fileURLToPath } from 'node:url';
 const environment = readEnvironment();
 const { pool } = createDatabase(environment.DATABASE_URL);
 const auth = createAuthService(pool);
+const linkVault = createLinkVault(
+  environment.JUROR_LINK_KEYS,
+  environment.JUROR_LINK_ACTIVE_KEY_ID,
+);
 const app = buildApp({
   logger: true,
   webRoot:
@@ -25,20 +29,13 @@ const app = buildApp({
   auth: {
     service: auth,
     origin: environment.APP_ORIGIN,
-    events: createEventService(pool, auth),
+    events: createEventService(pool, auth, linkVault),
     votings: createVotingService(pool, auth),
     wizard: createWizardService(pool, auth),
     ballotAdmin: createBallotAdminService(pool, auth),
     dashboard: createDashboardService(pool, auth),
     results: createResultsService(pool, auth),
-    jurorAccess: createJurorAccessService(
-      pool,
-      auth,
-      createLinkVault(
-        environment.JUROR_LINK_KEYS,
-        environment.JUROR_LINK_ACTIVE_KEY_ID,
-      ),
-    ),
+    jurorAccess: createJurorAccessService(pool, auth, linkVault),
   },
   checkDatabase: async () => {
     await pool.query('select 1');

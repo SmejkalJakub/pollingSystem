@@ -169,7 +169,14 @@ beforeAll(async () => {
     auth: {
       service: auth,
       origin,
-      events: createEventService(pool, auth),
+      events: createEventService(
+        pool,
+        auth,
+        createLinkVault(
+          JSON.stringify({ test: randomBytes(32).toString('hex') }),
+          'test',
+        ),
+      ),
       votings: createVotingService(pool, auth),
       results,
       wizard,

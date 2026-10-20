@@ -5,6 +5,7 @@ import type { EventInput, EventPatch } from '@d21/contracts';
 import { eventListSchema, eventSchema } from '@d21/contracts';
 import { notFound } from './locking';
 import { createJuryService } from '../jurors/service';
+import { createLinkVault, type LinkVault } from '../auth/link-vault';
 
 const eventColumns = `id, name, description, created_at AS "createdAt", updated_at AS "updatedAt"`;
 function serializeEvent(row: Record<string, unknown>) {
@@ -15,11 +16,15 @@ function serializeEvent(row: Record<string, unknown>) {
   });
 }
 
-export function createEventService(pool: Pool, auth: AuthService) {
+export function createEventService(
+  pool: Pool,
+  auth: AuthService,
+  vault: LinkVault = createLinkVault(),
+) {
   return (token: string | undefined) => {
     const withLock = adminEventLock(pool, auth, token);
     return {
-      jury: createJuryService(pool, auth, token),
+      jury: createJuryService(pool, auth, token, vault),
       async list() {
         return adminTransaction(pool, auth, token, async (client) => {
           const result = await client.query(

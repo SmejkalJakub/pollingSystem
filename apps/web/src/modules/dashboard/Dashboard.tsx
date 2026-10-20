@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useState } from 'react';
 import { EventHeading } from '../admin/EventNavigation';
 import {
@@ -30,7 +31,9 @@ function JurorOverview({ categories }: { categories: DashboardCategory[] }) {
       const current = byJuror.get(j.id) ?? {
         id: j.id,
         name: j.displayName,
-        group: category.groups.find((g) => g.id === j.groupId)?.code ?? '',
+        group: juryGroupLabel(
+          category.groups.find((g) => g.id === j.groupId)?.code,
+        ),
         tasks: [],
       };
       current.tasks.push({ category, progress: j.progress });

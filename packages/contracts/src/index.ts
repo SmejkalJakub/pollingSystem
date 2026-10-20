@@ -8,6 +8,9 @@ export const votingStatuses = [
 ] as const;
 export const ballotStatuses = ['draft', 'submitted', 'cancelled'] as const;
 export const juryGroupCodes = ['T', 'V'] as const;
+// Presentation names only; stored/API group codes remain stable.
+export const juryGroupLabel = (code: string | undefined) =>
+  code === 'T' ? 'Technická' : code === 'V' ? 'Veřejná' : (code ?? '');
 export const votingStatusSchema = z.enum(votingStatuses);
 export const ballotStatusSchema = z.enum(ballotStatuses);
 export const jurorProgressSchema = z.enum([
@@ -124,10 +127,15 @@ export const juryGroupSchema = juryGroupInputSchema.extend({
   eventId: z.uuid(),
 });
 export const jurorInputSchema = z.strictObject({
+  id: z
+    .uuid()
+    .transform((id) => id.toLowerCase())
+    .optional(),
   displayName: nameSchema,
   juryGroupId: z.uuid(),
 });
 export const jurorPatchSchema = jurorInputSchema
+  .omit({ id: true })
   .partial()
   .refine(
     (value) => Object.keys(value).length > 0,
@@ -144,7 +152,9 @@ export const jurorListSchema = z.array(jurorSchema);
 export const rosterSchema = z.strictObject({
   groups: juryGroupListSchema,
   jurors: z.array(
-    jurorSchema.extend({ access: z.enum(['none', 'legacy', 'stored']) }),
+    jurorSchema.extend({
+      access: z.enum(['none', 'legacy', 'stored', 'revoked']),
+    }),
   ),
   locked: z.boolean(),
 });

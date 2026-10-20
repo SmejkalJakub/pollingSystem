@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useState } from 'react';
 import {
   juryGroupCodes,
@@ -45,7 +46,7 @@ export function JuryGroups({
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Při přípravě může být porota neúplná. Před aktivací hlasování musí mít
-          T i V stejný počet členů: 5, 7 nebo 9.
+          Technická i Veřejná porota stejný počet členů: 5, 7 nebo 9.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {juryGroupCodes.map((code) => {
@@ -60,7 +61,7 @@ export function JuryGroups({
               >
                 <div className="flex items-start justify-between gap-4">
                   <span className="font-mono text-sm font-semibold">
-                    POROTA {code}
+                    POROTA {juryGroupLabel(code)}
                   </span>
                   <span className="font-mono text-sm text-muted-foreground">
                     {count} členů
@@ -78,7 +79,7 @@ export function JuryGroups({
                   }}
                   disabled={disabled || groupEditor !== null || !group}
                 >
-                  {`Upravit část ${code}`}
+                  {`Upravit část ${juryGroupLabel(code)}`}
                 </Button>
               </div>
             );
@@ -89,7 +90,7 @@ export function JuryGroups({
             <MutationForm
               headingLevel={3}
               key={groupEditor}
-              title={`Upravit část ${groupEditor}`}
+              title={`Upravit část ${juryGroupLabel(groupEditor)}`}
               initial={{ name: selectedGroup.name }}
               fields={[
                 { key: 'name', label: 'Název části poroty', maxLength: 200 },

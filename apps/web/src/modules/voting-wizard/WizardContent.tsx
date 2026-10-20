@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useState, type RefObject } from 'react';
 import type {
   WizardCurrent,
@@ -58,7 +59,7 @@ export function WizardContent({
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
         <div className="min-w-0">
           <p className="eyebrow">
-            Porota {current.group.code} · {current.group.name}
+            Porota {juryGroupLabel(current.group.code)} · {current.group.name}
           </p>
           <p className="mt-2 break-words font-medium">
             {current.principal.displayName}

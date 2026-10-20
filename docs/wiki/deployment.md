@@ -1,5 +1,9 @@
 # Linux hosting and colleague testing
 
+**Automatic-links release authorized, 2026-10-20:** explicit commit/push approval is received for automatic juror links and the preserved jury-label correction. Fresh private backup, unchanged-source Docker build and publication scan pass; publication/deployment is in progress on the same Free test service. Existing live source below remains current until terminal live verification. [Current release state](../implementation/next-session.md).
+
+**Automatic-links release preparation, 2026-10-19:** the user authorizes deployment of automatic juror links and jury-label correction to the existing Free test app. Docker build, publication scan, private pre-backup/manifest and current admin-session checks pass. Explicit commit/push authorization is pending under AGENTS.md; nothing has been published yet. The deployed version below is still current. See [release state, backup and next action](../implementation/next-session.md).
+
 **Current release, 2026-10-19:** Stages 1–5 run source `4995a2d`, Render deploy `dep-dbat50dg1s2s73dec4a0` (live). Same Free service/project, six migrations and automatic deployment off. Private pre/post backups, authenticated Jurors/group creation, combined category save/reload and exact preservation of every original database row PASS. The labelled new test event has no credentials or votes. [Current release evidence and remaining work](../implementation/progress.md#stages-45-release--done-2026-10-19). The Stages 1–3 and Phase 13 records below are historical.
 
 ## Current Stages 1–3 release — 2026-10-18

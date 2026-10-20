@@ -1,4 +1,7 @@
-import { randomUUID } from 'node:crypto';
+import { createWizardService } from '../wizard/service';
+import { createJurorAccessService } from '../auth/juror-access';
+import { createLinkVault } from '../auth/link-vault';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -13,6 +16,10 @@ import { newSecret, secretHash } from '../auth/crypto';
 import { createEventService } from '../events/service';
 import { createVotingService } from '../votings/service';
 
+const vault = createLinkVault(
+  JSON.stringify({ test: randomBytes(32).toString('hex') }),
+  'test',
+);
 const name = `d21_test_${randomUUID().replaceAll('-', '')}`;
 const baseUrl = process.env.TEST_DATABASE_URL ?? readEnvironment().DATABASE_URL;
 if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseUrl).hostname))
@@ -102,7 +109,9 @@ describe('atomic juror table against local PostgreSQL', () => {
       auth: {
         service: auth,
         origin: headers.origin,
-        events: createEventService(pool, auth),
+        events: createEventService(pool, auth, vault),
+        jurorAccess: createJurorAccessService(pool, auth, vault),
+        wizard: createWizardService(pool, auth),
         votings: createVotingService(pool, auth),
       },
     });
@@ -125,7 +134,7 @@ describe('atomic juror table against local PostgreSQL', () => {
     }
   });
 
-  it('reads without writes; creates missing groups and duplicate-name memberships once, with no credentials', async () => {
+  it('reads without writes; creates missing groups and duplicate-name memberships once, with encrypted links and no sessions', async () => {
     const id = await event(),
       before = await table(id),
       a = row(' Same name '),
@@ -145,7 +154,7 @@ describe('atomic juror table against local PostgreSQL', () => {
     expect(after.jurors).toHaveLength(2);
     expect(
       after.jurors.every(
-        (j) => j.displayName === 'Same name' && j.access === 'none',
+        (j) => j.displayName === 'Same name' && j.access === 'stored',
       ),
     ).toBe(true);
     expect((await save(id, before.version, [b, a])).json().status).toBe(
@@ -155,12 +164,355 @@ describe('atomic juror table against local PostgreSQL', () => {
     expect(
       (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
         .rowCount,
-    ).toBe(0);
+    ).toBe(2);
     expect(
       (await pool.query('SELECT * FROM sessions WHERE event_id=$1', [id]))
         .rowCount,
     ).toBe(0);
   });
+  it('copies automatically stored links without exposing secrets in roster or audit, and retains sessions on replay', async () => {
+    const id = await event(),
+      a = row(),
+      before = await table(id);
+    const saved = await save(id, before.version, [a]);
+    const copy = () =>
+      request('POST', `/events/${id}/jurors/${a.id}/access/copy`, {});
+    const first = await copy();
+    expect(first.statusCode).toBe(200);
+    const link = first.json().url;
+    const secret = new URLSearchParams(new URL(link).hash.slice(1)).get('key')!;
+    const token = newSecret();
+    await pool.query(
+      'INSERT INTO sessions(token_hash,event_id,juror_id,expires_at) VALUES ($1,$2,$3,NULL)',
+      [secretHash(token), id, a.id],
+    );
+    const persisted = async () =>
+      (
+        await pool.query(
+          `SELECT
+      (SELECT json_agg(t) FROM juror_access t WHERE event_id=$1) AS links,
+      (SELECT json_agg(t) FROM sessions t WHERE event_id=$1) AS sessions,
+      (SELECT json_agg(t) FROM audit_logs t WHERE event_id=$1) AS audit`,
+          [id],
+        )
+      ).rows;
+    const original = await persisted();
+    expect(JSON.stringify(original).includes(secret)).toBe(false);
+    expect(saved.body.includes(secret)).toBe(false);
+    expect(saved.body.includes('encrypted_token')).toBe(false);
+    expect(original[0].links[0].token_hash).toBe(secretHash(secret));
+    expect(original[0].links[0].encrypted_token.startsWith('v1.')).toBe(true);
+    expect((await save(id, before.version, [a])).statusCode).toBe(200);
+    expect((await copy()).json().url === link).toBe(true);
+    expect(await persisted()).toEqual(original);
+    expect(first.headers['cache-control']).toContain('no-store');
+  });
+  it('issues only never-issued memberships on explicit save, retaining legacy links and revoked history', async () => {
+    const id = await event();
+    await save(id, (await table(id)).version, []);
+    const group = (await table(id)).groups[0]!;
+    const members = [row('Never issued'), row('Legacy'), row('Revoked')];
+    for (const member of members)
+      await pool.query(
+        'INSERT INTO event_jurors(id,event_id,jury_group_id,display_name) VALUES ($1,$2,$3,$4)',
+        [member.id, id, group.id, member.displayName],
+      );
+    const legacy = newSecret(),
+      revoked = newSecret();
+    await pool.query(
+      'INSERT INTO juror_access(token_hash,event_id,juror_id,revoked_at) VALUES ($1,$2,$3,NULL),($4,$2,$5,now())',
+      [
+        secretHash(legacy),
+        id,
+        members[1]!.id,
+        secretHash(revoked),
+        members[2]!.id,
+      ],
+    );
+    const credentials = (
+      await pool.query(
+        'SELECT * FROM juror_access WHERE event_id=$1 ORDER BY token_hash',
+        [id],
+      )
+    ).rows;
+    const before = await table(id);
+    expect(before.jurors.map((j) => j.access).sort()).toEqual([
+      'legacy',
+      'none',
+      'revoked',
+    ]);
+    expect(
+      (
+        await pool.query(
+          'SELECT * FROM juror_access WHERE event_id=$1 ORDER BY token_hash',
+          [id],
+        )
+      ).rows,
+    ).toEqual(credentials);
+    expect((await save(id, before.version, members)).statusCode).toBe(200);
+    const after = await table(id);
+    expect(after.jurors.map((j) => j.access).sort()).toEqual([
+      'legacy',
+      'revoked',
+      'stored',
+    ]);
+    expect(after.version).toBe(before.version);
+    expect(
+      (
+        await pool.query(
+          'SELECT * FROM juror_access WHERE event_id=$1 AND juror_id<>$2 ORDER BY token_hash',
+          [id, members[0]!.id],
+        )
+      ).rows,
+    ).toEqual(credentials);
+    const access = createJurorAccessService(
+      pool,
+      createAuthService(pool),
+      vault,
+    );
+    expect((await access.start(id, legacy)).session.principal.kind).toBe(
+      'juror',
+    );
+    await expect(access.start(id, revoked)).rejects.toMatchObject({
+      code: 'INVALID_JUROR_LINK',
+    });
+    await expect(
+      access.copy(cookie.split('=')[1], id, members[1]!.id),
+    ).rejects.toMatchObject({ code: 'LEGACY_LINK' });
+  });
+  it('rolls back new groups, memberships, name edits and individual creation when keys are missing', async () => {
+    const auth = createAuthService(pool),
+      service = createEventService(pool, auth)(cookie.split('=')[1]).jury;
+    const id = await event(),
+      before = await table(id);
+    await expect(
+      service.saveTable(id, { baseVersion: before.version, rows: [row()] }),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    expect(await table(id)).toEqual(before);
+    await save(id, before.version, []);
+    const group = (await table(id)).groups[0]!;
+    await expect(
+      service.createJuror(id, { displayName: 'Failed', juryGroupId: group.id }),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    expect(await rowsIn(id)).toHaveLength(0);
+    const a = row('Original');
+    await pool.query(
+      'INSERT INTO event_jurors(id,event_id,jury_group_id,display_name) VALUES ($1,$2,$3,$4)',
+      [a.id, id, group.id, a.displayName],
+    );
+    const current = await table(id);
+    await expect(
+      service.saveTable(id, {
+        baseVersion: current.version,
+        rows: [{ ...a, displayName: 'Must roll back' }],
+      }),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    expect(await table(id)).toEqual(current);
+    expect(
+      (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
+        .rowCount,
+    ).toBe(0);
+    expect(
+      (await pool.query('SELECT * FROM audit_logs WHERE event_id=$1', [id]))
+        .rowCount,
+    ).toBe(0);
+  });
+  it('rolls back earlier credentials and audit records if later encryption fails', async () => {
+    const id = await event(),
+      before = await table(id);
+    let encryptions = 0;
+    const failing = {
+      ...vault,
+      encrypt: (...args: Parameters<typeof vault.encrypt>) => {
+        if (++encryptions === 2) return createLinkVault().encrypt(...args);
+        return vault.encrypt(...args);
+      },
+    };
+    const service = createEventService(
+      pool,
+      createAuthService(pool),
+      failing,
+    )(cookie.split('=')[1]).jury;
+    await expect(
+      service.saveTable(id, {
+        baseVersion: before.version,
+        rows: [row(), row()],
+      }),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    expect(await table(id)).toEqual(before);
+    expect(
+      (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
+        .rowCount,
+    ).toBe(0);
+    expect(
+      (await pool.query('SELECT * FROM audit_logs WHERE event_id=$1', [id]))
+        .rowCount,
+    ).toBe(0);
+  });
+  it('does not revive a credential revoked while the save waits for the event lock', async () => {
+    const id = await event();
+    await save(id, (await table(id)).version, []);
+    const group = (await table(id)).groups[0]!,
+      a = row();
+    await pool.query(
+      'INSERT INTO event_jurors(id,event_id,jury_group_id,display_name) VALUES ($1,$2,$3,$4)',
+      [a.id, id, group.id, a.displayName],
+    );
+    const before = await table(id),
+      lock = await pool.connect();
+    try {
+      await lock.query('BEGIN');
+      await lock.query('SELECT id FROM events WHERE id=$1 FOR UPDATE', [id]);
+      const pending = Promise.resolve(save(id, before.version, [a]));
+      const until = Date.now() + 3000;
+      while (
+        !(
+          await pool.query(
+            "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND pid<>pg_backend_pid()",
+          )
+        ).rowCount
+      ) {
+        if (Date.now() > until)
+          throw new Error('Expected actual event lock wait.');
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      await lock.query(
+        'INSERT INTO juror_access(token_hash,event_id,juror_id,revoked_at) VALUES ($1,$2,$3,now())',
+        [secretHash(newSecret()), id, a.id],
+      );
+      await lock.query('COMMIT');
+      expect((await pending).statusCode).toBe(200);
+      expect((await table(id)).jurors[0]!.access).toBe('revoked');
+      expect(
+        (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
+          .rowCount,
+      ).toBe(1);
+      expect(
+        (await pool.query('SELECT * FROM audit_logs WHERE event_id=$1', [id]))
+          .rowCount,
+      ).toBe(0);
+    } finally {
+      await lock.query('ROLLBACK');
+      lock.release();
+    }
+  });
+  it('rolls back credential and roster writes when the issuance audit cannot be stored', async () => {
+    const id = await event(),
+      before = await table(id);
+    await pool.query(
+      "CREATE FUNCTION fail_link_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='juror_access.issued' THEN RAISE EXCEPTION 'injected'; END IF; RETURN NEW; END $$",
+    );
+    await pool.query(
+      'CREATE TRIGGER fail_link_audit BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION fail_link_audit()',
+    );
+    try {
+      expect((await save(id, before.version, [row()])).statusCode).toBe(500);
+      expect(await table(id)).toEqual(before);
+      expect(
+        (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
+          .rowCount,
+      ).toBe(0);
+      expect(
+        (await pool.query('SELECT * FROM audit_logs WHERE event_id=$1', [id]))
+          .rowCount,
+      ).toBe(0);
+    } finally {
+      await pool.query('DROP TRIGGER fail_link_audit ON audit_logs');
+      await pool.query('DROP FUNCTION fail_link_audit()');
+    }
+  });
+  it('individual stable-ID retries retain one encrypted link, reject mismatches and preserve revoked access after freezing', async () => {
+    const id = await event();
+    await save(id, (await table(id)).version, []);
+    const group = (await table(id)).groups[0]!,
+      input = {
+        id: randomUUID(),
+        displayName: 'Individual',
+        juryGroupId: group.id,
+      };
+    const [first, concurrent] = await Promise.all([
+      request('POST', `/events/${id}/jurors`, input),
+      request('POST', `/events/${id}/jurors`, input),
+    ]);
+    expect(concurrent.json()).toEqual(first.json());
+    expect(first.statusCode).toBe(201);
+    const original = (
+      await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id])
+    ).rows;
+    const repeat = await request('POST', `/events/${id}/jurors`, input);
+    expect(repeat.json()).toEqual(first.json());
+    expect(
+      (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
+        .rows,
+    ).toEqual(original);
+    expect(
+      (
+        await request('POST', `/events/${id}/jurors`, {
+          ...input,
+          displayName: 'Different',
+        })
+      ).statusCode,
+    ).toBe(409);
+    const other = await event();
+    expect(
+      (await request('POST', `/events/${other}/jurors`, input)).statusCode,
+    ).toBe(409);
+    await pool.query(
+      'UPDATE juror_access SET revoked_at=now() WHERE event_id=$1',
+      [id],
+    );
+    await pool.query(
+      "INSERT INTO votings(event_id,name,kind,status) VALUES ($1,'Freeze','final','active')",
+      [id],
+    );
+    expect(
+      (await request('POST', `/events/${id}/jurors`, input)).json(),
+    ).toEqual(first.json());
+    expect((await table(id)).jurors[0]!.access).toBe('revoked');
+    expect(
+      (await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [id]))
+        .rowCount,
+    ).toBe(1);
+  });
+  it.each(['table', 'individual'] as const)(
+    'rolls back %s membership, credential and audit on authorization loss after credential insertion',
+    async (mode) => {
+      const id = await event();
+      await save(id, (await table(id)).version, []);
+      const before = await table(id);
+      await pool.query(
+        'CREATE FUNCTION revoke_after_link() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN UPDATE sessions SET revoked_at=statement_timestamp() WHERE admin_user_id IS NOT NULL; RETURN NEW; END $$',
+      );
+      await pool.query(
+        'CREATE TRIGGER revoke_after_link AFTER INSERT ON juror_access FOR EACH ROW EXECUTE FUNCTION revoke_after_link()',
+      );
+      try {
+        const result =
+          mode === 'table'
+            ? await save(id, before.version, [row()])
+            : await request('POST', `/events/${id}/jurors`, {
+                displayName: 'Individual',
+                juryGroupId: before.groups[0]!.id,
+              });
+        expect(result.statusCode).toBe(401);
+        expect(await table(id)).toEqual(before);
+        expect(
+          (
+            await pool.query('SELECT * FROM juror_access WHERE event_id=$1', [
+              id,
+            ])
+          ).rowCount,
+        ).toBe(0);
+        expect(
+          (await pool.query('SELECT * FROM audit_logs WHERE event_id=$1', [id]))
+            .rowCount,
+        ).toBe(0);
+      } finally {
+        await pool.query('DROP TRIGGER revoke_after_link ON juror_access');
+        await pool.query('DROP FUNCTION revoke_after_link()');
+      }
+    },
+  );
   it('can explicitly save only missing groups, preserving existing names and IDs', async () => {
     const id = await event();
     const group = (

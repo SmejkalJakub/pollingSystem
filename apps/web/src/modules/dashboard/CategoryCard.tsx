@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import type { DashboardCategory } from '@d21/contracts';
 import { lifecycleLabels, stateLabels } from './presentation';
 export function Progress({
@@ -56,8 +57,9 @@ export function CategoryCard({ category: c }: { category: DashboardCategory }) {
       </h3>
       <p className="mt-2 break-words text-sm text-muted-foreground">
         {lifecycleLabels[c.status]} ·{' '}
-        {c.groups.map((g) => `${g.code} — ${g.name}`).join(', ') ||
-          'Bez oprávněných částí poroty'}
+        {c.groups
+          .map((g) => `${juryGroupLabel(g.code)} — ${g.name}`)
+          .join(', ') || 'Bez oprávněných částí poroty'}
       </p>
       <div className="mt-6">
         <Progress

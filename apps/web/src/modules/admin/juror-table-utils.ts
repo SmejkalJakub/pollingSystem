@@ -23,18 +23,23 @@ export function parseJurorPaste(text: string) {
   const result = parseTeamPaste(text);
   return {
     error: result.error
-      ? 'Zkontrolujte uvozovky a použijte právě dva sloupce: jméno a T nebo V.'
+      ? 'Zkontrolujte uvozovky a použijte právě dva sloupce: jméno a Technická nebo Veřejná (také T nebo V).'
       : undefined,
     rows: result.rows.map((row) => ({
       displayName: row.name,
-      groupCode: row.description.trim(),
+      groupCode:
+        row.description.trim() === 'Technická'
+          ? 'T'
+          : row.description.trim() === 'Veřejná'
+            ? 'V'
+            : row.description.trim(),
     })),
   };
 }
 export const jurorFieldError = (field: 'displayName' | 'groupCode') =>
   field === 'displayName'
     ? 'Zadejte jméno o délce 1–200 znaků.'
-    : 'Vyberte část poroty T nebo V.';
+    : 'Vyberte Technickou nebo Veřejnou porotu.';
 export const rowChanged = (row: JurorTableRow, base?: JurorTableRow) =>
   !base ||
   row.displayName !== base.displayName ||

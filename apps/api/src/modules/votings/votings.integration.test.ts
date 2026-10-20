@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto';
+import { createLinkVault } from '../auth/link-vault';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -154,7 +155,14 @@ describe('draft voting preparation against PostgreSQL', () => {
       auth: {
         service: createAuthService(pool),
         origin: headers.origin,
-        events: createEventService(pool, createAuthService(pool)),
+        events: createEventService(
+          pool,
+          createAuthService(pool),
+          createLinkVault(
+            JSON.stringify({ test: randomBytes(32).toString('hex') }),
+            'test',
+          ),
+        ),
         votings: createVotingService(pool, createAuthService(pool)),
       },
     });

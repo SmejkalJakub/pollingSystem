@@ -41,52 +41,64 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     );
   const legacyToken = newSecret();
   await runtime.pool.query(
-    'INSERT INTO juror_access(token_hash,event_id,juror_id) VALUES ($1,$2,$3)',
+    'UPDATE juror_access SET token_hash=$1,encrypted_token=NULL WHERE event_id=$2 AND juror_id=$3',
     [secretHash(legacyToken), event.id, jurors[1].id],
+  );
+  await runtime.pool.query(
+    'UPDATE juror_access SET revoked_at=now() WHERE event_id=$1 AND juror_id=$2',
+    [event.id, jurors[2].id],
+  );
+  await runtime.pool.query(
+    "INSERT INTO event_jurors(event_id,jury_group_id,display_name) VALUES ($1,$2,'Nikdy nevydaný')",
+    [event.id, group.id],
   );
   await page.goto(`/admin/events/${event.id}`);
   const row = page
     .getByRole('row')
     .filter({ has: page.getByText('Kopírování', { exact: true }) });
   const copy = row.getByRole('button', { name: /Kopírovat odkaz/ });
-  await expect(copy).toBeDisabled();
-  await expect(row.getByText('Bez aktivního odkazu.')).toBeVisible();
+  await expect(copy).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: /Osobní přístup/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(/Odkaz vznikne při uložení tabulky/),
+  ).toBeVisible();
   const legacyRow = page
     .getByRole('row')
     .filter({ has: page.getByText('Původní odkaz', { exact: true }) });
+  const revokedRow = page
+    .getByRole('row')
+    .filter({ has: page.getByText('Bez odkazu', { exact: true }) });
   await expect(
     legacyRow.getByRole('button', { name: /Kopírovat odkaz/ }),
   ).toBeDisabled();
   await expect(legacyRow.getByText(/Původní odkaz funguje/)).toBeVisible();
-  await row.getByRole('button', { name: /Osobní přístup/ }).press('Enter');
+  await expect(revokedRow.getByText(/Přístup byl zrušen/)).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Uložit tabulku', exact: true })
+    .click();
   await expect(
-    row.getByRole('textbox', { name: 'Jméno porotce, řádek 1', exact: true }),
+    page.getByText('Tabulka porotců byla uložena.', { exact: true }),
+  ).toBeVisible();
+  const historicalRow = page
+    .getByRole('row')
+    .filter({ has: page.getByText('Nikdy nevydaný', { exact: true }) });
+  await expect(
+    historicalRow.getByRole('button', { name: /Kopírovat odkaz/ }),
+  ).toBeEnabled();
+  await expect(
+    legacyRow.getByRole('button', { name: /Kopírovat odkaz/ }),
   ).toBeDisabled();
-  await page
-    .getByRole('button', { name: 'Vytvořit osobní odkaz', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Vytvořit odkaz', exact: true })
-    .click();
-  const link = await page
-    .getByLabel('Nový osobní odkaz', { exact: true })
-    .inputValue();
-  await page
-    .getByRole('button', { name: 'Zavřít osobní přístup', exact: true })
-    .click();
-  await expect(copy).toBeEnabled();
+  await expect(
+    revokedRow.getByRole('button', { name: /Kopírovat odkaz/ }),
+  ).toBeDisabled();
   await copy.focus();
   await copy.press('Enter');
-  await expect(row.getByRole('status')).toContainText('byl zkopírován');
-  expect(
-    await page
-      .evaluate(() => navigator.clipboard.readText())
-      .then((value) => value === link),
-  ).toBe(true);
+  await expect(row.getByRole('status').first()).toContainText('byl zkopírován');
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(new URL(link).hash.includes('key=')).toBe(true);
   await expect(copy).toBeFocused();
-  await expect(
-    page.getByRole('heading', { name: /Osobní přístup:/ }),
-  ).toHaveCount(0);
   const jurorContext = await browser.newContext({ baseURL: runtime.origin });
   try {
     const jurorPage = await jurorContext.newPage();
@@ -98,6 +110,65 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     await expect(
       jurorPage.getByText('Kopírování', { exact: true }),
     ).toBeVisible();
+    // Legacy replacement stays explicit; cancellation preserves the working session.
+    const legacyContext = await browser.newContext({ baseURL: runtime.origin });
+    try {
+      const entered = await legacyContext.request.post(
+        '/api/auth/juror/start',
+        {
+          headers: { 'X-D21-Request': '1' },
+          data: { eventId: event.id, token: legacyToken },
+        },
+      );
+      expect(entered.ok()).toBe(true);
+      await legacyRow
+        .getByRole('button', { name: 'Nahradit odkaz', exact: true })
+        .press('Enter');
+      await expect(
+        page.getByRole('heading', {
+          name: 'Nahradit osobní odkaz?',
+          exact: true,
+        }),
+      ).toBeFocused();
+      await expect(
+        page.getByRole('form', { name: 'Nahradit osobní odkaz?', exact: true }),
+      ).toContainText(jurors[1].id);
+      await expect(
+        page.getByRole('form', { name: 'Nahradit osobní odkaz?', exact: true }),
+      ).toContainText('Původní odkaz');
+      await expect(
+        row.getByRole('textbox', {
+          name: 'Jméno porotce, řádek 1',
+          exact: true,
+        }),
+      ).toBeDisabled();
+      await page
+        .getByRole('button', { name: 'Zrušit', exact: true })
+        .press('Enter');
+      await expect(
+        legacyRow.getByRole('button', { name: 'Nahradit odkaz', exact: true }),
+      ).toBeFocused();
+      expect(
+        (await legacyContext.request.get('/api/wizard/current')).status(),
+      ).toBe(200);
+      await legacyRow
+        .getByRole('button', { name: 'Nahradit odkaz', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Potvrdit náhradu', exact: true })
+        .click();
+      await expect(
+        legacyRow.getByRole('button', { name: /Kopírovat odkaz/ }),
+      ).toBeEnabled();
+      expect(
+        (await legacyContext.request.get('/api/wizard/current')).status(),
+      ).toBe(401);
+      expect(
+        (await jurorPage.request.get('/api/wizard/current')).status(),
+      ).toBe(200);
+    } finally {
+      await legacyContext.close();
+    }
     const cookie = (await jurorContext.cookies()).find(
       (value) => value.name === 'd21-session',
     )!;
@@ -141,7 +212,9 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     expect((await current.json()).expiresAt).toBeNull();
     await page.reload();
     await copy.click();
-    await expect(row.getByRole('status')).toContainText('byl zkopírován');
+    await expect(row.getByRole('status').first()).toContainText(
+      'byl zkopírován',
+    );
     expect(
       await page
         .evaluate(() => navigator.clipboard.readText())
@@ -171,7 +244,7 @@ test('roster copies existing links in one click with keyboard, fallback and unti
           node.selectionStart === 0 && node.selectionEnd === node.value.length,
       ),
     ).toBe(true);
-    await expect(row.getByRole('status')).toContainText('Ctrl+C');
+    await expect(row.getByRole('status').first()).toContainText('Ctrl+C');
     expect((await jurorPage.request.get('/api/wizard/current')).status()).toBe(
       200,
     );
@@ -199,12 +272,11 @@ test('roster copies existing links in one click with keyboard, fallback and unti
       path: testInfo.outputPath(`stage1-roster-${testInfo.project.name}.png`),
       fullPage: true,
     });
-    await row.getByRole('button', { name: /Osobní přístup/ }).click();
     await page
-      .getByRole('button', { name: 'Vytvořit náhradní odkaz', exact: true })
+      .getByRole('button', { name: 'Nahradit odkaz', exact: true })
       .click();
     await expect(
-      page.getByRole('form', { name: 'Vytvořit nový osobní odkaz?' }),
+      page.getByRole('form', { name: 'Nahradit osobní odkaz?' }),
     ).toBeVisible();
     // Opening/cancelling a consequential action must leave the current session intact.
     await page.getByRole('button', { name: 'Zrušit', exact: true }).click();
@@ -212,20 +284,74 @@ test('roster copies existing links in one click with keyboard, fallback and unti
       200,
     );
     await page
-      .getByRole('button', { name: 'Zrušit přístup a přihlášení', exact: true })
+      .getByRole('button', { name: 'Zrušit odkazy a přihlášení', exact: true })
       .click();
     await page
-      .getByRole('form', { name: 'Zrušit osobní přístup?' })
+      .getByRole('form', { name: 'Zrušit odkazy a přihlášení?' })
       .getByRole('button', { name: 'Zrušit přístup', exact: true })
       .click();
     expect((await jurorPage.request.get('/api/wizard/current')).status()).toBe(
       401,
     );
-    await page
-      .getByRole('button', { name: 'Zavřít osobní přístup', exact: true })
-      .click();
     await expect(copy).toBeDisabled();
-    await expect(row.getByText('Bez aktivního odkazu.')).toBeVisible();
+    await expect(row.getByText(/Přístup byl zrušen/)).toBeVisible();
+    await expect(
+      row.getByRole('button', { name: 'Obnovit odkaz', exact: true }),
+    ).toBeFocused();
+    // Saving again must never revive intentionally revoked access.
+    const snapshot = await (
+      await page.request.get(`/api/events/${event.id}/jurors/table`)
+    ).json();
+    const result = await page.request.put(
+      `/api/events/${event.id}/jurors/table`,
+      {
+        headers: { 'X-D21-Request': '1' },
+        data: {
+          baseVersion: snapshot.version,
+          rows: snapshot.jurors.map(
+            (j: { id: string; displayName: string; juryGroupId: string }) => ({
+              id: j.id,
+              displayName: j.displayName,
+              groupCode: snapshot.groups.find(
+                (g: { id: string }) => g.id === j.juryGroupId,
+              ).code,
+            }),
+          ),
+        },
+      },
+    );
+    expect(result.ok()).toBe(true);
+    expect((await jurorPage.request.get('/api/wizard/current')).status()).toBe(
+      401,
+    );
+    await page.reload();
+    await expect(copy).toBeDisabled();
+    await row
+      .getByRole('button', { name: 'Obnovit odkaz', exact: true })
+      .click();
+    await expect(
+      page.getByRole('textbox', {
+        name: 'Jméno porotce, řádek 1',
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await page
+      .getByRole('button', { name: 'Potvrdit náhradu', exact: true })
+      .click();
+    await expect(copy).toBeEnabled();
+    await expect(copy).toBeFocused();
+    await copy.click();
+    await expect(row.getByRole('status').first()).toContainText(
+      'byl zkopírován',
+    );
+    expect(
+      await page
+        .evaluate(() => navigator.clipboard.readText())
+        .then((value) => value !== link),
+    ).toBe(true);
+    expect((await jurorPage.request.get('/api/wizard/current')).status()).toBe(
+      401,
+    );
   } finally {
     await jurorContext.close();
   }

@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import ExcelJS from 'exceljs';
 import type {
   DashboardOverview,
@@ -167,7 +168,7 @@ export async function createResultsWorkbook(
       c.kind === 'selection' ? 'Výběrové' : 'Finálové',
       lifecycle[c.status],
       stage(c),
-      c.groups.map((g) => g.code).join(' + '),
+      c.groups.map((g) => juryGroupLabel(g.code)).join(' + '),
       c.selectedPlaces,
       c.counts.expected,
       c.counts.submitted,
@@ -217,7 +218,7 @@ export async function createResultsWorkbook(
         lifecycle[c.status],
         j.displayName,
         j.id,
-        c.groups.find((g) => g.id === j.groupId)!.code,
+        juryGroupLabel(c.groups.find((g) => g.id === j.groupId)!.code),
         j.groupId,
         progress[j.progress],
         j.savedAt,

@@ -2,6 +2,10 @@
 
 Phase 3 implementation, with Stage 1 access, Stage 2 workspace Stage 3 Teams and Stage 4 Jurors updates on 2026-10-18. See [progress](../implementation/progress.md) for actual validation and completion status.
 
+## Jury labels — 2026-10-19 correction
+
+The interface and XLSX display **Technická** for stored code T and **Veřejná** for V. This changes presentation only; codes, group IDs, existing custom descriptive names and voting policies stay unchanged. Juror spreadsheet paste accepts these exact names and legacy T/V. The correction is currently local; see the latest progress/handoff for validation and publication status.
+
 ## Approved behavior
 
 - Events have a name (1–200 trimmed characters) and optional description (up to 5,000 trimmed characters).
@@ -20,7 +24,7 @@ These Q05/Q10 roster decisions and the limited removal policy were explicitly co
 
 Stage 2 keeps these URLs and places event administration in **Příprava / Průběh hlasování / Výsledky**. Preparation defaults to **Porotci**; `?setup=teams` and `?setup=categories` open the other focused management views. T/V controls and direct Stage 1 copying stay in Porotci; event metadata/editing is under **Nastavení eventu** below the selected view. [Current workspace guide](simplification-stage-2.md).
 
-`/` remains the juror entry surface with no administration link. Stage 1 adds direct **Kopírovat odkaz** actions and explicit absent/legacy-link labels; [configuration and transition](simplification-stage-1.md). Phase 5 adds per-juror **Osobní přístup** controls for link issuance/revocation and protected wizard navigation; see [juror entry](juror-wizard.md). Voting configuration is Phase 4; results/dashboard remain later work.
+`/` remains the juror entry surface with no administration link. Stage 1 adds direct **Kopírovat odkaz** actions and explicit absent/legacy-link labels; [configuration and transition](simplification-stage-1.md). The current local update removes the Phase 5 **Osobní přístup** panel and automatically creates first links during explicit saves; direct exceptional replacement/revocation remains confirmed. See [automatic links](automatic-juror-links.md) and [juror entry](juror-wizard.md). Voting configuration is Phase 4; results/dashboard remain later work.
 
 The screens use existing Tailwind tokens and shadcn Button/Input controls, labeled native selects/textareas, keyboard focus, pending/empty/error/retry states and preserved form values on failed mutations. Roster lock information comes from the backend; every write rechecks the lock authoritatively.
 
@@ -28,20 +32,20 @@ The screens use existing Tailwind tokens and shadcn Button/Input controls, label
 
 All routes below run within `registerAuth`'s cookie/origin scope and inherit `adminGuard`. Mutations require `X-D21-Request: 1` and the approved origin. Responses are no-store. Shared strict Zod contracts validate input and output. Unknown fields, empty patches and malformed UUIDs return 400. Missing or wrong-event resources return 404. Unauthenticated/expired/revoked sessions return 401; juror sessions and forbidden origins return 403.
 
-| Route                                         | Request / response                                                                                      |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `GET /events`                                 | Array of event records, newest creation first with stable ID ordering.                                  |
-| `POST /events`                                | `{ name, description }`; 201 event record. Does not automatically create groups.                        |
-| `GET /events/:eventId`                        | Event record.                                                                                           |
-| `PATCH /events/:eventId`                      | At least one of `{ name, description }`; updated event record.                                          |
-| `GET /events/:eventId/roster`                 | Consistent `{ groups, jurors, locked }`; roster jurors add `access: none \| legacy \| stored` metadata. |
-| `GET /events/:eventId/jury-groups`            | Group array.                                                                                            |
-| `POST /events/:eventId/jury-groups`           | `{ code: 'T' \| 'V', name }`; 201 group record.                                                         |
-| `PATCH /events/:eventId/jury-groups/:groupId` | `{ name }`; group record.                                                                               |
-| `GET /events/:eventId/jurors`                 | Juror array, ordered by display name and ID.                                                            |
-| `POST /events/:eventId/jurors`                | `{ displayName, juryGroupId }`; 201 juror record.                                                       |
-| `PATCH /events/:eventId/jurors/:jurorId`      | At least one of `{ displayName, juryGroupId }`; juror record.                                           |
-| `DELETE /events/:eventId/jurors/:jurorId`     | 204 only for an unreferenced, unfrozen membership.                                                      |
+| Route                                         | Request / response                                                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `GET /events`                                 | Array of event records, newest creation first with stable ID ordering.                                             |
+| `POST /events`                                | `{ name, description }`; 201 event record. Does not automatically create groups.                                   |
+| `GET /events/:eventId`                        | Event record.                                                                                                      |
+| `PATCH /events/:eventId`                      | At least one of `{ name, description }`; updated event record.                                                     |
+| `GET /events/:eventId/roster`                 | Consistent `{ groups, jurors, locked }`; roster jurors add `access: none \| legacy \| stored \| revoked` metadata. |
+| `GET /events/:eventId/jury-groups`            | Group array.                                                                                                       |
+| `POST /events/:eventId/jury-groups`           | `{ code: 'T' \| 'V', name }`; 201 group record.                                                                    |
+| `PATCH /events/:eventId/jury-groups/:groupId` | `{ name }`; group record.                                                                                          |
+| `GET /events/:eventId/jurors`                 | Juror array, ordered by display name and ID.                                                                       |
+| `POST /events/:eventId/jurors`                | `{ displayName, juryGroupId, id? }`; atomic first link, public 201 record; optional stable-ID retries.             |
+| `PATCH /events/:eventId/jurors/:jurorId`      | At least one of `{ displayName, juryGroupId }`; juror record.                                                      |
+| `DELETE /events/:eventId/jurors/:jurorId`     | 204 only for an unreferenced, unfrozen membership.                                                                 |
 
 Records expose event IDs and public display/timestamp fields; no passwords, session tokens or juror-access secrets. `ROSTER_LOCKED`, `GROUP_EXISTS` and `MEMBERSHIP_REFERENCED` are 409 conflicts; wrong-event group assignment returns 400 `INVALID_GROUP`.
 

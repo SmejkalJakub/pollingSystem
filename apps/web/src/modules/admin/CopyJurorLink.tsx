@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { jurorLinkSchema, type JurorRecord } from '@d21/contracts';
+import { jurorLinkSchema, type JurorRecord, type Roster } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { adminRequest, managementError } from './api';
@@ -10,7 +10,7 @@ export function CopyJurorLink({
   onExpired,
 }: {
   juror: JurorRecord;
-  access: 'none' | 'legacy' | 'stored';
+  access: Roster['jurors'][number]['access'];
   onExpired: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -86,13 +86,17 @@ export function CopyJurorLink({
       </Button>
       {access === 'none' && (
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-          Bez aktivního odkazu.
+          Odkaz vznikne při uložení tabulky.
+        </p>
+      )}
+      {access === 'revoked' && (
+        <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+          Přístup byl zrušen. Uložení tabulky jej neobnoví.
         </p>
       )}
       {access === 'legacy' && (
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-          Původní odkaz funguje. Pro kopírování je nutná výslovná náhrada v
-          Osobním přístupu.
+          Původní odkaz funguje. Pro kopírování jej musíte výslovně nahradit.
         </p>
       )}
       <p role="status" aria-atomic="true" className="mt-2 max-w-xs text-sm">

@@ -56,7 +56,8 @@ export function EventList({ onExpired }: { onExpired: () => void }) {
             <div className="border border-dashed border-border p-8 sm:p-12">
               <h2 className="text-xl font-semibold">Začněte prvním eventem</h2>
               <p className="mt-3 max-w-lg text-muted-foreground">
-                Založte akci, přidejte části poroty T a V a přiřaďte porotce.
+                Založte akci, přidejte Technickou a Veřejnou porotu a přiřaďte
+                porotce.
               </p>
             </div>
           ) : (

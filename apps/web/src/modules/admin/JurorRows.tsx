@@ -40,7 +40,7 @@ export function JurorRows({
   locked: boolean;
   snapshot: JurorTableSnapshot;
   disabled: boolean;
-  reload: () => void;
+  reload: (focusFeedback?: boolean) => void;
   onExpired: () => void;
 }) {
   return rows.length === 0 ? (
@@ -50,7 +50,7 @@ export function JurorRows({
   ) : (
     <table className="team-table juror-table mt-5 w-full table-fixed text-left text-sm">
       <caption className="sr-only">
-        Upravitelná jména a přiřazení porotců k T/V
+        Upravitelná jména a přiřazení porotců k Technické a Veřejné porotě
       </caption>
       <thead>
         <tr>
@@ -58,10 +58,10 @@ export function JurorRows({
             Řádek / stav
           </th>
           <th scope="col">Jméno porotce</th>
-          <th scope="col" className="sm:w-28">
+          <th scope="col" className="sm:w-36">
             Část poroty
           </th>
-          <th scope="col">Osobní přístup / členství</th>
+          <th scope="col">Odkaz / členství</th>
         </tr>
       </thead>
       <tbody>
@@ -141,8 +141,8 @@ export function JurorRows({
                         className={controlClass}
                       >
                         <option value="">Vyberte</option>
-                        <option value="T">T</option>
-                        <option value="V">V</option>
+                        <option value="T">Technická</option>
+                        <option value="V">Veřejná</option>
                       </select>
                     )}
                     {invalid && (
@@ -168,8 +168,8 @@ export function JurorRows({
                   />
                 ) : (
                   <p className="text-muted-foreground">
-                    Osobní přístup bude dostupný po uložení. Odkaz se nevytvoří
-                    automaticky.
+                    Odkaz se vytvoří automaticky při uložení. Pak jej můžete
+                    rovnou zkopírovat.
                   </p>
                 )}
               </td>

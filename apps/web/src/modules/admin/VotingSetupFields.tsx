@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import { useEffect, useRef } from 'react';
 import type { VotingSetupSnapshot, VotingSetupValues } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
@@ -196,7 +197,8 @@ export function VotingSetupFields({
       <fieldset className="space-y-3 border-t border-border pt-5">
         <legend className="font-semibold">Oprávněná porota</legend>
         <p className="text-sm text-muted-foreground">
-          Vyberte T, V nebo obě části. Koncept může zůstat bez oprávněné poroty.
+          Vyberte Technickou, Veřejnou nebo obě části. Koncept může zůstat bez
+          oprávněné poroty.
         </p>
         <div
           id={fieldId('juryGroupIds')}
@@ -222,15 +224,15 @@ export function VotingSetupFields({
                 }
               />
               <span>
-                {group.code} — {group.name}
+                {juryGroupLabel(group.code)} — {group.name}
               </span>
             </label>
           ))}
         </div>
         {snapshot.groups.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            Nejprve připravte T/V v části Porotci. Tady se části poroty
-            nevytvářejí.
+            Nejprve připravte Technickou a Veřejnou porotu v části Porotci. Tady
+            se části poroty nevytvářejí.
           </p>
         )}
         {error('juryGroupIds')}

@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+// Failure-time DOM snapshots can contain a selected personal-link fallback.
+process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1';
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,

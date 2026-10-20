@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto';
+import { createLinkVault } from '../auth/link-vault';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -101,7 +102,14 @@ describe('event and jury management against PostgreSQL', () => {
       auth: {
         service: createAuthService(pool),
         origin: headers.origin,
-        events: createEventService(pool, createAuthService(pool)),
+        events: createEventService(
+          pool,
+          createAuthService(pool),
+          createLinkVault(
+            JSON.stringify({ test: randomBytes(32).toString('hex') }),
+            'test',
+          ),
+        ),
       },
     });
     const login = await request(
@@ -551,7 +559,7 @@ describe('event and jury management against PostgreSQL', () => {
       ).statusCode,
     ).toBe(400);
     const roster = (await request('GET', `${b.base}/roster`)).json();
-    expect(roster.jurors).toEqual([{ ...b.juror, access: 'none' }]);
+    expect(roster.jurors).toEqual([{ ...b.juror, access: 'stored' }]);
     expect(roster.groups[0].name).toBe('Technical');
     await expect(
       pool.query('UPDATE event_jurors SET jury_group_id=$1 WHERE id=$2', [
@@ -563,12 +571,18 @@ describe('event and jury management against PostgreSQL', () => {
 
   it('removes only an unreferenced setup membership and exposes no event/group deletion or archive', async () => {
     const f = await fixture();
+    const unreferenced = (
+      await pool.query(
+        'INSERT INTO event_jurors(event_id,jury_group_id,display_name) VALUES ($1,$2,$3) RETURNING id',
+        [f.e.id, f.groupT.id, 'Historical never-issued membership'],
+      )
+    ).rows[0].id;
     expect(
-      (await request('DELETE', `${f.base}/jurors/${f.juror.id}`)).statusCode,
+      (await request('DELETE', `${f.base}/jurors/${unreferenced}`)).statusCode,
     ).toBe(204);
-    expect((await request('GET', `${f.base}/jurors`)).json()).toEqual([]);
+    expect((await request('GET', `${f.base}/jurors`)).json()).toHaveLength(1);
     expect(
-      (await request('DELETE', `${f.base}/jurors/${f.juror.id}`)).statusCode,
+      (await request('DELETE', `${f.base}/jurors/${unreferenced}`)).statusCode,
     ).toBe(404);
     expect((await request('DELETE', f.base)).statusCode).toBe(404);
     expect(

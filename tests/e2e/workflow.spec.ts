@@ -234,7 +234,7 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
           await api(
             page.request,
             'POST',
-            `/events/${eventId}/jurors/${juror.id}/access`,
+            `/events/${eventId}/jurors/${juror.id}/access/copy`,
             {},
           ),
         ).url;
@@ -529,7 +529,7 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
             await api(
               page.request,
               'POST',
-              `/events/${eventId}/jurors/${juror.id}/access`,
+              `/events/${eventId}/jurors/${juror.id}/access/copy`,
               {},
             ),
           );

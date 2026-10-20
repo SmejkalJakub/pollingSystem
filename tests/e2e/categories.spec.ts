@@ -90,8 +90,10 @@ test('combined category setup preserves atomicity, exact retries, comparison and
   await form.getByLabel('Maximum kladných hlasů', { exact: true }).fill('2');
   await form.getByLabel('Maximum záporných hlasů', { exact: true }).fill('1');
   await form.getByLabel('Záporné hlasy', { exact: true }).selectOption('yes');
-  await form.getByLabel('T — Vlastní porota T', { exact: true }).check();
-  await form.getByLabel('V — Vlastní porota V', { exact: true }).check();
+  await form
+    .getByLabel('Technická — Vlastní porota T', { exact: true })
+    .check();
+  await form.getByLabel('Veřejná — Vlastní porota V', { exact: true }).check();
   for (let i = 0; i < 5; i++) {
     await form
       .getByRole('button', { name: 'Přidat položku', exact: true })

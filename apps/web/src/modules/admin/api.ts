@@ -6,9 +6,9 @@ export function managementError(error: unknown) {
     if (error.code === 'LINK_STORAGE_UNAVAILABLE')
       return 'Odkaz nelze načíst nebo vytvořit. Organizátor musí obnovit šifrovací klíče serveru. Stávající přístup zůstává zachován.';
     if (error.code === 'LEGACY_LINK')
-      return 'Původní odkaz funguje, ale nelze jej obnovit. Pro budoucí kopírování výslovně vytvořte náhradní odkaz v Osobním přístupu; tím zrušíte dosavadní přihlášení.';
+      return 'Původní odkaz funguje, ale nelze jej obnovit. Pro budoucí kopírování výslovně vytvořte náhradní odkaz u porotce; tím zrušíte dosavadní přihlášení.';
     if (error.code === 'NO_ACTIVE_LINK')
-      return 'Porotce nemá aktivní osobní odkaz. Vytvořte jej v Osobním přístupu.';
+      return 'Porotce nemá aktivní osobní odkaz. Obnovte porotu a zkontrolujte stav odkazu.';
     if (error.status === 401) return 'Přihlášení vypršelo. Přihlaste se znovu.';
     if (error.status === 403)
       return 'K této operaci nemáte přístup. Použijte adresu aplikace od organizátora.';
@@ -18,6 +18,8 @@ export function managementError(error: unknown) {
       return 'Lístek se změnil. Obnovte lístky, zkontrolujte aktuální stav a potvrďte znovu.';
     if (error.code === 'REVISION_EXHAUSTED')
       return 'Lístek dosáhl limitu změn a nelze jej odemknout.';
+    if (error.code === 'JUROR_CREATE_CONFLICT')
+      return 'Toto ID členství už existuje s jinými údaji. Obnovte porotu a zkontrolujte aktuální stav.';
     if (error.code === 'ROSTER_LOCKED')
       return 'Složení poroty je uzamčeno, protože již začalo hlasování nebo existují hlasovací lístky. Obnovte přehled.';
     if (error.code === 'GROUP_EXISTS')
@@ -39,7 +41,7 @@ export function managementError(error: unknown) {
     if (error.code === 'GROUPS_NOT_READY')
       return 'Vyberte alespoň jednu oprávněnou část poroty.';
     if (error.code === 'ROSTER_NOT_READY')
-      return 'Poroty T a V musí mít stejný počet členů: 5, 7 nebo 9 v každé. Doplňte porotu v detailu eventu.';
+      return 'Technická a Veřejná porota musí mít stejný počet členů: 5, 7 nebo 9 v každé. Doplňte porotu v detailu eventu.';
     if (error.code === 'MEMBERSHIP_REFERENCED')
       return 'Členství má navázané záznamy a nelze je odebrat.';
     if (error.status === 400)

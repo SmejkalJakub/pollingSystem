@@ -1,3 +1,4 @@
+import { juryGroupLabel } from '@d21/contracts';
 import type { VotingSetupSnapshot, VotingSetupValues } from '@d21/contracts';
 import { configurationKeys, setupFieldLabels } from './voting-setup-utils';
 export function VotingSetupComparison({
@@ -34,7 +35,7 @@ export function VotingSetupComparison({
         .map((id) => {
           const group = snapshot.groups.find((entry) => entry.id === id);
           return group
-            ? `${group.code} — ${group.name}`
+            ? `${juryGroupLabel(group.code)} — ${group.name}`
             : `Nedostupná část ${id}`;
         })
         .join('; ') || 'Neurčena',
