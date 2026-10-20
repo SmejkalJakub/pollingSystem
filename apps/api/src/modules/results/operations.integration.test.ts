@@ -212,6 +212,9 @@ it('audits actual lifecycle changes once, retains history and rejects invalid tr
   expect(
     (await request('POST', `/votings/${f.draft.id}/reopen`, {})).statusCode,
   ).toBe(409);
+  await pool.query('UPDATE votings SET max_plus_votes=NULL WHERE id=$1', [
+    f.draft.id,
+  ]);
   expect(
     (await request('POST', `/votings/${f.draft.id}/activate`, {})).statusCode,
   ).toBe(409);
@@ -233,11 +236,9 @@ it('audits actual lifecycle changes once, retains history and rejects invalid tr
       context: { from: 'closed', to: 'active' },
     },
   ]);
-  for (const group of f.groups)
-    await pool.query(
-      "INSERT INTO event_jurors(event_id,jury_group_id,display_name) SELECT $1,$2,'Extra ' || n FROM generate_series(1,4) n",
-      [f.event, group],
-    );
+  await pool.query('UPDATE votings SET max_plus_votes=2 WHERE id=$1', [
+    f.draft.id,
+  ]);
   expect(
     (await request('POST', `/votings/${f.draft.id}/activate`, {})).statusCode,
   ).toBe(200);

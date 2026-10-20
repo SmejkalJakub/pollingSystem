@@ -18,7 +18,6 @@ import {
 import { AppError } from '../../errors';
 import { notFound } from '../events/locking';
 import { createTeamService } from '../teams/service';
-import { requireReadyRoster } from './readiness';
 import { createVotingSetupService } from './setup';
 import { auditAdminAction } from '../events/audit';
 
@@ -174,7 +173,7 @@ export function createVotingService(pool: Pool, auth: AuthService) {
         });
       },
       async activate(votingId: string) {
-        return withVotingLock(votingId, async (client, eventId, status) => {
+        return withVotingLock(votingId, async (client, _eventId, status) => {
           if (status !== 'draft' && status !== 'active')
             throw new AppError(
               409,
@@ -229,7 +228,6 @@ export function createVotingService(pool: Pool, auth: AuthService) {
               'GROUPS_NOT_READY',
               'Choose at least one eligible jury group.',
             );
-          await requireReadyRoster(client, eventId);
           const activated = await client.query(
             `UPDATE votings SET status='active',updated_at=now() WHERE id=$1 RETURNING ${columns}`,
             [votingId],

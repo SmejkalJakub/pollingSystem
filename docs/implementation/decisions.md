@@ -1,5 +1,21 @@
 # Decision log
 
+## Event-flexibility release — authorized, IN PROGRESS, 2026-10-20
+
+The user explicitly approves the proposed commit, push and deployment: “yes, please deploy this”. Publish the tested bounded update to the existing Free Render service, preserving original hosted records and all credentials/keys/configuration. Final local checks remain 79 fast tests/typechecks/lint/format/builds, PostgreSQL 311/311 and full browser 24/24; no source change follows those checks. Local release container build passes. Confirmed Render target remains Free/Frankfurt, manual deployments off for automatic triggers, same repo/main and readiness path; current live source is still `3f36f83`. Private backup/row-preservation checks and publication are in progress. No new phase or paid resource is authorized.
+
+## Event flexibility and bulk preparation — confirmed and DONE locally, 2026-10-20
+
+The user explicitly starts this bounded session to remove equal/fixed jury sizes, assign every event team to a category at once, and export all juror links to Excel, targeting event `884b8056-f91e-4437-ad81-ef70c0fe5997`. This supersedes Q10's original equal 5/7/9 rule and prior no-bulk direction for these operations. Arbitrary/unequal headcounts and a single jury group are accepted; no replacement minimum is invented. Complete D21 configuration, linked candidate count, at least one permitted same-event group and sticky membership/configuration freezes remain.
+
+Bulk assignment fills unassigned entries and appends only missing team IDs from the loaded snapshot; preserve saved/unsaved IDs and existing order. Duplicate names remain separate identities. The action changes only the form; explicit atomic save, stale comparison and stable-ID retries remain authoritative.
+
+Excel is a new dedicated private credential export, separate from results/participation. Include every saved event juror, full jury label/name, existing clickable URL, access status, membership ID, event and UTC time. Existing links/sessions are neither replaced nor revoked. Missing/revoked/legacy links have blank URL cells and explicit explanations. Missing keys/corrupt ciphertext fail the whole download safely. Existing explicit replacement/restoration decisions remain unchanged. Guarded same-origin POST, strict empty inputs, event lock, current admin checks after waits/ZIP generation and no-store/no-referrer/nosniff protect the response. Do not log secrets.
+
+Final validation: 79 fast tests/typechecks/lint/format/builds, PostgreSQL 311/311, full built-app browser 24/24 without retries. Review fixed bulk keyboard focus, actionable export errors and long XLSX text row heights. A phone missed-click failure was traced to full-page screenshot-induced native focus scrolling; moving that screenshot after all interactions preserves every functional assertion and passes. [Evidence and limits](progress.md).
+
+No schema/migration/dependency, D21 cap/submission/results/tie/deletion/cleanup/identity change. No hosted record/configuration/key/password/paid/other-project action. Work is local/uncommitted on main after `c63c598`; explicit commit/push approval remains required. Further features require a new user-started session.
+
 ## Automatic-links release — DEPLOYED, 2026-10-20
 
 The user explicitly approved commit/push after requesting deployment. Commit `3f36f8364ed82eeeec01ba8435dbb3a1e95320f2` (**feat: automate juror links and clarify jury labels**) is pushed to main and deployed to the existing [Free test app](https://d21-voting-test.onrender.com), Render deploy `dep-dbbhqagm7kps73f1svr0`, confirmed **live at 07:51:03 UTC**. This publishes automatic encrypted first links, direct Copy/removal of the Osobní přístup panel and the preserved Technická/Veřejná label correction. No subsequent implementation phase is started.

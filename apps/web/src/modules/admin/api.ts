@@ -40,8 +40,6 @@ export function managementError(error: unknown) {
       return 'Propojte všechny položky s týmy eventu. Počet týmů musí být větší než počet míst i součet hlasovacích limitů.';
     if (error.code === 'GROUPS_NOT_READY')
       return 'Vyberte alespoň jednu oprávněnou část poroty.';
-    if (error.code === 'ROSTER_NOT_READY')
-      return 'Technická a Veřejná porota musí mít stejný počet členů: 5, 7 nebo 9 v každé. Doplňte porotu v detailu eventu.';
     if (error.code === 'MEMBERSHIP_REFERENCED')
       return 'Členství má navázané záznamy a nelze je odebrat.';
     if (error.status === 400)

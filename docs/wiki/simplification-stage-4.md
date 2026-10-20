@@ -20,7 +20,7 @@ Existing behavior permits one immutable code T and one V per event, with renamea
 
 Event creation, GET, preview, navigation, cancelled edits and failed saves create nothing. Group creation and all juror changes roll back together. Legacy group create/rename APIs remain compatible. Existing group rename controls remain separate explicit saves below the table, available when table edits have been saved or discarded.
 
-Once voting starts or any ballot exists, the sticky event roster freeze still rejects additions, reassignment and removal. Frozen historical events with a missing group are **not repaired or unfrozen**. Name corrections still work; an exact retry after a concurrent freeze can confirm already-saved state without writes. Activation still requires equal T/V groups of 5, 7 or 9 and all existing voting readiness conditions; this stage changes none of those rules.
+Once voting starts or any ballot exists, the sticky event roster freeze still rejects additions, reassignment and removal. Frozen historical events with a missing group are **not repaired or unfrozen**. Name corrections still work; an exact retry after a concurrent freeze can confirm already-saved state without writes. Historically this stage retained equal T/V groups of 5, 7 or 9 at activation. The later [2026-10-20 event-flexibility update](event-flexibility.md) supersedes that size requirement; all other voting readiness conditions remain.
 
 ## Current-data comparison and retries
 

@@ -18,8 +18,6 @@ import { createAuthService, setAdminPassword } from '../auth/service';
 import { newSecret, secretHash } from '../auth/crypto';
 import { createEventService } from '../events/service';
 import { createVotingService } from './service';
-import { requireReadyRoster } from './readiness';
-import { withEventLock } from '../events/locking';
 
 const databaseName = `d21_votings_test_${randomUUID().replaceAll('-', '')}`;
 const baseUrl = process.env.TEST_DATABASE_URL ?? readEnvironment().DATABASE_URL;
@@ -185,44 +183,44 @@ describe('draft voting preparation against PostgreSQL', () => {
     }
   });
 
-  it.each([5, 7, 9])(
-    'accepts equal T/V rosters of %i under the event lock',
-    async (size) => {
-      const eventId = await event();
-      await roster(eventId, size, size);
-      await expect(
-        withEventLock(pool, eventId, (client) =>
-          requireReadyRoster(client, eventId),
-        ),
-      ).resolves.toBeUndefined();
-    },
-  );
-
   it.each([
     [0, 0],
+    [1, 1],
     [4, 4],
     [6, 6],
     [8, 8],
     [10, 10],
     [5, 7],
+    [0, 14],
     [5, null],
+    [5, 5],
+    [7, 7],
+    [9, 9],
   ])(
-    'rejects incomplete or unequal T/V rosters (%s/%s) without freezing setup',
+    'activates arbitrary T/V roster sizes (%s/%s), including a single jury group',
     async (t, v) => {
-      const eventId = await event();
-      await roster(eventId, t!, v!);
-      await expect(
-        withEventLock(pool, eventId, (client) =>
-          requireReadyRoster(client, eventId),
-        ),
-      ).rejects.toMatchObject({ code: 'ROSTER_NOT_READY' });
+      const record = await voting(await event());
+      const groups = await roster(record.eventId, t!, v!);
+      for (let i = 0; i < 4; i++)
+        await item(record.id, (await team(record.eventId)).id, i);
+      await request('PUT', `/votings/${record.id}/configuration`, limits);
+      await request('PUT', `/votings/${record.id}/allowed-groups`, {
+        juryGroupIds: groups,
+      });
+      const result = await request(
+        'POST',
+        `/votings/${record.id}/activate`,
+        {},
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.json().status).toBe('active');
       expect(
         (
           await pool.query('SELECT roster_locked_at FROM events WHERE id=$1', [
-            eventId,
+            record.eventId,
           ])
         ).rows[0].roster_locked_at,
-      ).toBeNull();
+      ).not.toBeNull();
     },
   );
 
@@ -386,7 +384,6 @@ describe('draft voting preparation against PostgreSQL', () => {
     'entries',
     'unlinked',
     'limits',
-    'roster',
     'places',
   ])(
     'rejects invalid activation (%s) without changing status or freezing setup',
@@ -420,11 +417,6 @@ describe('draft voting preparation against PostgreSQL', () => {
           selectedPlaces: 4,
           maxPlusVotes: 5,
         });
-      if (problem === 'roster')
-        await pool.query(
-          'DELETE FROM event_jurors WHERE id=(SELECT id FROM event_jurors WHERE event_id=$1 LIMIT 1)',
-          [record.eventId],
-        );
       const before = (await request('GET', `/votings/${record.id}`)).json();
       const result = await request(
         'POST',
@@ -499,7 +491,7 @@ describe('draft voting preparation against PostgreSQL', () => {
     ]);
     expect([
       [200, 409],
-      [409, 204],
+      [200, 204],
     ]).toContainEqual([activation.statusCode, removal.statusCode]);
     const state = (await request('GET', `/votings/${record.id}`)).json();
     const frozen = (
@@ -513,7 +505,7 @@ describe('draft voting preparation against PostgreSQL', () => {
     expect(frozen !== null).toBe(activation.statusCode === 200);
   });
 
-  it('waits for the event lock then rejects a roster changed before activation; other events remain independent', async () => {
+  it('waits for the event lock then activates with the changed roster; other events remain independent', async () => {
     const record = await prepared();
     const other = await prepared();
     const blocker = await pool.connect();
@@ -548,14 +540,14 @@ describe('draft voting preparation against PostgreSQL', () => {
         [record.eventId],
       );
       await blocker.query('COMMIT');
-      expect((await pending).json().error.code).toBe('ROSTER_NOT_READY');
+      expect((await pending).json().status).toBe('active');
       expect(
         (
           await pool.query('SELECT roster_locked_at FROM events WHERE id=$1', [
             record.eventId,
           ])
         ).rows[0].roster_locked_at,
-      ).toBeNull();
+      ).not.toBeNull();
     } finally {
       await blocker.query('ROLLBACK');
       blocker.release();

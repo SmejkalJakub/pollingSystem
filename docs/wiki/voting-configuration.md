@@ -18,7 +18,7 @@ Drafts without ballot history can edit metadata, explicit rules, same-event T/V 
 
 ## Lifecycle
 
-First activation validates complete rules, no draft ballot history, linked entries, sufficient candidates, at least one allowed same-event group and both T/V rosters equal with 5/7/9 jurors each. It locks the parent event then voting and changes status only after validation. Failure rolls back without freezing setup. A repeated request on active voting returns the unchanged record.
+First activation validates complete rules, no draft ballot history, linked entries, sufficient candidates, at least one allowed same-event group. Jury sizes may be arbitrary and unequal; the original equal 5/7/9 restriction was removed by the user on 2026-10-20. It locks the parent event then voting and changes status only after validation. Failure rolls back without freezing setup. A repeated request on active voting returns the unchanged record.
 
 Active voting can be closed through explicit confirmation; already-closed retries are idempotent. Draft/archived closure is rejected. Admins may reopen closed/archived voting **without readiness checks**, preserving ballots, configuration and sticky roster lock. Active reopen retries are idempotent; drafts cannot bypass first activation through reopen. Configuration remains frozen. No archive/delete operation is introduced.
 
@@ -42,7 +42,7 @@ Every route inherits `adminGuard` inside authentication cookie/origin scope. Mut
 | `POST /votings/:votingId/close`              | Active → closed; closed retry idempotent.                                                                                        |
 | `POST /votings/:votingId/reopen`             | Closed/archived → active without readiness checks; active retry idempotent.                                                      |
 
-Lifecycle actions accept an empty body or strict `{}`. Create returns 201; normal reads/updates/actions return 200. Malformed/unknown inputs return 400, missing resources 404, invalid/missing/expired/revoked sessions 401 and juror/forbidden-origin requests 403. Conflicts return 409 with specific codes: `VOTING_NOT_EDITABLE`, `ITEM_EXISTS`, `INVALID_VOTING_STATUS`, `CONFIGURATION_NOT_READY`, `ITEMS_NOT_READY`, `GROUPS_NOT_READY`, `ROSTER_NOT_READY`.
+Lifecycle actions accept an empty body or strict `{}`. Create returns 201; normal reads/updates/actions return 200. Malformed/unknown inputs return 400, missing resources 404, invalid/missing/expired/revoked sessions 401 and juror/forbidden-origin requests 403. Conflicts return 409 with specific codes: `VOTING_NOT_EDITABLE`, `ITEM_EXISTS`, `INVALID_VOTING_STATUS`, `CONFIGURATION_NOT_READY`, `ITEMS_NOT_READY`, `GROUPS_NOT_READY`.
 
 ## Storage and integration
 
@@ -53,3 +53,7 @@ Existing voting columns store explicit configuration; no extra migration is need
 Phase 4 added no ballot API, wizard, dashboard, results/ties, deadline or deletion/archive behavior. Phases 5/6 now add [authorized navigation and temporary voting interactions](juror-wizard.md). These remain in assigned later phases with unresolved product decisions recorded separately.
 
 Phase 8 now provides [independent category submission and administrator-only unlocking](ballot-submission.md). Unlock retains choices/history and returns a draft; it never changes voting status/configuration or roster lock. Closed/archived categories still require separate reopening before juror writes. Review/results remain later phases.
+
+## Bulk category preparation — 2026-10-20
+
+**Přidat všechny týmy eventu** adds only missing team IDs from the loaded event snapshot to the combined form, fills unassigned entries first and preserves existing entry identities/orders. Duplicate names remain distinct teams. Repeating the action cannot add duplicates. Use **Uložit kategorii** to save atomically; errors, conflicts, stable-ID retries and configuration freezes remain unchanged. No server-side auto-assignment or activation occurs. Refresh/review the preparation snapshot to include teams added elsewhere. [Full workflow and validation](event-flexibility.md).

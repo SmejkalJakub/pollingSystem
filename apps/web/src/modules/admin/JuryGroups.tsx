@@ -45,8 +45,8 @@ export function JuryGroups({
           </h2>
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Při přípravě může být porota neúplná. Před aktivací hlasování musí mít
-          Technická i Veřejná porota stejný počet členů: 5, 7 nebo 9.
+          Technická a Veřejná porota mohou mít libovolné a rozdílné počty členů.
+          Kategorie může hlasování povolit jedné nebo oběma částem.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {juryGroupCodes.map((code) => {

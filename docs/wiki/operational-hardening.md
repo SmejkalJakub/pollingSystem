@@ -53,3 +53,7 @@ The workbook uses numeric count/score cells and literal string cells, including 
 ExcelJS 4.4.0 is a server-only dependency. The compatible UUID 11.1.1 override avoids the reported older UUID advisory; clean install and audit evidence are recorded in progress. No workbook library enters the browser bundle. Export generation is in memory for the current hackathon scale; no large-export/load benchmark, native Excel/LibreOffice application check or background export infrastructure is claimed.
 
 Deployment, hosting, proxy configuration, backups, retention and multi-instance operations remain Phase 13 decisions. Phase 13 requires a new explicitly user-started session.
+
+## Dedicated private juror-links export — 2026-10-20
+
+The separate **Porotci → Stáhnout odkazy porotců (XLSX)** action exports access links explicitly requested by the organizer. It is separate from the secret-free results/participation workbook above. It uses a guarded same-origin POST, strict empty inputs, no-store download headers and authorization checks after event lock waits and workbook generation. It never issues, replaces or restores credentials; non-copyable links have blank URL cells with explicit status. [Contract, limitations and validation](event-flexibility.md).

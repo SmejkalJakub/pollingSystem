@@ -1,5 +1,48 @@
 # Progress
 
+## Event-flexibility release — authorized, IN PROGRESS, 2026-10-20
+
+The user explicitly approves the proposed commit, push and deployment: “yes, please deploy this”. Publish the tested bounded update to the existing Free Render service, preserving original hosted records and all credentials/keys/configuration. Final local checks remain 79 fast tests/typechecks/lint/format/builds, PostgreSQL 311/311 and full browser 24/24; no source change follows those checks. Local release container build passes. Confirmed Render target remains Free/Frankfurt, manual deployments off for automatic triggers, same repo/main and readiness path; current live source is still `3f36f83`. Private backup/row-preservation checks and publication are in progress. No new phase or paid resource is authorized.
+
+## Event flexibility and bulk preparation — DONE locally; publication pending, 2026-10-20
+
+**Phase:** one user-authorized bounded update after completed original Phases 0–13 and Simplification Stages 1–5. **Status:** local implementation DONE; live publication pending explicit Git approval. The user requests removal of equal/fixed jury sizes, assignment of all event teams to a category, and Excel export of all juror links. [Workflow/API](../wiki/event-flexibility.md).
+
+### Implemented / decisions
+
+Remove the old activation 5/7/9/equality gate and obsolete UI error/guidance. Arbitrary/unequal counts and a single present jury group are allowed; no new minimum is inferred. Keep D21 limits, same-event category permissions, candidate readiness, sticky membership/configuration freezes and all ballot/history/results rules.
+
+Add **Přidat všechny týmy eventu** to new/editable category preparation. It fills unassigned rows, appends only missing team IDs, preserves existing entry IDs/orders and duplicate-name identity, disables when complete, and focuses the first filled row. It uses the existing explicit all-or-nothing save, conflict comparison and stable-ID retry flow; it neither autosaves nor activates.
+
+Add **Stáhnout odkazy porotců (XLSX)** under Porotci, disabled during unsaved/table/auxiliary work. Dedicated admin-only strict POST produces all saved jurors, full jury labels/descriptive names, existing clickable URLs, access statuses, IDs, event/time. Export preserves every credential/session and writes no audit/history. Revoked/missing/legacy rows are labelled with blank links. Missing keys or damaged ciphertext fail the whole export. Same-origin/header/no-store/referrer/nosniff protection, shared event lock and current authorization after waits/ZIP generation remain authoritative. Results/participation exports remain secret-free. No migration/dependency or new identity/submission/tie/deletion/cleanup behavior.
+
+### Files / modules
+
+API `auth/{juror-access,juror-links-workbook,routes}`, removal of `votings/readiness.ts` and its call; existing voting/results-operations/wizard integration tests. Web `admin/{VotingSetupFields,voting-setup-utils,ExportJurorLinks,JurorTable,JuryGroups,VotingDetail,api}` and helper tests. New `tests/e2e/event-operations.spec.ts`; existing access test moves its screenshot after interactions. README, all four implementation documents and relevant wiki are updated.
+
+### Actual validation
+
+- Final `npm run check` PASS: workspace/E2E TypeScript, lint, formatting, **79 fast tests** across 12 files and both builds. Existing build emits a non-blocking ~500 KiB JavaScript chunk warning.
+- Final `npm run test:db -- --maxWorkers=2` PASS: **311/311 across 11 files**. Covers arbitrary/unequal/empty/single-group activation, activation/removal serialization and unchanged invalid configuration/permissions/freeze behavior; repeated XLSX contents/hyperlinks/literal formula-like names, credential/session/audit/ballot preservation, cross-event separation, missing/revoked/legacy status, missing/corrupt keys, strict input/origin/admin authorization and actual lock-wait revocation. A focused final wizard run also passed 109/109 before the full final suite.
+- Final finished-build `npx playwright test` PASS: **24/24 without retries**, desktop 1280×900, phone 375×812 and landscape 812×375 with dark preference/reduced motion. New event fixture matches 14 Veřejná / 0 Technická, 21 teams and 6 places / 10 plus / 3 minus. Keyboard bulk assignment preserves 21 unique IDs and persists across reload, first activation succeeds, XLSX download/retry/current-auth clearing works, reopened workbook includes every juror and an exported hyperlink successfully enters the category through an independent browser context. Existing complete T/V voting, drafts, review/submission, dashboard/results/XLSX/unlock, access/session restart, conflicts and lost responses remain covered.
+- Axe A/AA, keyboard focus, 44px controls, no-overflow and secret-free desktop/phone/landscape visual review pass. Screenshots are retained outside the checkout in this session's visualization directory as `juror-links-export-{desktop,phone,landscape-dark}.png` and `all-event-teams-desktop.png`.
+
+### Earlier failures and review findings
+
+Initial typecheck caught an overbroad import insertion at four route call sites; corrected before passing checks. The first database run passed 309/311 and exposed two historical assertions relying on the intentionally removed headcount gate. Replace those with arbitrary-size activation coverage and retained invalid-rule checks; the final suite passes. The first new browser run was interrupted at an incorrect fixture descriptive group label; use the existing **Druhá část poroty** without changing production defaults.
+
+The first full browser run was 23/24: phone replacement confirmation missed its click after a full-page screenshot. Isolated reproduction plus temporary pointer/focus tracing showed mouse-down on the correct button at y≈103, native focus scrolling it to y≈412, then mouse-up/click landing on the fieldset. Omitting that mid-test full-page capture passed unchanged functional assertions. Move the same screenshot after all interactions, remove instrumentation, and retain every interaction/assertion; final full suite passes 24/24. No security/domain assertion was weakened. Review also added first-filled-row bulk focus, actionable export failure text and wrapped long workbook row heights. No known local blocking finding remains.
+
+### Hosted inspection / preservation / limits
+
+Git began clean on main at `c63c598`. User signed in for read-only inspection: **Predvyber** event `884b8056-f91e-4437-ad81-ef70c0fe5997` has 14 public / 0 technical jurors. Category **Předvýběr** `0b525da1-8c4f-4987-a872-d97f4ad93494` already contains all 21 teams and valid caps 6/10/3 with negatives enabled, but no allowed jury group. It needs **Veřejná** selected/saved before activation. No hosted event, credential, ballot/session or configuration was modified; no live new-feature check or deployment is claimed. No commit/push was authorized or performed. Current hosted source remains the prior `3f36f83` release.
+
+Tests use generated disposable local databases/credentials and fixture-owned processes. Tracked SQL/schema/dependencies/deployment configuration remain unchanged; no development migration, configuration/key/password reset or backup modification was performed. No new container build/restore, native Excel/LibreOffice/manual-device/full screen-reader/all-browser/load/multi-instance claim. The exported XLSX intentionally contains personal access credentials; deliver only each juror's own URL.
+
+### Acceptance / handoff
+
+All three requested local capabilities, regression validation, review and four-document handoff are complete. The remaining step for the user's live event is publication after explicit commit/push approval required by AGENTS.md, then current-event configuration verification and a separate organizer activation. Suggested commit: `feat: support flexible juries and bulk event preparation`. Preserve the existing Free service, private backups/key ring and all original data. No subsequent feature phase is started; further features require a new user-started session.
+
 ## Automatic-links release — DEPLOYED, 2026-10-20
 
 The user explicitly approved commit/push after requesting deployment. Commit `3f36f8364ed82eeeec01ba8435dbb3a1e95320f2` (**feat: automate juror links and clarify jury labels**) is pushed to main and deployed to the existing [Free test app](https://d21-voting-test.onrender.com), Render deploy `dep-dbbhqagm7kps73f1svr0`, confirmed **live at 07:51:03 UTC**. This publishes automatic encrypted first links, direct Copy/removal of the Osobní přístup panel and the preserved Technická/Veřejná label correction. No subsequent implementation phase is started.

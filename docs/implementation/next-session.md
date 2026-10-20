@@ -1,5 +1,21 @@
 # Session handoff
 
+## Event-flexibility release — authorized, IN PROGRESS, 2026-10-20
+
+The user explicitly approves the proposed commit, push and deployment: “yes, please deploy this”. Publish the tested bounded update to the existing Free Render service, preserving original hosted records and all credentials/keys/configuration. Final local checks remain 79 fast tests/typechecks/lint/format/builds, PostgreSQL 311/311 and full browser 24/24; no source change follows those checks. Local release container build passes. Confirmed Render target remains Free/Frankfurt, manual deployments off for automatic triggers, same repo/main and readiness path; current live source is still `3f36f83`. Private backup/row-preservation checks and publication are in progress. No new phase or paid resource is authorized.
+
+## Event flexibility and bulk preparation — DONE locally; publication pending, 2026-10-20
+
+Implementation, validation, review and documentation are complete on main after `c63c598`, uncommitted. Scope: arbitrary/unequal jury sizes (remove equal 5/7/9 activation gate), **Přidat všechny týmy eventu**, and **Stáhnout odkazy porotců (XLSX)**. [Workflow, API, non-copyable links and limits](../wiki/event-flexibility.md).
+
+Final source `npm run check` PASS (79 fast tests/typechecks/lint/format/builds), full PostgreSQL 311/311, full final Chromium 24/24 without retries across desktop/phone/landscape with dark preference/reduced motion. Excel hyperlinks were reopened and redeemed in an independent browser context; export retry/auth clearing, keyboard/Axe/44px/no-overflow and complete existing voting/results/unlock regressions pass. Earlier failed/interrupted attempts and corrections are recorded in progress.md. All four implementation documents and relevant README/wiki are updated.
+
+Read-only hosted inspection after user sign-in: **Predvyber** event `884b8056-f91e-4437-ad81-ef70c0fe5997`, 14 Veřejná / 0 Technická. **Předvýběr** category `0b525da1-8c4f-4987-a872-d97f4ad93494` already contains all 21 event teams, with 6 places and 10/3 positive/negative caps, negatives enabled. No jury group is permitted yet: select **Veřejná** and save before activation. The event was not edited or opened. Re-read current state before any live save.
+
+Next action is publication of this same bounded phase, after explicit Git authorization required by AGENTS.md. Suggested commit: `feat: support flexible juries and bulk event preparation`. Keep the existing Render Free service `srv-dbac88eq1p3s73b4jqm0`, manual deploys, separate test database and existing key ring/settings. Take/retain private backups through the established workflow, verify published source/readiness/current session/private export and original-row preservation, and update the release record. Do not publish old source or reset credentials. Current verified deployment remains `3f36f83` / `dep-dbbhqagm7kps73f1svr0`; it does not contain this update.
+
+No schema/migration/dependency, paid resource, other-project change, event activation, new deletion/cleanup or messaging. Native Excel/LibreOffice, manual native devices/full screen reader/all browsers/load/multi-instance and hosted new-feature checks remain unrun. Existing source build has a non-blocking ~500 KiB JavaScript chunk warning. Secret-free visual checks are retained in this session's visualization directory. Stop after this phase; a further feature needs a new user-started session.
+
 ## Automatic-links release — DEPLOYED, 2026-10-20
 
 The user explicitly approved commit/push after requesting deployment. Commit `3f36f8364ed82eeeec01ba8435dbb3a1e95320f2` (**feat: automate juror links and clarify jury labels**) is pushed to main and deployed to the existing [Free test app](https://d21-voting-test.onrender.com), Render deploy `dep-dbbhqagm7kps73f1svr0`, confirmed **live at 07:51:03 UTC**. This publishes automatic encrypted first links, direct Copy/removal of the Osobní přístup panel and the preserved Technická/Veřejná label correction. No subsequent implementation phase is started.

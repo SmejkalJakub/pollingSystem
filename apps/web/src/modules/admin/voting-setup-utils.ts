@@ -116,3 +116,29 @@ export function setupFieldError(field: string) {
     )[field] ?? 'Zkontrolujte tuto hodnotu.'
   );
 }
+
+// Add only missing team identities; preserve saved and unsaved entry IDs/orders.
+export function addAllEventTeams(
+  values: VotingSetupValues,
+  teams: VotingSetupSnapshot['teams'],
+): VotingSetupValues {
+  const included = new Set(values.items.map((item) => item.teamId));
+  const missing = teams.filter((team) => !included.has(team.id));
+  if (!missing.length) return values;
+  const items = values.items.map((item) => ({ ...item }));
+  let nextOrder = items.reduce(
+    (next, item) => Math.max(next, (item.displayOrder ?? -1) + 1),
+    0,
+  );
+  for (const team of missing) {
+    const blank = items.find((item) => item.teamId === null);
+    if (blank) blank.teamId = team.id;
+    else
+      items.push({
+        id: crypto.randomUUID(),
+        teamId: team.id,
+        displayOrder: Math.min(nextOrder++, 2147483647),
+      });
+  }
+  return { ...values, items };
+}

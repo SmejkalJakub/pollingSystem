@@ -141,3 +141,7 @@ Opt-in built hosting adds `webRoot` to the existing application factory, serving
 ## Simplification Stage 3 — 2026-10-18
 
 Teams gain strict snapshot/table-save contracts and GET/PUT `/events/:eventId/teams/table` under existing event locks and administration rechecks. A precise timestamp/content fingerprint detects concurrent edits, including legacy team API writes. Stable client-generated IDs and read-only exact desired-state replay protect uncertain retries without a receipt table or migration. Missing existing IDs never delete. `TeamTable` owns pending edits/save/comparison, `TeamRows` renders accessible fields, and `TeamPaste` previews parsed tab-separated text. No storage/dependency/voting rule change. [Contract and limits](simplification-stage-3.md).
+
+## Event flexibility and bulk preparation — 2026-10-20
+
+First activation no longer validates jury headcounts/equality; other domain and history gates remain. The combined category form adds only missing event team IDs using existing setup save/retry/conflict transactions. `auth/juror-access.ts` and server-only `auth/juror-links-workbook.ts` provide a dedicated private POST/XLSX download of existing links, using the external vault, a shared parent-event lock and current admin checks after waits and workbook generation. No credential/session writes, new table/migration/dependency or secret-bearing shared contract; results exports remain separate and secret-free. [Workflow/API](event-flexibility.md).

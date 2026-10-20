@@ -268,10 +268,6 @@ test('roster copies existing links in one click with keyboard, fallback and unti
       .press('Enter');
     await expect(copy).toBeFocused();
     await page.getByLabel('Hledat porotce', { exact: true }).fill('Kopírování');
-    await page.screenshot({
-      path: testInfo.outputPath(`stage1-roster-${testInfo.project.name}.png`),
-      fullPage: true,
-    });
     await page
       .getByRole('button', { name: 'Nahradit odkaz', exact: true })
       .click();
@@ -352,6 +348,13 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     expect((await jurorPage.request.get('/api/wizard/current')).status()).toBe(
       401,
     );
+    // Capture after interactions: full-page screenshots can change Chromium's
+    // focus-scroll position on narrow viewports between pointer down/up.
+    await page.getByLabel('Hledat porotce', { exact: true }).fill('Kopírování');
+    await page.screenshot({
+      path: testInfo.outputPath(`stage1-roster-${testInfo.project.name}.png`),
+      fullPage: true,
+    });
   } finally {
     await jurorContext.close();
   }

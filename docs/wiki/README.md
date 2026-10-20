@@ -42,3 +42,5 @@ Use the user's explicit instructions and approved decisions as authority. Treat 
 - [Simplification Stage 5 — combined category preparation](simplification-stage-5.md)
 
 - [Automatic juror links, safe retries and legacy/revoked transition](automatic-juror-links.md)
+
+- [Event flexibility, all-team assignment and private juror-links XLSX](event-flexibility.md) — 2026-10-20 local update; publication pending.

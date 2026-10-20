@@ -6,11 +6,11 @@ Authorized bounded implementation session, 2026-10-19. This supersedes the manua
 
 ## Organizer workflow
 
-In **Příprava → Porotci**, add a juror or paste and review rows, then choose **Uložit tabulku**. The successful save creates an encrypted reusable personal link for each membership that has never had a credential. **Kopírovat odkaz** is immediately available beside the saved juror. No **Osobní přístup** entry, panel, status-fetch or separate initial-generation confirmation remains. Link delivery remains private and manual; no bulk distribution is added.
+In **Příprava → Porotci**, add a juror or paste and review rows, then choose **Uložit tabulku**. The successful save creates an encrypted reusable personal link for each membership that has never had a credential. **Kopírovat odkaz** is immediately available beside the saved juror. No **Osobní přístup** entry, panel, status-fetch or separate initial-generation confirmation remains. Link delivery remains private and manual. The 2026-10-20 [event-flexibility update](event-flexibility.md) adds a dedicated Excel export of all saved jurors and their existing copyable links.
 
 Existing never-issued memberships show that the link will be created on save. The table can be saved for those links even without name/group edits, including on frozen rosters without changing their membership. Existing encrypted links are retained, so saving names, assignments, other jurors or retrying a successful save never rotates those links or revokes sessions. Copy remains a protected read of the same current link. Clipboard failure focuses and selects a labelled read-only fallback; hiding it clears the displayed secret and restores focus.
 
-Every successful initial issuance records `juror_access.issued` with the current shared administration actor and zero replaced links/revoked sessions. It creates no juror session. No token, URL, encryption envelope or key enters roster/list/export/audit responses or browser storage. Plaintext is returned only through the existing dedicated authorized copy/exceptional replacement responses and held transiently.
+Every successful initial issuance records `juror_access.issued` with the current shared administration actor and zero replaced links/revoked sessions. It creates no juror session. No token, URL, encryption envelope or key enters roster/list/results-export/audit responses or browser storage. Plaintext is returned through dedicated authorized copy/exceptional replacement responses and, in the 2026-10-20 update, the explicitly requested private juror-links XLSX. The downloaded workbook contains access credentials and should be distributed one personal link at a time.
 
 ## Existing and exceptional access
 

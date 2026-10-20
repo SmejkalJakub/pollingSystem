@@ -1,5 +1,22 @@
 # Implementation plan
 
+## Event-flexibility release — authorized, IN PROGRESS, 2026-10-20
+
+The user explicitly approves the proposed commit, push and deployment: “yes, please deploy this”. Publish the tested bounded update to the existing Free Render service, preserving original hosted records and all credentials/keys/configuration. Final local checks remain 79 fast tests/typechecks/lint/format/builds, PostgreSQL 311/311 and full browser 24/24; no source change follows those checks. Local release container build passes. Confirmed Render target remains Free/Frankfurt, manual deployments off for automatic triggers, same repo/main and readiness path; current live source is still `3f36f83`. Private backup/row-preservation checks and publication are in progress. No new phase or paid resource is authorized.
+
+## Event flexibility and bulk preparation — DONE locally, 2026-10-20
+
+User-authorized bounded session: remove equal/fixed jury sizes, add all event teams to a category, export all saved jurors and existing personal links to Excel. This supersedes Q10's original equal 5/7/9 policy and earlier no-bulk scope for these operations only. [Workflow/API](../wiki/event-flexibility.md).
+
+- [x] Inspect continuity/source/Git and the signed-in target event; no hosted data changes.
+- [x] Remove activation headcount/equality gate and obsolete UI guidance; retain other readiness checks and sticky freezes.
+- [x] Add missing team identities to combined category form, preserve entries/orders/blank row IDs, focus the first filled row, and use existing atomic save/conflict/retry behavior.
+- [x] Dedicated guarded private POST/XLSX of all saved jurors with existing clickable links and explicit unavailable statuses; preserve credentials/sessions and secret-free results exports.
+- [x] Final `npm run check` PASS (79 fast tests/typechecks/lint/format/builds), PostgreSQL 311/311 and final full browser 24/24 without retries.
+- [x] Source/visual/keyboard/Axe/responsive review, documentation and handoff. No migration/dependency/new voting rule beyond jury sizes.
+
+Publication remains pending explicit Git approval under AGENTS.md. No commit/push/deploy, hosted mutation, key/password/configuration/paid/other-project change. Keep existing archives and keys. After publication, select Veřejná in the target category and save before separate activation. A further feature phase requires a new user-started session.
+
 ## Automatic-links release — DEPLOYED, 2026-10-20
 
 The user explicitly approved commit/push after requesting deployment. Commit `3f36f8364ed82eeeec01ba8435dbb3a1e95320f2` (**feat: automate juror links and clarify jury labels**) is pushed to main and deployed to the existing [Free test app](https://d21-voting-test.onrender.com), Render deploy `dep-dbbhqagm7kps73f1svr0`, confirmed **live at 07:51:03 UTC**. This publishes automatic encrypted first links, direct Copy/removal of the Osobní přístup panel and the preserved Technická/Veřejná label correction. No subsequent implementation phase is started.

@@ -11,7 +11,7 @@ The interface and XLSX display **Technická** for stored code T and **Veřejná*
 - Events have a name (1–200 trimmed characters) and optional description (up to 5,000 trimmed characters).
 - Each event can contain one T and one V group. Group codes are immutable; their descriptive names can be corrected.
 - Each event juror has a display name (1–200 trimmed characters) and exactly one group belonging to that event. Duplicate names are allowed; UUIDs identify memberships. This is an event-specific roster, without global juror accounts or identity matching by name.
-- Incomplete/unequal rosters are allowed during setup. Phase 4 now validates equal T/V groups of 5, 7 or 9 on first activation. Incomplete setup is rejected without freezing it.
+- Jury groups may have arbitrary and unequal membership counts, including zero members or a single present group. The 2026-10-20 user instruction supersedes the original equal 5/7/9 activation requirement. Category permissions still select at least one same-event group; no minimum headcount is inferred. See [event flexibility](event-flexibility.md).
 - Membership creation, reassignment and removal freeze for the entire event once any voting is active/closed/archived or any ballot exists, including drafts/cancelled ballots. Juror names, group names and event descriptions can still be corrected.
 - Removal before the freeze deletes only the selected event membership. Existing foreign-key RESTRICT references (including secret links, sessions, audit or ballots) prevent deletion; no cascade or automatic access-history removal is implemented. The UI requires an explicit confirmation step.
 - There are no event or jury-group deletion/archive endpoints or controls. Event membership cannot be transferred by changing `eventId`; add a distinct membership in the other event.
@@ -55,7 +55,7 @@ Additive migration `0002_low_talon.sql` adds nullable `events.roster_locked_at`,
 
 Membership mutations lock the parent event row before checking the marker and writing. Roster reads hold a shared event lock for a consistent group/juror snapshot. Voting insert/status changes and ballot insert/event changes set the sticky marker under the same event row lock. Reverting a status to draft or deleting ballots does not clear it. Direct database administration can bypass application policies and is outside the HTTP authorization boundary.
 
-Phase 4 must preserve this lock protocol. Activation must lock the parent event first, validate the approved T/V size and remaining configuration requirements in its transaction, then activate. An invalid activation must roll back without freezing setup. Do not rewrite history or clear the marker to reopen membership editing. No voting lifecycle endpoint was added in Phase 3.
+Phase 4 must preserve this lock protocol. Activation must lock the parent event first, validate the remaining configuration requirements in its transaction, then activate. An invalid activation must roll back without freezing setup. Do not rewrite history or clear the marker to reopen membership editing. No voting lifecycle endpoint was added in Phase 3.
 
 Phase 4 first activation now implements the event-first validation protocol above and is covered by real activation/roster concurrency tests. Admin reopening preserves the sticky roster marker without readiness checks and never reopens roster editing.
 

@@ -18,6 +18,7 @@ import {
   tableRows,
   canRebase,
 } from './juror-table-utils';
+import { ExportJurorLinks } from './ExportJurorLinks';
 import { JurorPaste } from './JurorPaste';
 import { JurorRows } from './JurorRows';
 import { JuryGroups } from './JuryGroups';
@@ -482,6 +483,13 @@ export function JurorTable({
           </div>
         )}
       </div>
+      <ExportJurorLinks
+        eventId={eventId}
+        onExpired={onExpired}
+        disabled={
+          busy || auxiliary || dirty || conflict || base.jurors.length === 0
+        }
+      />
       <JurorPaste
         disabled={busy || auxiliary || conflict || base.locked}
         append={append}

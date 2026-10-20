@@ -4,6 +4,7 @@ import type { VotingSetupSnapshot, VotingSetupValues } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
 import { controlClass } from './MutationForm';
 import {
+  addAllEventTeams,
   configurationKeys,
   setupFieldLabels,
   setupFieldError,
@@ -245,34 +246,61 @@ export function VotingSetupFields({
           <h4 id={fieldId('items-title')} className="font-semibold">
             Týmy v hlasování ({values.items.length})
           </h4>
-          <Button
-            type="button"
-            id={fieldId('add-entry')}
-            variant="outline"
-            className="min-h-11"
-            disabled={snapshot.teams.length === 0}
-            onClick={() => {
-              focusRow.current = fieldId(`items.${values.items.length}.teamId`);
-              onChange({
-                ...values,
-                items: [
-                  ...values.items,
-                  {
-                    id: crypto.randomUUID(),
-                    teamId: null,
-                    displayOrder: values.items.length,
-                  },
-                ],
-              });
-            }}
-          >
-            Přidat položku
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={
+                !snapshot.teams.some(
+                  (team) =>
+                    !values.items.some((item) => item.teamId === team.id),
+                )
+              }
+              onClick={() => {
+                const next = addAllEventTeams(values, snapshot.teams);
+                const first = next.items.findIndex(
+                  (item, index) => item.teamId !== values.items[index]?.teamId,
+                );
+                if (first >= 0)
+                  focusRow.current = fieldId(`items.${first}.teamId`);
+                onChange(next);
+              }}
+            >
+              Přidat všechny týmy eventu
+            </Button>
+            <Button
+              type="button"
+              id={fieldId('add-entry')}
+              variant="outline"
+              className="min-h-11"
+              disabled={snapshot.teams.length === 0}
+              onClick={() => {
+                focusRow.current = fieldId(
+                  `items.${values.items.length}.teamId`,
+                );
+                onChange({
+                  ...values,
+                  items: [
+                    ...values.items,
+                    {
+                      id: crypto.randomUUID(),
+                      teamId: null,
+                      displayOrder: values.items.length,
+                    },
+                  ],
+                });
+              }}
+            >
+              Přidat položku
+            </Button>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           Každý tým může být zařazen jednou. Uložené položky lze přeřadit nebo
           změnit jejich pořadí; nemažou se. Týmy a jejich popisy upravíte v
-          části Týmy.
+          části Týmy. Přidání všech týmů doplní pouze chybějící týmy; změny se
+          uloží tlačítkem Uložit kategorii.
         </p>
         {snapshot.teams.length === 0 && (
           <p className="text-sm text-muted-foreground">

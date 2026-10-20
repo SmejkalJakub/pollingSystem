@@ -13,6 +13,7 @@ import {
   jurorStartSchema,
   jurorStartResponseSchema,
   jurorParamsSchema,
+  eventParamsSchema,
   jurorLinkSchema,
 } from '@d21/contracts';
 import { z } from 'zod';
@@ -165,6 +166,30 @@ export async function registerAuth(
           session: result.session,
           wizard: welcome,
         });
+      },
+    );
+    app.post(
+      '/events/:eventId/jurors/links.xlsx',
+      { preHandler: requireAdmin },
+      async (request, reply) => {
+        const { eventId } = parseInput(eventParamsSchema, request.params);
+        parseInput(z.strictObject({}), request.body);
+        parseInput(z.strictObject({}), request.query);
+        const buffer = await jurorAccess.exportWorkbook(
+          request.cookies[cookieName],
+          eventId,
+          origin,
+        );
+        return reply
+          .type(
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          )
+          .header(
+            'Content-Disposition',
+            `attachment; filename="d21-jurors-${eventId}.xlsx"`,
+          )
+          .header('X-Content-Type-Options', 'nosniff')
+          .send(buffer);
       },
     );
     app.get(

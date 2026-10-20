@@ -1,3 +1,7 @@
+import {
+  createJurorLinksWorkbook,
+  type JurorLinkExportRow,
+} from './juror-links-workbook';
 import { createLinkVault, type LinkVault } from './link-vault';
 import { adminEventLock } from './admin-transaction';
 import { auditAdminAction } from '../events/audit';
@@ -90,6 +94,76 @@ export function createJurorAccessService(
     });
   }
   return {
+    async exportWorkbook(
+      token: string | undefined,
+      eventId: string,
+      origin: string,
+    ) {
+      return adminEventLock(pool, auth, token)(
+        eventId,
+        async (client) => {
+          const event = (
+            await client.query<{ id: string; name: string }>(
+              'SELECT id,name FROM events WHERE id=$1',
+              [eventId],
+            )
+          ).rows[0]!;
+          const result = await client.query<{
+            id: string;
+            displayName: string;
+            groupCode: 'T' | 'V';
+            groupName: string;
+            token_hash: string | null;
+            encrypted_token: string | null;
+            had_access: boolean;
+          }>(
+            `SELECT j.id,j.display_name AS "displayName",g.code AS "groupCode",g.name AS "groupName",
+           a.token_hash,a.encrypted_token,
+           EXISTS(SELECT 1 FROM juror_access h WHERE h.event_id=j.event_id AND h.juror_id=j.id) AS had_access
+           FROM event_jurors j
+           JOIN jury_groups g ON g.event_id=j.event_id AND g.id=j.jury_group_id
+           LEFT JOIN LATERAL (
+             SELECT token_hash,encrypted_token FROM juror_access
+             WHERE event_id=j.event_id AND juror_id=j.id AND revoked_at IS NULL
+             ORDER BY created_at DESC,token_hash LIMIT 1
+           ) a ON true
+           WHERE j.event_id=$1 ORDER BY j.display_name,j.id`,
+            [eventId],
+          );
+          const rows: JurorLinkExportRow[] = result.rows.map((row) => {
+            const status = row.token_hash
+              ? row.encrypted_token
+                ? 'stored'
+                : 'legacy'
+              : row.had_access
+                ? 'revoked'
+                : 'none';
+            const secret =
+              status === 'stored'
+                ? vault.decrypt(row.encrypted_token!, {
+                    eventId,
+                    jurorId: row.id,
+                    tokenHash: row.token_hash!,
+                  })
+                : null;
+            return {
+              id: row.id,
+              displayName: row.displayName,
+              groupCode: row.groupCode,
+              groupName: row.groupName,
+              status,
+              url: secret ? `${origin}/#event=${eventId}&key=${secret}` : null,
+            };
+          });
+          return createJurorLinksWorkbook(
+            event,
+            rows,
+            new Date().toISOString(),
+          );
+        },
+        true,
+      );
+    },
     async copy(token: string | undefined, eventId: string, jurorId: string) {
       return adminEventLock(pool, auth, token)(
         eventId,

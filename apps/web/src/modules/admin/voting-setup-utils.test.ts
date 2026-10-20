@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { VotingSetupSnapshot } from '@d21/contracts';
-import { rebaseSetup, setupValues } from './voting-setup-utils';
+import {
+  addAllEventTeams,
+  rebaseSetup,
+  setupValues,
+} from './voting-setup-utils';
 const blank = (): VotingSetupSnapshot => ({
   version: '0'.repeat(64),
   voting: null,
@@ -64,5 +68,41 @@ describe('explicit category comparison', () => {
       rebaseSetup(base, local, { ...blank(), editable: false }),
     ).toBeNull();
     expect(rebaseSetup(base, local, blank())).toBeNull();
+  });
+});
+
+describe('all event teams', () => {
+  const teams = ['a', 'b', 'c'].map((id) => ({
+    id: `team-${id}`,
+    eventId: 'event',
+    name: 'Duplicate name',
+    description: '',
+    createdAt: '',
+    updatedAt: '',
+  }));
+  it('preserves entries and blank-row identities, appends missing teams once and keeps retries stable', () => {
+    const values = setupValues(blank());
+    values.items = [
+      { id: 'saved', teamId: 'team-a', displayOrder: 12 },
+      { id: 'blank', teamId: null, displayOrder: 3 },
+    ];
+    const result = addAllEventTeams(values, teams);
+    expect(result.items[0]).toEqual(values.items[0]);
+    expect(result.items[1]).toEqual({
+      id: 'blank',
+      teamId: 'team-b',
+      displayOrder: 3,
+    });
+    expect(result.items[2]).toMatchObject({
+      teamId: 'team-c',
+      displayOrder: 13,
+    });
+    expect(new Set(result.items.map((row) => row.teamId)).size).toBe(3);
+    expect(values.items[1]!.teamId).toBeNull();
+    expect(addAllEventTeams(result, teams)).toBe(result);
+  });
+  it('handles an empty event without adding rows', () => {
+    const values = setupValues(blank());
+    expect(addAllEventTeams(values, [])).toBe(values);
   });
 });

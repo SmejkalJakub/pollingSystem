@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { createBallotAdminService } from '../ballots/admin';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -269,6 +270,162 @@ describe('juror access and wizard', () => {
       await restartedPool.end();
     }
   });
+  it('exports all jurors with clickable reusable links, literal names and no access/session writes', async () => {
+    const f = await fixture();
+    const link = await issue(f.event, f.jurors[0]);
+    const session = sessionCookie(await enter(link));
+    await pool.query('UPDATE event_jurors SET display_name=$2 WHERE id=$1', [
+      f.jurors[0],
+      '=1+1',
+    ]);
+    const snapshot = async () =>
+      Promise.all(
+        [
+          'juror_access',
+          'sessions',
+          'audit_logs',
+          'ballots',
+          'ballot_entries',
+        ].map(
+          async (table) =>
+            (
+              await pool.query(
+                `SELECT row_to_json(t)::text FROM ${table} t WHERE event_id=$1 ORDER BY row_to_json(t)::text`,
+                [f.event],
+              )
+            ).rows,
+        ),
+      );
+    const before = await snapshot();
+    for (let i = 0; i < 2; i++) {
+      const response = await request(
+        'POST',
+        `/events/${f.event}/jurors/links.xlsx`,
+        {},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(response.headers['referrer-policy']).toBe('no-referrer');
+      expect(response.headers['content-disposition']).toContain(
+        `d21-jurors-${f.event}.xlsx`,
+      );
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(response.rawPayload as unknown as ExcelJS.Buffer);
+      const sheet = book.worksheets[0]!;
+      expect(sheet.rowCount).toBe(7);
+      const row = [sheet.getRow(6), sheet.getRow(7)].find(
+        (row) => row.getCell(6).value === f.jurors[0],
+      )!;
+      expect(row.getCell(1).value).toBe('=1+1');
+      expect(row.getCell(1).type).toBe(ExcelJS.ValueType.String);
+      expect(row.getCell(2).value).toBe('Technická');
+      expect(row.getCell(4).type).toBe(ExcelJS.ValueType.Hyperlink);
+      const expected = `${headers.origin}/#event=${f.event}&key=${link.token}`;
+      expect(row.getCell(4).hyperlink === expected).toBe(true);
+      const missing = [sheet.getRow(6), sheet.getRow(7)].find(
+        (row) => row.getCell(6).value === f.jurors[1],
+      )!;
+      expect(missing.getCell(4).text).toBe('');
+      expect(missing.getCell(5).text).toContain('dosud nebyl');
+    }
+    expect(await snapshot()).toEqual(before);
+    expect(
+      (await request('GET', '/wizard/current', undefined, session)).statusCode,
+    ).toBe(200);
+    expect((await enter(link)).statusCode).toBe(200);
+    const g = await fixture();
+    const isolated = await request(
+      'POST',
+      `/events/${g.event}/jurors/links.xlsx`,
+      {},
+    );
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(isolated.rawPayload as unknown as ExcelJS.Buffer);
+    expect(JSON.stringify(book.model).includes(link.token)).toBe(false);
+  });
+  it('labels legacy/revoked links, rejects unavailable decryption and never replaces credentials during export', async () => {
+    const f = await fixture();
+    const legacy = newSecret();
+    await pool.query(
+      'INSERT INTO juror_access(token_hash,event_id,juror_id) VALUES ($1,$2,$3)',
+      [secretHash(legacy), f.event, f.jurors[0]],
+    );
+    await issue(f.event, f.jurors[1]);
+    await access.revoke(cookie.split('=')[1]!, f.event, f.jurors[1]);
+    const response = await request(
+      'POST',
+      `/events/${f.event}/jurors/links.xlsx`,
+      {},
+    );
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(response.rawPayload as unknown as ExcelJS.Buffer);
+    const rows = [book.worksheets[0]!.getRow(6), book.worksheets[0]!.getRow(7)];
+    expect(rows.every((row) => row.getCell(4).text === '')).toBe(true);
+    expect(
+      rows
+        .map((row) => row.getCell(5).text)
+        .some((value) => value.includes('Starší')),
+    ).toBe(true);
+    expect(
+      rows
+        .map((row) => row.getCell(5).text)
+        .some((value) => value.includes('zrušen')),
+    ).toBe(true);
+    expect((await enter({ eventId: f.event, token: legacy })).statusCode).toBe(
+      200,
+    );
+    await issue(f.event, f.jurors[0]);
+    const unavailable = createJurorAccessService(pool, auth);
+    await expect(
+      unavailable.exportWorkbook(
+        cookie.split('=')[1]!,
+        f.event,
+        headers.origin,
+      ),
+    ).rejects.toMatchObject({ code: 'LINK_STORAGE_UNAVAILABLE' });
+    await pool.query(
+      "UPDATE juror_access SET encrypted_token='v1.missing.invalid.invalid.invalid' WHERE event_id=$1 AND revoked_at IS NULL",
+      [f.event],
+    );
+    const broken = await request(
+      'POST',
+      `/events/${f.event}/jurors/links.xlsx`,
+      {},
+    );
+    expect(broken.statusCode).toBe(503);
+    expect(broken.json().error.code).toBe('LINK_STORAGE_UNAVAILABLE');
+    expect(broken.headers['content-disposition']).toBeUndefined();
+    expect(broken.body.includes('#event=')).toBe(false);
+  });
+  it('protects juror link exports with admin, strict input and origin guards', async () => {
+    const f = await fixture();
+    const session = sessionCookie(
+      await enter(await issue(f.event, f.jurors[0])),
+    );
+    const path = `/events/${f.event}/jurors/links.xlsx`;
+    expect((await request('POST', path, {}, '')).statusCode).toBe(401);
+    expect((await request('POST', path, {}, session)).statusCode).toBe(403);
+    expect((await request('POST', path, {}, cookie, {})).statusCode).toBe(403);
+    expect(
+      (
+        await request('POST', path, {}, cookie, {
+          ...headers,
+          origin: 'https://foreign.example',
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (await request('POST', path, { jurorIds: f.jurors })).statusCode,
+    ).toBe(400);
+    expect(
+      (await request('POST', `${path}?eventId=${f.event}`, {})).statusCode,
+    ).toBe(400);
+    expect(
+      (await request('POST', `/events/${randomUUID()}/jurors/links.xlsx`, {}))
+        .statusCode,
+    ).toBe(404);
+    expect((await request('GET', path)).statusCode).toBe(404);
+  });
   it('repeated copying returns the same active link without writes, session invalidation or metadata leaks', async () => {
     const f = await fixture();
     const link = await issue(f.event, f.jurors[0]);
@@ -459,52 +616,62 @@ describe('juror access and wizard', () => {
       ).json().error.code,
     ).toBe('NO_ACTIVE_LINK');
   });
-  it('rechecks admin revocation after a real lock wait before decrypting a link', async () => {
-    const f = await fixture();
-    await issue(f.event, f.jurors[0]);
-    const login = await request(
-      'POST',
-      '/auth/admin/login',
-      { password: 'Disposable Phase Five password' },
-      '',
-    );
-    const ownCookie = sessionCookie(login);
-    const client = await pool.connect();
-    await client.query('BEGIN');
-    await client.query('SELECT id FROM events WHERE id=$1 FOR UPDATE', [
-      f.event,
-    ]);
-    const pending = Promise.resolve(
-      request('POST', `${f.path}/copy`, {}, ownCookie),
-    );
-    try {
-      const until = Date.now() + 3000;
-      let waiting = false;
-      while (Date.now() < until) {
-        waiting = Boolean(
-          (
-            await pool.query(
-              "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%roster_locked_at%'",
-            )
-          ).rowCount,
-        );
-        if (waiting) break;
-        await new Promise((resolve) => setTimeout(resolve, 10));
-      }
-      expect(waiting).toBe(true);
-      await pool.query(
-        'UPDATE sessions SET revoked_at=now() WHERE token_hash=$1',
-        [secretHash(ownCookie.split('=')[1]!)],
+  it.each(['copy', 'export'])(
+    'rechecks admin revocation after a real lock wait before decrypting links (%s)',
+    async (action) => {
+      const f = await fixture();
+      await issue(f.event, f.jurors[0]);
+      const login = await request(
+        'POST',
+        '/auth/admin/login',
+        { password: 'Disposable Phase Five password' },
+        '',
       );
-      await client.query('COMMIT');
-      const result = await pending;
-      expect(result.statusCode).toBe(401);
-      expect(result.body).not.toContain('#event=');
-    } finally {
-      await client.query('ROLLBACK');
-      client.release();
-    }
-  });
+      const ownCookie = sessionCookie(login);
+      const client = await pool.connect();
+      await client.query('BEGIN');
+      await client.query('SELECT id FROM events WHERE id=$1 FOR UPDATE', [
+        f.event,
+      ]);
+      const pending = Promise.resolve(
+        request(
+          'POST',
+          action === 'copy'
+            ? `${f.path}/copy`
+            : `/events/${f.event}/jurors/links.xlsx`,
+          {},
+          ownCookie,
+        ),
+      );
+      try {
+        const until = Date.now() + 3000;
+        let waiting = false;
+        while (Date.now() < until) {
+          waiting = Boolean(
+            (
+              await pool.query(
+                "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%roster_locked_at%'",
+              )
+            ).rowCount,
+          );
+          if (waiting) break;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        expect(waiting).toBe(true);
+        await pool.query(
+          'UPDATE sessions SET revoked_at=now() WHERE token_hash=$1',
+          [secretHash(ownCookie.split('=')[1]!)],
+        );
+        await client.query('COMMIT');
+        const result = await pending;
+        expect(result.statusCode).toBe(401);
+        expect(result.body).not.toContain('#event=');
+      } finally {
+        await client.query('ROLLBACK');
+        client.release();
+      }
+    },
+  );
   it('allows reusable old links, multiple devices, logout and recovery without expiring the link', async () => {
     const f = await fixture();
     const link = await issue(f.event, f.jurors[0]);

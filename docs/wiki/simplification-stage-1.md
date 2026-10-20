@@ -52,7 +52,7 @@ Back up **both** PostgreSQL and the external key ring. Store key backups separat
 
 For rotation, add a new random key under a new ID, keep all old keys, then change only the active ID. Older ciphertext remains decryptable. There is no automatic re-encryption or key retirement job. Do not delete old keys while any retained live link or backup may require them. A lost key does not revoke a link; explicit replacement is a separate consequential organizer decision.
 
-Personal links grant juror access. Deliver them privately. Keys, plaintext tokens and ciphertext never enter ordinary roster/status/results/export responses, audit context or routine application logs. Only initial issuance and the dedicated authorized copy response return a fragment URL; response caching is disabled. Do not add analytics/request-body/response logging around these routes.
+Personal links grant juror access. Deliver them privately. Keys, plaintext tokens and ciphertext never enter ordinary roster/status/results-export responses, audit context or routine application logs. Initial issuance and the dedicated authorized copy response return a fragment URL. The later [2026-10-20 event-flexibility update](event-flexibility.md) additionally provides an explicit private juror-links XLSX containing existing plaintext links; it is separate from results export. Response caching is disabled. Do not add analytics/request-body/response logging around these routes.
 
 ## Protected copy API
 
