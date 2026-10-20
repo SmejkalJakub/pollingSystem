@@ -1,5 +1,9 @@
 # Linux hosting and colleague testing
 
+## Current event-flexibility release — 2026-10-20
+
+Application source `cb21c9e` is live on the existing Free service, deploy `dep-dbbnftbrjlhs73es41mg`. Same six migrations, external keys/settings and manual deployments. Readiness/protected APIs/exact served bundles, existing administration session, target category configuration and actual 14-juror XLSX credential matching pass. Private pre/post manifests and all original-row preservation pass, except the intentional target-category timestamp change and added Veřejná permission; the category remains draft. [Complete release evidence, archive hashes and limits](../implementation/progress.md#event-flexibility-release--deployed-and-verified-2026-10-20). Earlier release entries below are historical.
+
 **Current release, 2026-10-20:** automatic juror links and jury-label correction run source `3f36f83`, Render deploy `dep-dbbhqagm7kps73f1svr0` (live). Readiness, exact served release bundle, unauthorized API protection, private pre/post backup manifests and all original-row preservation pass. Same Free service/project, six migrations, keys/configuration preserved, auto-deploy off. Authenticated hosted save/copy verification awaits sign-in after overnight session expiry; no hosted validation data or credentials were created. [Actual release evidence and limits](../implementation/progress.md#automatic-links-release--deployed-2026-10-20). Earlier preparation and release records below are historical.
 
 **Automatic-links release authorized, 2026-10-20:** explicit commit/push approval is received for automatic juror links and the preserved jury-label correction. Fresh private backup, unchanged-source Docker build and publication scan pass; publication/deployment is in progress on the same Free test service. Existing live source below remains current until terminal live verification. [Current release state](../implementation/next-session.md).

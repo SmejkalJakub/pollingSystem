@@ -1,12 +1,12 @@
 # Event flexibility and bulk preparation
 
-User-authorized bounded implementation session, 2026-10-20. This amends the original jury-size requirement and adds two bulk organizer operations. Local implementation; publication remains pending.
+User-authorized bounded implementation session, 2026-10-20. This amends the original jury-size requirement and adds two bulk organizer operations. Deployed as `cb21c9e` on 2026-10-20; authenticated category setup, all 14 real Excel hyperlinks, private backups and original-data preservation are verified.
 
 ## Jury sizes
 
 Technická and Veřejná may have any membership counts and need not be equal. A public-only event such as **Predvyber** (event `884b8056-f91e-4437-ad81-ef70c0fe5997`) with 14 Veřejná and 0 Technická is supported. No replacement minimum or required second group is introduced. At least one same-event group must still be permitted in each category, and complete D21 rules and enough linked teams remain required. Empty eligible rosters retain existing dashboard warnings and provisional-results behavior. Activation still freezes membership and category configuration; reopening preserves votes/history/freezes.
 
-Live read-only inspection: the event's **Předvýběr** category `0b525da1-8c4f-4987-a872-d97f4ad93494` has 21 of 21 event teams, limits 6 places / 10 positive / 3 negative, and no permitted jury group selected. Select **Veřejná** and save before activation. This session has not activated or modified the hosted event.
+Pre-release read-only inspection: the event's **Předvýběr** category `0b525da1-8c4f-4987-a872-d97f4ad93494` has 21 of 21 event teams, limits 6 places / 10 positive / 3 negative, and no permitted jury group selected. Release verification saved **Veřejná** as the permitted group while preserving all entries/rules. The category remains a draft, ready for organizer activation.
 
 ## All event teams
 
@@ -22,4 +22,4 @@ This is a private credential file: give each juror only their own URL. It downlo
 
 ## Validation and handoff
 
-See [progress](../implementation/progress.md) for actual tests and review. No migration, new dependency, change to D21 limits/ballot submission/results/ties, membership deletion, automatic cleanup, messaging or other project is included. Native Excel/LibreOffice/manual mobile devices are separate from the automated workbook/Chromium checks. No commit/push or deployment has occurred; explicit Git authorization is required by AGENTS.md.
+See [progress](../implementation/progress.md) for actual tests and review. No migration, new dependency, change to D21 limits/ballot submission/results/ties, membership deletion, automatic cleanup, messaging or other project is included. Native Excel/LibreOffice/manual mobile devices are separate from the automated workbook/Chromium checks. The user explicitly authorized commit/push/deployment. Source `cb21c9e` is live and verified; exact hosted checks, the intended category-permission change, preservation and backups are recorded in implementation progress.
