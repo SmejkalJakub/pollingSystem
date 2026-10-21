@@ -29,6 +29,8 @@ Use the user's explicit instructions and approved decisions as authority. Treat 
 
 [Operational hardening and XLSX export](operational-hardening.md) records Phase 12 scope, audit, transaction authorization, error handling and workbook/API semantics.
 
+[Individual juror votes](juror-votes.md) records the 2026-10-21 decision to show each juror's choices (including uncounted drafts) on the category results detail and in the results workbook.
+
 [Linux hosting and colleague testing](deployment.md) describes the Phase 13 container, Render/Supabase setup, backup/restore, local/live E2E and recovery evidence, owner operations and explicit pilot limitations.
 
 - [Simplification Stage 1: untimed juror access, one-click copying and external keys](simplification-stage-1.md)

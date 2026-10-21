@@ -522,7 +522,55 @@ describe('current-submitted D21 results against PostgreSQL', () => {
       (await get(`/results/overview?eventId=${randomUUID()}`)).statusCode,
     ).toBe(404);
   });
-  it('rejects malformed/duplicate/extra claims, and exposes only aggregate data with no-store and no writes', async () => {
+  it('shows each eligible juror’s choices on the detail, counting only submissions', async () => {
+    const f = await fixture();
+    await wizard.submit(f.tokens[0], f.both.id, {
+      expectedRevision: null,
+      entries: entries(f.both.items, [0, 1], [2]),
+    });
+    await wizard.saveDraft(f.tokens[2], f.both.id, {
+      expectedRevision: null,
+      entries: entries(f.both.items, [3]),
+    });
+    const response = await get(`/results/votings/${f.both.id}`);
+    expect(response.statusCode).toBe(200);
+    const body = resultsDetailSchema.parse(response.json());
+    expect(body.jurorVotes.map((j) => j.jurorId).sort()).toEqual(
+      [...f.jurors].sort(),
+    );
+    const byJuror = new Map(body.jurorVotes.map((j) => [j.jurorId, j]));
+    const submitted = byJuror.get(f.jurors[0]!)!;
+    expect(submitted.progress).toBe('submitted');
+    expect(submitted.counted).toBe(true);
+    expect(submitted.submittedAt).not.toBeNull();
+    expect(
+      [...submitted.entries].sort((a, b) =>
+        a.votingItemId.localeCompare(b.votingItemId),
+      ),
+    ).toEqual(
+      entries(f.both.items, [0, 1], [2]).sort((a, b) =>
+        a.votingItemId.localeCompare(b.votingItemId),
+      ),
+    );
+    const draft = byJuror.get(f.jurors[2]!)!;
+    expect(draft.progress).toBe('in_progress');
+    expect(draft.counted).toBe(false);
+    expect(draft.entries).toEqual(entries(f.both.items, [3]));
+    const idle = byJuror.get(f.jurors[1]!)!;
+    expect(idle.progress).toBe('not_started');
+    expect(idle.entries).toEqual([]);
+    // Drafts never reach the aggregate.
+    expect(body.category.rows.find((r) => r.id === f.both.items[3])!.plus).toBe(
+      0,
+    );
+    const t = resultsDetailSchema.parse(
+      (await get(`/results/votings/${f.t.id}`)).json(),
+    );
+    expect(t.jurorVotes.map((j) => j.jurorId).sort()).toEqual(
+      [f.jurors[0]!, f.jurors[1]!].sort(),
+    );
+  });
+  it('rejects malformed/duplicate/extra claims, and keeps the overview aggregate-only with no-store and no writes', async () => {
     const f = await fixture();
     for (const path of [
       '/results/overview',
@@ -545,14 +593,20 @@ describe('current-submitted D21 results against PostgreSQL', () => {
       const response = await get(path);
       expect(response.headers['cache-control']).toBe('no-store');
       expect(response.statusCode).toBe(200);
+      // The detail intentionally lists individual choices; the overview does not.
+      const individual = path.startsWith('/results/overview')
+        ? [
+            'jurorId',
+            'displayName',
+            'entries',
+            'voteValue',
+            'submittedAt',
+            'savedAt',
+          ]
+        : [];
       for (const forbidden of [
-        'jurorId',
-        'displayName',
-        'entries',
-        'voteValue',
+        ...individual,
         'revision',
-        'submittedAt',
-        'savedAt',
         'token',
         'password',
         'history',

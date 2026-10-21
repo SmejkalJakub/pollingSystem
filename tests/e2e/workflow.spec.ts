@@ -479,9 +479,19 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
       'Kategorie',
       'Výsledky',
       'Účast',
+      'Hlasy porotců',
     ]);
     expect(workbook.getWorksheet('Účast')!.rowCount).toBeGreaterThan(30);
+    expect(workbook.getWorksheet('Hlasy porotců')!.rowCount).toBeGreaterThan(
+      30,
+    );
     await download.delete();
+    await page.goto(`/admin/results/votings/${selection}`);
+    await expect(
+      page.getByRole('heading', { name: 'Hlasy porotců', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('Započteno · odevzdáno').first()).toBeVisible();
+    await accessible(page);
     await api(page.request, 'POST', `/votings/${selection}/close`, {});
     const jurorPage = contexts[0]!.pages()[0]!;
     expect(

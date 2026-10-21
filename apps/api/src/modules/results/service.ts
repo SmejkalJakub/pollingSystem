@@ -5,6 +5,8 @@ import {
   type ResultsCategory,
   type ResultsReason,
   type DashboardOverview,
+  type BallotEntry,
+  type JurorVotes,
 } from '@d21/contracts';
 import { rankResults } from '@d21/voting-domain';
 import type { AuthService } from '../auth/service';
@@ -19,7 +21,8 @@ async function snapshot(
   dashboard?: DashboardOverview,
 ) {
   // Reuse eligibility, current participation and factual validity from the same
-  // event-locked projection; juror identities never leave the results boundary.
+  // event-locked projection; aggregates carry no juror identities. Individual
+  // choices are read separately by readJurorVotes for the detail and export.
   const projection =
     dashboard ?? (await readDashboardSnapshot(client, eventId));
   const configurations = (
@@ -109,6 +112,48 @@ async function snapshot(
   });
 }
 
+// Individual choices per category for the currently eligible jurors listed by
+// the dashboard projection, including drafts and not-started jurors. One
+// batched query under the caller's event lock; only submissions are counted.
+async function readJurorVotes(
+  client: PoolClient,
+  eventId: string,
+  projection: DashboardOverview,
+) {
+  const ballots = (
+    await client.query<{
+      votingId: string;
+      jurorId: string;
+      entries: BallotEntry[];
+    }>(
+      `SELECT b.voting_id AS "votingId",b.juror_id AS "jurorId",
+        coalesce(json_agg(json_build_object('votingItemId',e.voting_item_id,'voteValue',e.vote_value))
+          FILTER (WHERE e.voting_item_id IS NOT NULL),'[]') AS entries
+      FROM ballots b LEFT JOIN ballot_entries e ON e.event_id=b.event_id AND e.voting_id=b.voting_id AND e.ballot_id=b.id
+      WHERE b.event_id=$1 GROUP BY b.id`,
+      [eventId],
+    )
+  ).rows;
+  const byKey = new Map(
+    ballots.map((b) => [`${b.votingId}:${b.jurorId}`, b.entries]),
+  );
+  return new Map(
+    projection.categories.map((c) => [
+      c.id,
+      c.jurors.map((j): JurorVotes => ({
+        jurorId: j.id,
+        displayName: j.displayName,
+        groupId: j.groupId,
+        progress: j.progress,
+        counted: j.progress === 'submitted',
+        savedAt: j.savedAt,
+        submittedAt: j.submittedAt,
+        entries: byKey.get(`${c.id}:${j.id}`) ?? [],
+      })),
+    ]),
+  );
+}
+
 export function createResultsService(pool: Pool, auth: AuthService) {
   async function run(token: string | undefined, eventId: string) {
     return adminEventLock(pool, auth, token)(
@@ -125,7 +170,8 @@ export function createResultsService(pool: Pool, auth: AuthService) {
         async (client) => {
           const participation = await readDashboardSnapshot(client, eventId);
           const results = await snapshot(client, eventId, participation);
-          return { results, participation };
+          const votes = await readJurorVotes(client, eventId, participation);
+          return { results, participation, votes };
         },
         true,
       );
@@ -133,6 +179,7 @@ export function createResultsService(pool: Pool, auth: AuthService) {
       const buffer = await createResultsWorkbook(
         data.results,
         data.participation,
+        data.votes,
       );
       await adminTransaction(pool, auth, token, async () => {});
       return buffer;
@@ -144,14 +191,35 @@ export function createResultsService(pool: Pool, auth: AuthService) {
           [votingId],
         )
       ).rows[0];
-      if (!row) throw notFound();
-      const data = await run(token, row.event_id);
-      const category = data.categories.find((c) => c.id === votingId);
-      if (!category) throw notFound();
+      if (!row) {
+        throw notFound();
+      }
+      const data = await adminEventLock(pool, auth, token)(
+        row.event_id,
+        async (client) => {
+          const participation = await readDashboardSnapshot(
+            client,
+            row.event_id,
+          );
+          const results = await snapshot(client, row.event_id, participation);
+          const votes = await readJurorVotes(
+            client,
+            row.event_id,
+            participation,
+          );
+          return { results, votes };
+        },
+        true,
+      );
+      const category = data.results.categories.find((c) => c.id === votingId);
+      if (!category) {
+        throw notFound();
+      }
       return resultsDetailSchema.parse({
-        event: data.event,
-        asOf: data.asOf,
+        event: data.results.event,
+        asOf: data.results.asOf,
         category,
+        jurorVotes: data.votes.get(votingId) ?? [],
       });
     },
   };

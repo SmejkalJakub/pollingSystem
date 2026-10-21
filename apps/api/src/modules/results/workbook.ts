@@ -7,6 +7,7 @@ import type {
   JurorProgress,
   DashboardProblem,
   ResultsReason,
+  JurorVotes,
 } from '@d21/contracts';
 
 const lifecycle = {
@@ -47,6 +48,7 @@ const stage = (c: ResultsCategory) =>
 export async function createResultsWorkbook(
   results: ResultsOverview,
   participation: DashboardOverview,
+  votes: Map<string, JurorVotes[]>,
 ) {
   const book = new ExcelJS.Workbook();
   book.creator = 'D21';
@@ -159,7 +161,25 @@ export async function createResultsWorkbook(
       'Odevzdáno (UTC)',
     ],
     [30, 39, 20, 30, 39, 15, 39, 24, 30, 30],
-    'Pouze aktuálně oprávnění porotci v každé kategorii, včetně plánovaných přiřazení konceptů. Stav a dostupnost jsou oddělené; jednotlivé volby ani historie se neexportují.',
+    'Pouze aktuálně oprávnění porotci v každé kategorii, včetně plánovaných přiřazení konceptů. Stav a dostupnost jsou oddělené; jednotlivé volby jsou na listu Hlasy porotců, historie se neexportuje.',
+  );
+  const ballots = sheet(
+    'Hlasy porotců',
+    'Hlasy porotců',
+    [
+      'Kategorie',
+      'ID kategorie',
+      'Porotce',
+      'ID porotce',
+      'Porota',
+      'Stav lístku',
+      'Započteno',
+      'Tým',
+      'ID položky',
+      'Hlas',
+    ],
+    [30, 39, 30, 39, 15, 24, 14, 30, 39, 10],
+    'Jeden řádek na každý hlas aktuálně oprávněného porotce, včetně neodevzdaných návrhů. Do výsledků se započítávají jen odevzdané lístky (Započteno = Ano). Porotce bez hlasů má jeden prázdný řádek.',
   );
   for (const c of results.categories) {
     categories.addRow([
@@ -224,6 +244,38 @@ export async function createResultsWorkbook(
         j.savedAt,
         j.submittedAt,
       ]);
+  for (const c of results.categories) {
+    const items = new Map(c.rows.map((r) => [r.id, r]));
+    const order = (id: string) => items.get(id)?.displayOrder ?? 0;
+    const group = (id: string) =>
+      juryGroupLabel(c.groups.find((g) => g.id === id)?.code);
+    for (const j of votes.get(c.id) ?? []) {
+      const juror = [
+        c.name,
+        c.id,
+        j.displayName,
+        j.jurorId,
+        group(j.groupId),
+        progress[j.progress],
+        j.counted ? 'Ano' : 'Ne',
+      ];
+      if (!j.entries.length) {
+        ballots.addRow([...juror, null, null, null]);
+        continue;
+      }
+      const entries = [...j.entries].sort(
+        (a, b) => order(a.votingItemId) - order(b.votingItemId),
+      );
+      for (const e of entries) {
+        ballots.addRow([
+          ...juror,
+          items.get(e.votingItemId)?.name ?? '',
+          e.votingItemId,
+          e.voteValue,
+        ]);
+      }
+    }
+  }
   for (const ws of book.worksheets) {
     ws.autoFilter = {
       from: { row: 5, column: 1 },

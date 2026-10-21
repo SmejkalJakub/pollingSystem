@@ -1,5 +1,15 @@
 # Session handoff
 
+## Individual juror votes — DONE locally; publication pending, 2026-10-21
+
+**Request/decision:** the user asks for an option to view each juror's voting in administration plus an export. This reverses the Phase 11/12 aggregate-only results/XLSX rule, so the session asked first. The user chose: include submitted ballots **and saved drafts** (labelled, never counted); show them on the **category results detail**; export as a **new sheet in the existing results XLSX**. [Contract](../wiki/juror-votes.md).
+
+**Implemented:** contracts `jurorVotesSchema`/`JurorVotes` and `resultsDetailSchema.jurorVotes`; API `results/service.ts` batched `readJurorVotes` under the same event lock as the results snapshot (detail and export), `results/workbook.ts` fourth sheet **Hlasy porotců** (one row per vote, blank row for jurors with none, Započteno Ano/Ne) and updated Účast note; web `results/JurorVotesList.tsx` on the detail page, overview link renamed **Detail a hlasy porotců →**, export description updated. Overview remains aggregate-only. No schema/migration/dependency, counting, ranking, tie or finality change.
+
+**Validation:** typechecks, lint, 79 fast tests and both builds PASS; Prettier PASS for project files (the user's globally git-ignored `.claude/settings.local.json` fails formatting and was excluded, not modified). PostgreSQL `npm run test:db -- --maxWorkers=2` **312/312** (new per-juror detail case; privacy test now restricts identity/choice fields on the overview only; workbook test asserts the new sheet). Full built-app `npx playwright test` **24/24** without retries across desktop/phone/landscape-dark, including the new section with Axe and four-sheet workbook. No hosted check; native Excel and screen-reader checks not run.
+
+**State:** local and uncommitted on main after `29df1e3`. Commit/push/deploy require explicit authorization. Suggested commit: `feat: show and export individual juror votes`.
+
 ## Event-flexibility release — DEPLOYED and verified, 2026-10-20
 
 The user explicitly approved commit, push and deployment. Application source `cb21c9e43a1672cb55df064cef2458995cd8e770` (**feat: support flexible juries and bulk event preparation**) is live on the existing [Free test app](https://d21-voting-test.onrender.com), Render deploy `dep-dbbnftbrjlhs73es41mg`, live at **14:18:20 UTC (16:18 Prague)**. Same Free/Frankfurt service, repo/main, one instance, manual deployments and readiness path. No configuration/key/password/paid/other-project change or subsequent phase. A documentation-only release-report commit follows the application source; it requires no redeploy with automatic deployments off.

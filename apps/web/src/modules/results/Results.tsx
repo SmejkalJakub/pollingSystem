@@ -6,6 +6,7 @@ import { timestamp } from '../dashboard/presentation';
 import { ResultsState } from './ResultsState';
 import { ResultCategory } from './ResultCategory';
 import { ExportResults } from './ExportResults';
+import { JurorVotesList } from './JurorVotesList';
 
 function ResultsContent({
   data,
@@ -116,6 +117,10 @@ export function ResultsDetail({
           <div className="mt-8">
             <ResultCategory category={data.category} detail />
           </div>
+          <JurorVotesList
+            category={data.category}
+            jurorVotes={data.jurorVotes}
+          />
         </>
       )}
     </>

@@ -684,11 +684,25 @@ export const resultsOverviewSchema = z.strictObject({
   asOf: z.iso.datetime(),
   categories: z.array(resultsCategorySchema),
 });
+// Individual choices of each currently eligible juror, including unsubmitted
+// drafts. Only `counted` ballots (current submissions) contribute to results.
+export const jurorVotesSchema = z.strictObject({
+  jurorId: z.uuid(),
+  displayName: z.string(),
+  groupId: z.uuid(),
+  progress: jurorProgressSchema,
+  counted: z.boolean(),
+  savedAt: z.iso.datetime().nullable(),
+  submittedAt: z.iso.datetime().nullable(),
+  entries: z.array(ballotEntrySchema),
+});
 export const resultsDetailSchema = z.strictObject({
   event: eventSchema,
   asOf: z.iso.datetime(),
   category: resultsCategorySchema,
+  jurorVotes: z.array(jurorVotesSchema),
 });
+export type JurorVotes = z.infer<typeof jurorVotesSchema>;
 export type ResultsCategory = z.infer<typeof resultsCategorySchema>;
 export type ResultsOverview = z.infer<typeof resultsOverviewSchema>;
 export type ResultRow = z.infer<typeof resultRowSchema>;

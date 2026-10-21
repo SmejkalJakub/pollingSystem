@@ -365,13 +365,33 @@ it('exports real numeric scores, shared ranks, provisional status and distinct c
     'Kategorie',
     'Výsledky',
     'Účast',
+    'Hlasy porotců',
   ]);
   const categories = book.getWorksheet('Kategorie')!;
   const rows = book.getWorksheet('Výsledky')!;
   const attendance = book.getWorksheet('Účast')!;
+  const votes = book.getWorksheet('Hlasy porotců')!;
   expect(categories.rowCount).toBe(7);
   expect(rows.rowCount).toBe(13);
   expect(attendance.rowCount).toBe(9);
+  // Header rows plus one row per juror vote, or one blank row per idle juror.
+  const voteRows = votes
+    .getRows(6, votes.rowCount - 5)!
+    .filter((r) => r.getCell(2).value === f.active.id);
+  const counted = voteRows.filter((r) => r.getCell(7).value === 'Ano');
+  expect(counted).toHaveLength(3);
+  expect(counted.map((r) => r.getCell(10).value)).toEqual([1, 1, -1]);
+  expect(counted.map((r) => r.getCell(9).value)).toEqual(
+    entries.map((e) => e.votingItemId),
+  );
+  expect(new Set(counted.map((r) => r.getCell(6).value))).toEqual(
+    new Set(['Odevzdáno']),
+  );
+  const idle = voteRows.filter((r) => r.getCell(7).value === 'Ne');
+  expect(idle.length).toBeGreaterThan(0);
+  for (const r of idle) {
+    expect(r.getCell(10).value).toBeNull();
+  }
   const data = rows
     .getRows(6, 8)!
     .filter((r) => r.getCell(2).value === f.active.id);

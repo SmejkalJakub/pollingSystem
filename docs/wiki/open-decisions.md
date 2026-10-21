@@ -18,6 +18,10 @@ Q01/Q03 administration/Q05 lifecycle/Q09 teams and Q02 Phase 4 manual configurat
 
 Open questions do not authorize filling gaps silently. Unaffected planning can continue; dependent implementation must await decisions.
 
+## Individual juror votes — confirmed 2026-10-21
+
+The user asks for administrators to see each juror's voting and export it, superseding the Phase 11/12 aggregate-only results and export. Chosen: include submitted ballots and saved drafts (drafts labelled and never counted), show them on the category results detail, and add a sheet to the existing results XLSX. Counting, ranking, ties and finality are unchanged. [Contract](juror-votes.md).
+
 ## Stage 1 amendment — confirmed 2026-10-18
 
 The user removes juror session time limits and requires direct one-click copying of the same active personal link. This supersedes Phase 2/5 juror expiry and one-time-display restrictions. Secure encrypted retrieval uses external keys and preserves hash-only legacy entry; explicit replacement is required to enable legacy copying. Administration expiry, logout/revocation, voting rules and history remain unchanged. [Current behavior/transition](simplification-stage-1.md). Later-stage scope must be started explicitly in a new session.

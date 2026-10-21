@@ -79,8 +79,9 @@ export function ExportResults({
         <div className="min-w-0">
           <h2 className="font-semibold">Export výsledků a účasti</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            XLSX obsahuje přehled kategorií, výsledky týmů a stav účasti porotců
-            s časem exportu. Při stažení se načte nový snímek dat.
+            XLSX obsahuje přehled kategorií, výsledky týmů, stav účasti porotců
+            a jednotlivé hlasy porotců s časem exportu. Při stažení se načte
+            nový snímek dat.
           </p>
         </div>
         <Button

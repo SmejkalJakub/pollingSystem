@@ -214,7 +214,7 @@ export function ResultCategory({
       <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
         {!detail && (
           <a className="wizard-link" href={`/admin/results/votings/${c.id}`}>
-            Detail výsledků →
+            Detail a hlasy porotců →
           </a>
         )}
         <a className="wizard-link" href={`/admin/dashboard/votings/${c.id}`}>
