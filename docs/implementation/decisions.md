@@ -1,5 +1,20 @@
 # Decision log
 
+## Individual-juror-votes release — DEPLOYED, 2026-10-21
+
+The user explicitly approved commit, push and deployment. Source `7c6de123ccfa7fe3442bad702ff84ad20db73242` (**feat: show and export individual juror votes**) was pushed to main without trailers and manually deployed from the Render dashboard (after the user signed in) to the existing [Free test app](https://d21-voting-test.onrender.com), deploy `dep-dbcbq0eq1p3s73cu83kg`, **Deploy succeeded / Live** at about 13:25 UTC (1m25s). Same Free/Frankfurt service `srv-dbac88eq1p3s73b4jqm0`, manual deploys, no configuration/key/password/paid/other-project change.
+
+**Release checks:** local Docker build PASS; publication scan across 219 files found no hosted database or link-key values (only the public local-development defaults already in `.env.example`). Live readiness 200 `ready`/`connected`, no-store; administration HTML 200; `/api/events`, results overview, the new results detail and XLSX export all 401 without a session. All three served assets (`index-Q0xUEHX7.js`, `VotingSetup-BVK8AmFT.js`, `index-BUdDuwP3.css`) match the tested local build byte-for-byte. An initial bundle-polling helper omitted the HTML Accept header and never matched; the corrected check passed. Implementation evidence remains 79 fast tests, PostgreSQL 312/312 and browser 24/24 (not rerun for publication).
+
+**Data/backups:** private custom-format public/drizzle archives, 0600 in the ignored 0700 directory, both with 15 table-data entries:
+
+- Pre `backups/d21-polling-test-20261021T125748Z-pre-juror-votes.dump`, 96,528 bytes, SHA-256 `e9974bbd10a5b1e9f36251c2c8de49274de7fcd37554840fc9a8588ee564c06a`.
+- Post `backups/d21-polling-test-20261021T133538Z-post-juror-votes.dump`, 96,528 bytes, SHA-256 `f2cb26d43394e2d29133de8998d4954607398c97764ea41b9e4ac903cc71478a`.
+
+Row-level comparison: every row of all 15 tables is identical (9 events, 65 memberships, 102 ballots, 314 entries, 229 audit records, 49 access records, 89 sessions, six migrations). Neither archive was restored. No schema/migration.
+
+**Not verified live:** the in-app browser had no administration session and the shared password was not entered, so the authenticated **Hlasy porotců** view and four-sheet XLSX were not checked on the hosted app; they are covered by the local browser/PostgreSQL suites. Runtime error logs were not inspected beyond the successful deploy status. A documentation-only release commit follows; no redeploy needed.
+
 ## Individual juror votes — DONE locally; publication pending, 2026-10-21
 
 **Request/decision:** the user asks for an option to view each juror's voting in administration plus an export. This reverses the Phase 11/12 aggregate-only results/XLSX rule, so the session asked first. The user chose: include submitted ballots **and saved drafts** (labelled, never counted); show them on the **category results detail**; export as a **new sheet in the existing results XLSX**. [Contract](../wiki/juror-votes.md).

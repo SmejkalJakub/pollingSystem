@@ -1,6 +1,10 @@
 # Linux hosting and colleague testing
 
-## Current event-flexibility release — 2026-10-20
+## Current individual-juror-votes release — 2026-10-21
+
+Source `7c6de12` is live on the same Free service, deploy `dep-dbcbq0eq1p3s73cu83kg`. Readiness, protected APIs, byte-identical bundles, private pre/post backups and identical rows across all 15 tables pass; authenticated hosted view not checked. [Release record](../implementation/progress.md). The entry below is historical.
+
+## Event-flexibility release — 2026-10-20
 
 Application source `cb21c9e` is live on the existing Free service, deploy `dep-dbbnftbrjlhs73es41mg`. Same six migrations, external keys/settings and manual deployments. Readiness/protected APIs/exact served bundles, existing administration session, target category configuration and actual 14-juror XLSX credential matching pass. Private pre/post manifests and all original-row preservation pass, except the intentional target-category timestamp change and added Veřejná permission; the category remains draft. [Complete release evidence, archive hashes and limits](../implementation/progress.md#event-flexibility-release--deployed-and-verified-2026-10-20). Earlier release entries below are historical.
 
