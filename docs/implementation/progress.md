@@ -1,5 +1,11 @@
 # Progress
 
+## Actionable category readiness — DONE locally, 2026-11-11
+
+The category editor shows the assigned team count, required minimum and shortfall as the organizer edits. The checklist distinguishes blank or repeated team selections from a shortage caused by the voting limits. It can stage remaining event teams, open the event team list, or focus the field that needs changing. Missing rules and jury assignment also link to the next step. Drafts can still be saved incomplete. Activation rules and the server confirmation are unchanged.
+
+Typechecks, lint, changed-file formatting, builds and 79 fast tests passed. Category and navigation browser tests passed 6/6. The initial organizer test expected obsolete wording; the revised organizer test passed 3/3, including empty-row focus, bulk assignment, exact shortage and limit guidance, saving, and successful activation. Reviewed the readiness panel on desktop, phone and dark landscape using disposable fixture data. The local server was restarted and serves the final build with a connected database. Hosted deployment and the full browser suite were outside this phase.
+
 ## Interface clarity — DONE locally, 2026-11-11
 
 Grouped the five event destinations under **Příprava** and **Hlasování** with a filled active tab and retained direct links. Updated shared action borders, labels and focus, and strengthened page and section headings in the admin and juror flows. Load errors name the affected resource. Requests distinguish a failed connection, unavailable service, invalid response, rejected data and permission errors. Form feedback points to invalid fields, and voting writes with an uncertain outcome retain recovery guidance. No backend, database migration or product-rule changes.

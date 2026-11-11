@@ -1,5 +1,9 @@
 # Implementation plan
 
+## Actionable category readiness — 2026-11-11
+
+Replace the combined activation warning with a live checklist showing the team count, minimum, shortfall and available actions. Link directly to the affected controls. Verify the category can still be saved incomplete, and verify a complete save and activation across the three browser projects.
+
 ## Interface clarity — 2026-11-11
 
 One local presentation and error-recovery phase from the user's feedback. Keep the event name and current destination visible, group the five existing destinations by task, use filled primary actions and visible outlined secondary actions, and strengthen the heading hierarchy. Explain the operation, known cause and recovery for failures. Verify existing workflows and error recovery at desktop, phone and dark landscape sizes. See [progress](progress.md) for validation.

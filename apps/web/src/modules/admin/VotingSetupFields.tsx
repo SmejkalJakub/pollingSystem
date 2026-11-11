@@ -120,8 +120,6 @@ export function VotingSetupFields({
           Limity zadejte výslovně. Kladných hlasů musí být více než vybíraných
           míst; záporných nejvýše polovina kladných. Každý záporný hlas vyžaduje
           dva skutečně udělené kladné hlasy. Hlasy není nutné využít všechny.
-          Před aktivací musí být počet míst i součet limitů menší než počet
-          týmů.
         </p>
         <p className="text-sm text-muted-foreground">
           Nový koncept může mít všechna pravidla prázdná. Při nastavení vyplňte
@@ -245,7 +243,11 @@ export function VotingSetupFields({
         aria-labelledby={fieldId('items-title')}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h4 id={fieldId('items-title')} className="font-semibold">
+          <h4
+            id={fieldId('items-title')}
+            tabIndex={-1}
+            className="font-semibold scroll-mt-36"
+          >
             Týmy v hlasování ({values.items.length})
           </h4>
           <div className="flex flex-wrap gap-2">

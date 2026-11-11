@@ -1,5 +1,9 @@
 # Session handoff
 
+## Actionable category readiness — local handoff, 2026-11-11
+
+Refresh [local administration](http://127.0.0.1:3001/admin/events) and open a category draft. Under **Před aktivací zbývá**, try adding the remaining teams or editing the limits and check that the shortage updates before saving. The local build is for review. See [progress](progress.md) for validation.
+
 ## Interface clarity — local handoff, 2026-11-11
 
 Review the updated [local administration](http://127.0.0.1:3001/admin/events) with the existing local password. The event name, grouped tabs and active selection anchor the event views. Test the outlines on secondary controls and the new operation-specific messages on a failed save or unavailable service. Validation and remaining limits are recorded in [progress](progress.md). Changes are in the working tree and available on the local server. Publication requires separate authorization.

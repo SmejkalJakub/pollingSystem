@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import {
-  votingConfigurationSchema,
   votingSetupSnapshotSchema,
   votingSetupSaveSchema,
   type VotingSetupSnapshot,
@@ -18,6 +17,7 @@ import {
 } from './voting-setup-utils';
 import { VotingSetupComparison } from './VotingSetupComparison';
 import { VotingSetupFields } from './VotingSetupFields';
+import { VotingReadiness } from './VotingReadiness';
 
 export function VotingSetup({
   eventId,
@@ -207,25 +207,8 @@ export function VotingSetup({
       </div>
     );
   const rebased = current ? rebaseSetup(base, values, current) : null;
-  const limits = votingConfigurationSchema.safeParse(
-    base.voting && {
-      selectedPlaces: base.voting.selectedPlaces,
-      maxPlusVotes: base.voting.maxPlusVotes,
-      maxMinusVotes: base.voting.maxMinusVotes,
-      allowNegativeVotes: base.voting.allowNegativeVotes,
-    },
-  );
-  const readiness = [
-    !limits.success && 'Doplňte platné limity hlasů.',
-    (!base.items.length ||
-      base.items.some((item) => !item.teamId) ||
-      (limits.success &&
-        (limits.data.selectedPlaces >= base.items.length ||
-          limits.data.maxPlusVotes + limits.data.maxMinusVotes >=
-            base.items.length))) &&
-      'Přiřaďte všechny položky k týmům. Počet týmů musí převýšit počet míst i součet limitů.',
-    !base.juryGroupIds.length && 'Vyberte alespoň jednu oprávněnou porotu.',
-  ].filter(Boolean);
+  const editingDisabled =
+    busy || paused || !base.editable || conflict || Boolean(current);
   return (
     <form
       onSubmit={save}
@@ -252,36 +235,24 @@ export function VotingSetup({
           Načíst aktuální přípravu
         </Button>
       </div>
-      {isCreation ? (
+      {isCreation && (
         <p className="text-sm text-muted-foreground">
           Kategorii můžete uložit jako koncept a dokončit ji později.
         </p>
-      ) : (
-        <div className="rounded-lg border border-border bg-secondary px-4 py-3 text-sm">
-          <p className="font-medium">
-            {dirty
-              ? 'Před aktivací uložte úpravy'
-              : readiness.length
-                ? 'Před aktivací zbývá'
-                : 'Uložené nastavení je připravené k aktivaci'}
-          </p>
-          {!dirty && readiness.length > 0 && (
-            <ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
-              {readiness.map((hint) => (
-                <li key={String(hint)}>{hint}</li>
-              ))}
-            </ul>
-          )}
-        </div>
+      )}
+      {base.editable && (
+        <VotingReadiness
+          values={values}
+          snapshot={base}
+          eventId={eventId}
+          fieldId={fieldId}
+          needsSave={dirty || isCreation}
+          disabled={editingDisabled}
+          onChange={change}
+        />
       )}
       <div className="editor-actions">
-        <Button
-          type="submit"
-          className="min-h-11"
-          disabled={
-            busy || paused || !base.editable || conflict || Boolean(current)
-          }
-        >
+        <Button type="submit" className="min-h-11" disabled={editingDisabled}>
           {busy ? 'Ukládání…' : 'Uložit kategorii'}
         </Button>
         <Button
@@ -437,12 +408,7 @@ export function VotingSetup({
           hlasovacího lístku.
         </p>
       )}
-      <fieldset
-        disabled={
-          busy || paused || !base.editable || conflict || Boolean(current)
-        }
-        className="min-w-0 space-y-6"
-      >
+      <fieldset disabled={editingDisabled} className="min-w-0 space-y-6">
         <VotingSetupFields
           values={values}
           snapshot={base}

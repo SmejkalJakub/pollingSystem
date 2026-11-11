@@ -1,5 +1,9 @@
 # Decision log
 
+## Actionable category readiness — 2026-11-11
+
+Show the required team count from the existing validated voting limits, and count distinct selected teams. Show empty or repeated selections separately. Offer to assign the remaining event teams with the existing bulk-add behavior, open the event team list, or edit the limits. Team assignment remains an explicit unsaved edit. Activation continues to use the existing server checks and confirmation.
+
 ## Interface clarity — confirmed scope, 2026-11-11
 
 The user reports difficulty finding their place, recognizing buttons, reading the type hierarchy and recovering from vague errors. Group the existing event links under **Příprava** and **Hlasování** and retain the blue/navy themes and Czech interface. Use safe Czech explanations derived from known response codes and statuses. When the response is lost after a write, report that the outcome could not be confirmed. Preserve current voting rules, access, data and submission behavior. This phase runs locally.

@@ -134,9 +134,37 @@ test('organizer works directly with saved links, undo, imports and voting contro
   await form.getByLabel('Maximum záporných hlasů', { exact: true }).fill('0');
   await form.getByLabel('Záporné hlasy', { exact: true }).selectOption('no');
   await form.getByLabel(/Veřejná —/).check();
+  const readiness = form.getByRole('region', { name: 'Před aktivací zbývá' });
+  await expect(readiness).toContainText('Zařazené týmy 0 / 3 · Chybí 3');
   await form
-    .getByRole('button', { name: 'Přidat všechny týmy eventu', exact: true })
+    .getByRole('button', { name: 'Přidat položku', exact: true })
     .click();
+  await expect(readiness).toContainText('Řádky bez vybraného týmu (1)');
+  await readiness
+    .getByRole('link', { name: 'Přejít na první prázdný řádek' })
+    .press('Enter');
+  await expect(
+    form.getByLabel('Tým, položka 1', { exact: true }),
+  ).toBeFocused();
+  await readiness
+    .getByRole('button', { name: 'Zařadit zbývající týmy', exact: true })
+    .click();
+  const plusLimit = form.getByLabel('Maximum kladných hlasů', { exact: true });
+  await plusLimit.fill('21');
+  await expect(readiness).toContainText('Zařazené týmy 21 / 22 · Chybí 1');
+  await expect(readiness).toContainText('nejvýše na 20 hlasů celkem');
+  await expect(
+    readiness.getByRole('link', { name: 'Doplnit týmy v eventu' }),
+  ).toHaveAttribute('href', `/admin/events/${event.id}?setup=teams`);
+  await readiness.screenshot({
+    path: testInfo.outputPath('activation-readiness.png'),
+  });
+  await readiness
+    .getByRole('link', { name: 'Upravit limity hlasů' })
+    .press('Enter');
+  await expect(plusLimit).toBeFocused();
+  await plusLimit.fill('2');
+  await expect(form.getByText('Před aktivací uložte kategorii')).toBeVisible();
   await form.getByLabel('Pořadí, položka 21', { exact: true }).focus();
   const save = form.getByRole('button', {
     name: 'Uložit kategorii',
@@ -149,6 +177,9 @@ test('organizer works directly with saved links, undo, imports and voting contro
   );
   await save.click();
   await expect(page).toHaveURL(/\/admin\/votings\/[0-9a-f-]+$/);
+  await expect(
+    form.getByText('Kategorie je připravená k aktivaci'),
+  ).toBeVisible();
   const votingId = page.url().split('/').at(-1)!;
   const categoryName = form.getByLabel('Název hlasování', { exact: true });
   await categoryName.fill('Místní změna');

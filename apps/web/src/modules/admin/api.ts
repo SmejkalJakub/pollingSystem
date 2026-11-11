@@ -30,11 +30,11 @@ export function managementError(error: unknown) {
     if (error.code === 'INVALID_GROUP')
       return 'Vyberte část poroty patřící do tohoto eventu.';
     if (error.code === 'CONFIGURATION_NOT_READY')
-      return 'Nejprve nastavte platný počet míst a limity kladných a záporných hlasů.';
+      return 'V uložené kategorii chybí platná pravidla. Zavřete potvrzení a v části „Před aktivací zbývá“ přejděte přímo na pole k opravě.';
     if (error.code === 'ITEMS_NOT_READY')
-      return 'Propojte všechny položky s týmy eventu. Počet týmů musí být větší než počet míst i součet hlasovacích limitů.';
+      return 'Uložené týmy nesplňují podmínky pro aktivaci. Zavřete potvrzení, klikněte na „Načíst aktuální přípravu“ a postupujte podle pokynů nad formulářem.';
     if (error.code === 'GROUPS_NOT_READY')
-      return 'Vyberte alespoň jednu oprávněnou část poroty.';
+      return 'V uložené kategorii není vybraná porota. Zavřete potvrzení, v části „Oprávněná porota“ vyberte alespoň jednu možnost a uložte kategorii.';
     if (error.code === 'MEMBERSHIP_REFERENCED')
       return 'Členství má navázané záznamy a nelze je odebrat.';
   }
