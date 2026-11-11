@@ -1,260 +1,436 @@
 import { juryGroupLabel } from '@d21/contracts';
-import { useState, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import type {
+  BallotDraft,
   WizardCurrent,
+  WizardFinalSubmit,
   WizardStep,
   WizardStepDetail,
   WizardReview,
 } from '@d21/contracts';
-import { Button } from '@/components/ui/button';
+import { EmptyCategories, LockIcon } from './CategoryAvailability';
 import { CategoryVoting } from './CategoryVoting';
-import { WizardReviewScreen } from './WizardReviewScreen';
+import { WizardSummary } from './WizardSummary';
+import {
+  isWizardTab,
+  reviewPath,
+  stepPath,
+  type useWizardNavigation,
+} from './useWizardNavigation';
+import './wizard.css';
 
-const stepUrl = (id: string) => `/wizard/steps/${id}`;
+const emptySummaryBallots = new Map<string, BallotDraft>();
+
 const progressLabels = {
-  not_started: 'Bez uloženého návrhu',
-  in_progress: 'Rozpracováno · návrh uložen',
-  invalid_draft: 'Neplatný návrh · vyžaduje opravu',
+  not_started: 'Bez hlasů',
+  in_progress: 'Rozpracováno',
+  invalid_draft: 'Neplatný návrh',
   submitted: 'Odevzdáno',
-  locked: 'Uzamčeno',
+  locked: 'Uzavřeno',
 };
-function status(step: WizardStep) {
-  return step.status === 'active'
-    ? 'Otevřeno'
-    : step.status === 'closed'
-      ? 'Uzavřeno — nedostupné'
-      : 'Archivováno — nedostupné';
+
+function CategoryMark({ state }: { state: WizardStep['progress'] }) {
+  return (
+    <span className="wizard-mark" data-state={state} aria-hidden="true">
+      {state === 'submitted' && (
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="m4 8 2.5 2.5L12 5" />
+        </svg>
+      )}
+      {state === 'locked' && <LockIcon />}
+      {state === 'in_progress' && '•'}
+      {state === 'invalid_draft' && '!'}
+    </span>
+  );
 }
+
+function WizardHeader({
+  current,
+  busy,
+  logout,
+}: {
+  current: WizardCurrent;
+  busy: boolean;
+  logout: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menu = useRef<HTMLButtonElement>(null);
+  const action = useRef<HTMLButtonElement>(null);
+  const identity = `${current.principal.displayName} · ${juryGroupLabel(current.group.code)} porota`;
+  useEffect(() => {
+    if (open) {
+      action.current?.focus();
+    }
+  }, [open]);
+  return (
+    <header className="wizard-header">
+      <div className="wizard-header-inner">
+        <span className="wizard-wordmark">D21</span>
+        <p className="wizard-identity" title={identity}>
+          {identity}
+        </p>
+        <p className="wizard-event" title={current.event.name}>
+          {current.event.name}
+        </p>
+        <div
+          className="wizard-menu"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              setOpen(false);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && open) {
+              setOpen(false);
+              menu.current?.focus();
+            }
+          }}
+        >
+          <button
+            ref={menu}
+            type="button"
+            className="wizard-menu-toggle"
+            aria-label="Menu porotce"
+            aria-expanded={open}
+            aria-controls="wizard-logout"
+            onClick={() => setOpen(!open)}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+          <button
+            ref={action}
+            id="wizard-logout"
+            type="button"
+            className="wizard-logout"
+            data-open={open}
+            onClick={logout}
+            disabled={busy}
+          >
+            {busy ? 'Odhlašujeme…' : 'Odhlásit se'}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function CategoryNavigation({
+  steps,
+  ballots,
+  path,
+}: {
+  steps: WizardStep[];
+  ballots: ReadonlyMap<string, BallotDraft | null>;
+  path: string;
+}) {
+  const active = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    active.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [path]);
+  const submitted = steps.filter(
+    (step) => step.progress === 'submitted',
+  ).length;
+  const summary = path === reviewPath || path === '/wizard/confirmation';
+  return (
+    <nav className="wizard-categories" aria-label="Kategorie">
+      <p className="wizard-rail-label">Vaše kategorie</p>
+      {steps.map((step) => {
+        const href = stepPath(step.id);
+        const selected = href === path;
+        const state = step.status === 'active' ? step.progress : 'locked';
+        const ballot = ballots.get(step.id);
+        let label = progressLabels[state];
+        if (state === 'in_progress' && ballot && step.maxPlusVotes !== null) {
+          label += ` · ${ballot.validation.plusUsed} z ${step.maxPlusVotes} +`;
+        }
+        return (
+          <a
+            key={step.id}
+            ref={selected ? active : undefined}
+            href={href}
+            aria-current={selected ? 'page' : undefined}
+            className="wizard-tab"
+          >
+            <CategoryMark state={state} />
+            <span className="wizard-tab-copy">
+              <span>{step.name}</span>
+              <span className="wizard-tab-status" data-state={state}>
+                {label}
+              </span>
+            </span>
+          </a>
+        );
+      })}
+      <a
+        ref={summary ? active : undefined}
+        href={reviewPath}
+        aria-current={summary ? 'page' : undefined}
+        className="wizard-tab wizard-summary-tab"
+      >
+        <span>
+          Souhrn<span className="wizard-summary-extension"> a odevzdání</span>
+        </span>
+        <span className="wizard-summary-count">
+          {submitted}/{steps.length}
+        </span>
+      </a>
+    </nav>
+  );
+}
+
 export function WizardContent({
   current,
   detail,
   review,
-  confirmationPage,
+  rail,
+  navigation,
+  loading,
   headingRef,
   logout,
   busy,
   onAccessError,
   onRefresh,
   refreshing,
+  feedback,
 }: {
   current: WizardCurrent;
   detail?: WizardStepDetail;
   review?: WizardReview;
-  confirmationPage: boolean;
+  rail?: WizardReview;
+  navigation: ReturnType<typeof useWizardNavigation>;
+  loading: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
   logout: () => void;
   busy: boolean;
   onAccessError: (error: unknown) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  feedback: ReactNode;
 }) {
-  const [unsaved, setUnsaved] = useState(false);
+  const [unavailableStep, setUnavailableStep] = useState<string>();
+  const recordAvailability = useCallback((id: string, closed: boolean) => {
+    setUnavailableStep(closed ? id : undefined);
+  }, []);
+  const [announcement, setAnnouncement] = useState('');
+  const [localBallot, setLocalBallot] = useState<{
+    current: WizardCurrent;
+    id: string;
+    ballot: BallotDraft;
+  }>();
+  const [summaryUpdates, setSummaryUpdates] = useState<{
+    review: WizardReview;
+    ballots: ReadonlyMap<string, BallotDraft>;
+  }>();
+  const summaryBallots =
+    summaryUpdates && summaryUpdates.review === review
+      ? summaryUpdates.ballots
+      : emptySummaryBallots;
+  const recordSummaryResult = useCallback(
+    (source: WizardReview, result: WizardFinalSubmit) => {
+      setSummaryUpdates((previous) => {
+        const next = new Map(
+          previous?.review === source ? previous.ballots : undefined,
+        );
+        for (const outcome of result.results) {
+          if (outcome.outcome === 'submitted') {
+            next.set(outcome.stepId, outcome.ballot);
+          }
+        }
+        return { review: source, ballots: next };
+      });
+    },
+    [],
+  );
+  const { setGuard } = navigation;
+  const reviewGuard = useCallback(
+    (pending: boolean) => setGuard(false, pending),
+    [setGuard],
+  );
+
+  let steps = current.steps;
+  const ballots = new Map(
+    rail?.categories.map(({ step, ballot }) => [step.id, ballot]),
+  );
+  if (detail) {
+    ballots.set(detail.step.id, detail.ballot);
+  }
+  if (localBallot?.current === current) {
+    const { id, ballot } = localBallot;
+    steps = steps.map((step) =>
+      step.id === id ? { ...step, progress: ballot.progress } : step,
+    );
+    ballots.set(id, ballot);
+  }
+  if (summaryBallots.size) {
+    steps = steps.map((step) => {
+      const ballot = summaryBallots.get(step.id);
+      if (ballot) {
+        ballots.set(step.id, ballot);
+        return { ...step, progress: ballot.progress };
+      }
+      return step;
+    });
+  }
   const index = detail
-    ? current.steps.findIndex((step) => step.id === detail.step.id)
+    ? steps.findIndex((step) => step.id === detail.step.id)
     : -1;
-  const previous = current.steps[index - 1];
-  const next = current.steps[index + 1];
+  const next = steps[index + 1];
+  const nextAvailable =
+    detail &&
+    steps.find(
+      (step) =>
+        step.id !== detail.step.id &&
+        step.status === 'active' &&
+        step.progress !== 'submitted' &&
+        step.progress !== 'locked',
+    );
+
+  function openLink(event: MouseEvent<HTMLDivElement>) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.shiftKey ||
+      !(event.target instanceof Element)
+    ) {
+      return;
+    }
+    const link = event.target.closest('a');
+    if (link && link.origin === location.origin && isWizardTab(link.pathname)) {
+      event.preventDefault();
+      navigation.navigate(link.pathname);
+    }
+  }
+
   return (
-    <>
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
-        <div className="min-w-0">
-          <p className="eyebrow">
-            Porota {juryGroupLabel(current.group.code)} · {current.group.name}
-          </p>
-          <p className="mt-2 break-words font-medium">
-            {current.principal.displayName}
-          </p>
-          <p className="mt-1 break-words text-sm text-muted-foreground">
-            {current.event.name}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          className="min-h-11"
-          onClick={() => {
-            if (
-              !unsaved ||
-              window.confirm(
-                'Máte neuložené změny nebo probíhá ukládání. Opravdu se chcete odhlásit?',
-              )
+    <div className="wizard-shell" onClick={openLink}>
+      <WizardHeader
+        current={current}
+        busy={busy}
+        logout={() => {
+          if (
+            !navigation.isBlocked() ||
+            window.confirm(
+              'Máte neuložené změny nebo probíhá ukládání. Opravdu se chcete odhlásit?',
             )
-              logout();
-          }}
-          disabled={busy}
-        >
-          {busy ? 'Odhlašujeme…' : 'Odhlásit se'}
-        </Button>
-      </div>
-      {review ? (
-        <WizardReviewScreen
-          review={review}
-          confirmationPage={confirmationPage}
-          headingRef={headingRef}
-          onAccessError={onAccessError}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-          onPendingChange={setUnsaved}
-        />
-      ) : !detail ? (
-        <section className="py-8 sm:py-12">
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="page-title outline-none"
-          >
-            Vaše kategorie
-          </h1>
-          {current.event.description && (
-            <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words leading-relaxed text-muted-foreground">
-              {current.event.description}
-            </p>
-          )}
-          <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">
-            Přehled obsahuje kategorie přístupné vaší části poroty. Mezi nimi
-            můžete volně přecházet; pořadí v průvodci neznamená odevzdání hlasů.
+          ) {
+            logout();
+          }
+        }}
+      />
+      <div className="wizard-layout">
+        {steps.length > 0 && (
+          <CategoryNavigation
+            steps={
+              detail && unavailableStep === detail.step.id
+                ? steps.map((step) =>
+                    step.id === unavailableStep
+                      ? { ...step, progress: 'locked' }
+                      : step,
+                  )
+                : steps
+            }
+            ballots={ballots}
+            path={navigation.path}
+          />
+        )}
+        <main className="wizard-main" id="main" aria-busy={loading || busy}>
+          <p className="sr-only" role="status">
+            {announcement}
           </p>
-          {!current.steps.length ? (
-            <div
-              role="status"
-              className="mt-8 border border-border bg-card p-6"
-            >
-              <h2 className="text-lg font-semibold">
-                Zatím žádné dostupné kategorie
-              </h2>
-              <p className="mt-2 leading-relaxed text-muted-foreground">
-                Organizátor zatím neotevřel kategorii pro vaši část poroty.
-                Zkuste přehled později obnovit nebo se obraťte na organizátora.
-              </p>
-              <a className="wizard-link mt-4" href="/wizard">
-                Obnovit přehled
-              </a>
-            </div>
-          ) : (
-            <>
-              <ol className="mt-8 divide-y border-y border-border">
-                {current.steps.map((step, i) => (
-                  <li key={step.id}>
-                    <a
-                      href={stepUrl(step.id)}
-                      className="flex min-h-20 items-center gap-4 py-5 outline-offset-4 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
-                      aria-label={`${i + 1}. ${step.name}, ${status(step)}, ${progressLabels[step.progress]}`}
-                    >
-                      <span className="w-7 shrink-0 font-mono text-sm text-muted-foreground">
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block break-words font-semibold">
-                          {step.name}
-                        </span>
-                        <span className="mt-1 block text-sm text-muted-foreground">
-                          {step.kind === 'selection'
-                            ? 'Výběrové kolo'
-                            : 'Finálová kategorie'}{' '}
-                          · {status(step)}
-                        </span>
-                        <span className="mt-1 block text-sm">
-                          {progressLabels[step.progress]}
-                        </span>
-                      </span>
-                      <span aria-hidden="true" className="px-2">
-                        →
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ol>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild className="min-h-11">
-                  <a href={stepUrl(current.steps[0]!.id)}>
-                    Přejít na první kategorii
-                  </a>
-                </Button>
-                <Button asChild variant="outline" className="min-h-11">
-                  <a href="/wizard/review">Rekapitulace a odevzdání</a>
-                </Button>
-              </div>
-            </>
-          )}
-        </section>
-      ) : (
-        <>
-          <nav
-            aria-label="Kategorie průvodce"
-            className="mt-6 flex flex-wrap gap-4"
-          >
-            <a className="wizard-link" href="/wizard">
-              ← Všechny kategorie
-            </a>
-            <a className="wizard-link" href="/wizard/review">
-              Rekapitulace
-            </a>
-          </nav>
-          <div className="mt-5" aria-label="Poloha v průvodci">
-            <label htmlFor="wizard-progress" className="font-mono text-sm">
-              Krok {index + 1} z {current.steps.length}
-            </label>
-            <progress
-              id="wizard-progress"
-              max={current.steps.length}
-              value={index + 1}
-              className="mt-3 block h-1.5 w-full accent-primary"
-            />
-          </div>
-          <section className="mt-8" aria-labelledby="category-title">
-            <p className="eyebrow">
-              {detail.step.kind === 'selection'
-                ? 'Výběrové kolo'
-                : 'Finálová kategorie'}{' '}
-              · {status(detail.step)}
+          {loading && (
+            <p role="status" className="p-4 text-muted-foreground">
+              Načítáme váš přístup a kategorie…
             </p>
-            <h1
-              id="category-title"
-              ref={headingRef}
-              tabIndex={-1}
-              className="page-title outline-none"
-            >
-              {detail.step.name}
-            </h1>
-            {detail.step.instructions && (
-              <p className="mt-4 whitespace-pre-wrap break-words leading-relaxed text-muted-foreground">
-                {detail.step.instructions}
-              </p>
-            )}
-            <CategoryVoting
-              key={`${current.principal.id}:${detail.step.id}`}
-              detail={detail}
+          )}
+          {review && steps.length > 0 && (
+            <WizardSummary
+              key={navigation.path}
+              review={review}
+              submittedBallots={summaryBallots}
+              onResult={recordSummaryResult}
+              headingRef={headingRef}
               onAccessError={onAccessError}
-              onUnsavedChange={setUnsaved}
               onRefresh={onRefresh}
               refreshing={refreshing}
-              completedAction={
-                <Button asChild className="min-h-11">
-                  <a href={next ? stepUrl(next.id) : '/wizard/review'}>
-                    {next
-                      ? 'Pokračovat na další kategorii'
-                      : 'Přejít k rekapitulaci'}
-                  </a>
-                </Button>
-              }
+              onPendingChange={reviewGuard}
             />
-          </section>
-          <nav
-            aria-label="Navigace mezi kroky"
-            className="mt-10 flex flex-wrap justify-between gap-4 border-t border-border pt-6"
-          >
-            <Button asChild variant="outline" className="min-h-11">
-              <a href={previous ? stepUrl(previous.id) : '/wizard'}>
-                {previous ? '← Předchozí' : '← Přehled'}
-              </a>
-            </Button>
-            <Button asChild className="min-h-11">
-              <a href={next ? stepUrl(next.id) : '/wizard/review'}>
-                {next ? 'Další kategorie →' : 'Rekapitulace a odevzdání →'}
-              </a>
-            </Button>
-          </nav>
-        </>
-      )}
-    </>
+          )}
+          {detail && (
+            <CategoryVoting
+              key={detail.step.id}
+              detail={detail}
+              categoryNumber={index + 1}
+              categoryCount={steps.length}
+              headingRef={headingRef}
+              onAccessError={onAccessError}
+              onGuardChange={setGuard}
+              onAvailabilityChange={recordAvailability}
+              onRefresh={onRefresh}
+              refreshing={refreshing}
+              navigation={navigation}
+              nextHref={next ? stepPath(next.id) : reviewPath}
+              lastCategory={!next}
+              nextAvailable={nextAvailable}
+              onSaved={(ballot) =>
+                setLocalBallot({ current, id: detail.step.id, ballot })
+              }
+              onSubmitted={(ballot) => {
+                setLocalBallot({ current, id: detail.step.id, ballot });
+                setAnnouncement(
+                  `Kategorie ${detail.step.name} byla odevzdána.`,
+                );
+                // Next open category after this one, then any earlier one.
+                const remaining = [
+                  ...steps.slice(index + 1),
+                  ...steps.slice(0, index),
+                ].find(
+                  (step) =>
+                    step.status === 'active' && step.progress !== 'submitted',
+                );
+                navigation.navigate(
+                  remaining ? stepPath(remaining.id) : reviewPath,
+                  true,
+                );
+              }}
+            />
+          )}
+          {!loading && !steps.length && !feedback && (
+            <EmptyCategories
+              headingRef={headingRef}
+              onRefresh={onRefresh}
+              refreshing={refreshing}
+            />
+          )}
+          {feedback}
+        </main>
+      </div>
+    </div>
   );
 }

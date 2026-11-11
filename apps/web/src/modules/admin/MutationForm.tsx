@@ -32,6 +32,7 @@ export function MutationForm<T>({
   destructive = false,
   description,
   headingLevel = 2,
+  layout = 'stacked',
 }: {
   title: string;
   initial: Record<string, string>;
@@ -44,9 +45,15 @@ export function MutationForm<T>({
   destructive?: boolean;
   description?: string;
   headingLevel?: 2 | 3 | 4;
+  layout?: 'stacked' | 'inline';
 }) {
   const id = useId();
-  const Heading = headingLevel === 4 ? 'h4' : headingLevel === 3 ? 'h3' : 'h2';
+  let Heading: 'h2' | 'h3' | 'h4' = 'h2';
+  if (headingLevel === 3) {
+    Heading = 'h3';
+  } else if (headingLevel === 4) {
+    Heading = 'h4';
+  }
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
@@ -58,22 +65,28 @@ export function MutationForm<T>({
   const [returnFocus] = useState(() => document.activeElement);
   const errorRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    headingRef.current?.focus();
+    (firstInputRef.current ?? headingRef.current)?.focus();
     return () => {
       // Restore after the parent has re-enabled its button in the same commit.
       queueMicrotask(() => {
-        if (returnFocus instanceof HTMLElement && returnFocus.isConnected)
+        if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
           returnFocus.focus();
+        }
       });
     };
   }, [returnFocus]);
   useEffect(() => {
-    if (error || Object.keys(errors).length) errorRef.current?.focus();
+    if (error || Object.keys(errors).length) {
+      errorRef.current?.focus();
+    }
   }, [error, errors]);
   async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setError('');
     setErrors({});
     const parsed = schema.safeParse(values);
@@ -93,24 +106,54 @@ export function MutationForm<T>({
     try {
       await save(parsed.data);
     } catch (cause) {
-      if (cause instanceof ApiError && cause.status === 401) onExpired();
-      else setError(managementError(cause));
+      if (cause instanceof ApiError && cause.status === 401) {
+        onExpired();
+      } else {
+        setError(managementError(cause));
+      }
     } finally {
       setBusy(false);
     }
   }
+  const submitButton = (
+    <Button
+      type="submit"
+      variant={destructive ? 'destructive' : 'default'}
+      disabled={busy}
+      className="min-h-11"
+    >
+      {busy ? 'Ukládání…' : submitLabel}
+    </Button>
+  );
+  const cancelButton = (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={busy}
+      onClick={cancel}
+      className="min-h-11"
+    >
+      Zrušit
+    </Button>
+  );
   return (
     <form
       onSubmit={submit}
       aria-label={title}
       noValidate
       aria-busy={busy}
-      className="space-y-5 border border-border bg-card p-5 sm:p-6"
+      className={
+        layout === 'inline'
+          ? 'admin-create-form'
+          : 'space-y-5 border border-border bg-card p-5 sm:p-6'
+      }
     >
       <Heading
         ref={headingRef}
         tabIndex={-1}
-        className="text-lg font-semibold outline-none"
+        className={
+          layout === 'inline' ? 'sr-only' : 'text-lg font-semibold outline-none'
+        }
       >
         {title}
       </Heading>
@@ -144,7 +187,7 @@ export function MutationForm<T>({
         </div>
       )}
       <fieldset disabled={busy} className="min-w-0 space-y-5">
-        {fields.map((field) => {
+        {fields.map((field, index) => {
           const fieldId = `${id}-${field.key}`;
           const props = {
             id: fieldId,
@@ -161,6 +204,44 @@ export function MutationForm<T>({
               >,
             ) => setValues({ ...values, [field.key]: event.target.value }),
           };
+          let control;
+          if (field.options) {
+            control = (
+              <select {...props} className={controlClass}>
+                <option value="">
+                  {field.placeholder ?? 'Vyberte část poroty'}
+                </option>
+                {field.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            );
+          } else if (field.multiline) {
+            control = (
+              <textarea
+                {...props}
+                rows={layout === 'inline' ? 1 : 4}
+                placeholder={field.placeholder}
+                maxLength={field.maxLength}
+                className={controlClass}
+              />
+            );
+          } else {
+            control = (
+              <Input
+                ref={
+                  layout === 'inline' && index === 0 ? firstInputRef : undefined
+                }
+                {...props}
+                type={field.inputType ?? 'text'}
+                maxLength={field.maxLength}
+                placeholder={field.placeholder}
+                autoComplete="off"
+              />
+            );
+          }
           return (
             <div key={field.key}>
               <label
@@ -169,32 +250,7 @@ export function MutationForm<T>({
               >
                 {field.label}
               </label>
-              {field.options ? (
-                <select {...props} className={controlClass}>
-                  <option value="">
-                    {field.placeholder ?? 'Vyberte část poroty'}
-                  </option>
-                  {field.options.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              ) : field.multiline ? (
-                <textarea
-                  {...props}
-                  rows={4}
-                  maxLength={field.maxLength}
-                  className={controlClass}
-                />
-              ) : (
-                <Input
-                  {...props}
-                  type={field.inputType ?? 'text'}
-                  maxLength={field.maxLength}
-                  autoComplete="off"
-                />
-              )}
+              {control}
               {errors[field.key] && (
                 <p
                   id={`${fieldId}-error`}
@@ -208,23 +264,9 @@ export function MutationForm<T>({
         })}
       </fieldset>
       <div className="flex flex-wrap gap-3">
-        <Button
-          type="submit"
-          variant={destructive ? 'destructive' : 'default'}
-          disabled={busy}
-          className="min-h-11"
-        >
-          {busy ? 'Ukládání…' : submitLabel}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={busy}
-          onClick={cancel}
-          className="min-h-11"
-        >
-          Zrušit
-        </Button>
+        {layout === 'inline' && cancelButton}
+        {submitButton}
+        {layout === 'stacked' && cancelButton}
       </div>
     </form>
   );

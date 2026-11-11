@@ -60,7 +60,7 @@ test('organizer works directly with saved links, undo, imports and voting contro
   const download = page.waitForEvent('download');
   await page
     .getByRole('button', {
-      name: 'Stáhnout odkazy porotců (XLSX)',
+      name: 'Stáhnout odkazy (XLSX)',
       exact: true,
     })
     .click();
@@ -74,27 +74,22 @@ test('organizer works directly with saved links, undo, imports and voting contro
       )
     ).rows[0].display_name,
   ).toBe('Uložený porotce');
-  await page
-    .getByRole('button', { name: 'Zahodit změny', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await expect(name).toHaveValue('Uložený porotce');
   await page.getByRole('button', { name: 'Vrátit změny', exact: true }).click();
   await expect(name).toHaveValue('Neuložená oprava');
-  await page
-    .getByRole('button', { name: 'Zahodit změny', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Zahodit', exact: true }).click();
   const navigation = page.getByRole('navigation', {
     name: 'Event',
     exact: true,
   });
-  await expect(navigation.getByRole('link')).toHaveCount(5);
-  await navigation.getByRole('link', { name: 'Týmy', exact: true }).click();
-  await page.getByText('Vložit ze spreadsheetu', { exact: true }).click();
+  await expect(navigation.getByRole('link')).toHaveCount(6);
+  await navigation.getByRole('link', { name: /Týmy(?: |$)/u }).click();
   await page
-    .getByLabel('Řádky z tabulky', { exact: true })
+    .getByLabel('Data z tabulky', { exact: true })
     .fill('Nový tým\tPřidán bez mezikroku');
   await page
-    .getByRole('button', { name: 'Přidat řádky do tabulky', exact: true })
+    .getByRole('button', { name: 'Zobrazit náhled', exact: true })
     .click();
   await expect(
     page.getByLabel('Název týmu, řádek 22', { exact: true }),
@@ -107,49 +102,51 @@ test('organizer works directly with saved links, undo, imports and voting contro
       )
     ).rows[0].count,
   ).toBe(21);
-  await page
-    .getByRole('button', { name: 'Zahodit změny', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await page.getByRole('button', { name: 'Vrátit změny', exact: true }).click();
   await expect(
     page.getByLabel('Název týmu, řádek 22', { exact: true }),
   ).toHaveValue('Nový tým');
+  await page.getByRole('button', { name: 'Zahodit', exact: true }).click();
+  await navigation.getByRole('link', { name: /\bKategorie(?: |$)/u }).click();
   await page
-    .getByRole('button', { name: 'Zahodit změny', exact: true })
-    .click();
-  await navigation
-    .getByRole('link', { name: 'Kategorie', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Nové hlasování', exact: true })
+    .getByRole('button', { name: 'Nová kategorie', exact: true })
     .click();
   const form = page.getByRole('form', {
     name: 'Příprava kategorie',
     exact: true,
   });
-  await form.getByLabel('Název hlasování', { exact: true }).fill('Finále');
-  await form.getByLabel('Typ hlasování', { exact: true }).selectOption('final');
+  await form.getByLabel('Název', { exact: true }).fill('Finále');
+  await form.getByRole('radio', { name: 'Finále', exact: true }).check();
   await form.getByLabel('Počet vítězů', { exact: true }).fill('1');
-  await form.getByLabel('Maximum kladných hlasů', { exact: true }).fill('2');
-  await form.getByLabel('Maximum záporných hlasů', { exact: true }).fill('0');
-  await form.getByLabel('Záporné hlasy', { exact: true }).selectOption('no');
-  await form.getByLabel(/Veřejná —/).check();
-  const readiness = form.getByRole('region', { name: 'Před aktivací zbývá' });
+  await form.getByLabel('Kladných hlasů na porotce', { exact: true }).fill('2');
+  await form.getByRole('radio', { name: 'Zakázat', exact: true }).check();
+  await expect(
+    form.getByLabel('Záporných hlasů', { exact: true }),
+  ).toBeDisabled();
+  await expect(form.getByLabel('Záporných hlasů', { exact: true })).toHaveValue(
+    '0',
+  );
+  await form.getByRole('checkbox', { name: /^Veřejná porota/ }).check();
+  const readiness = form.getByRole('region', { name: 'Před otevřením' });
   await expect(readiness).toContainText('Zařazené týmy 0 / 3 · Chybí 3');
   await form
-    .getByRole('button', { name: 'Přidat položku', exact: true })
+    .getByText('Upravit přiřazení a přesné pořadí', { exact: true })
     .click();
-  await expect(readiness).toContainText('Řádky bez vybraného týmu (1)');
+  await form.getByRole('button', { name: 'Přidat tým', exact: true }).click();
+  await expect(readiness).toContainText('Vybrat tým v prázdném řádku (1)');
   await readiness
-    .getByRole('link', { name: 'Přejít na první prázdný řádek' })
+    .getByRole('link', { name: 'Vybrat tým v prázdném řádku (1)' })
     .press('Enter');
   await expect(
     form.getByLabel('Tým, položka 1', { exact: true }),
   ).toBeFocused();
-  await readiness
-    .getByRole('button', { name: 'Zařadit zbývající týmy', exact: true })
+  await form
+    .getByRole('button', { name: 'Přidat všechny týmy eventu', exact: true })
     .click();
-  const plusLimit = form.getByLabel('Maximum kladných hlasů', { exact: true });
+  const plusLimit = form.getByLabel('Kladných hlasů na porotce', {
+    exact: true,
+  });
   await plusLimit.fill('21');
   await expect(readiness).toContainText('Zařazené týmy 21 / 22 · Chybí 1');
   await expect(readiness).toContainText('nejvýše na 20 hlasů celkem');
@@ -181,19 +178,15 @@ test('organizer works directly with saved links, undo, imports and voting contro
     form.getByText('Kategorie je připravená k aktivaci'),
   ).toBeVisible();
   const votingId = page.url().split('/').at(-1)!;
-  const categoryName = form.getByLabel('Název hlasování', { exact: true });
+  const categoryName = form.getByLabel('Název', { exact: true });
   await categoryName.fill('Místní změna');
-  await form
-    .getByRole('button', { name: 'Zahodit místní změny', exact: true })
-    .click();
+  await form.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await expect(categoryName).toHaveValue('Finále');
   await form.getByRole('button', { name: 'Vrátit změny', exact: true }).click();
   await expect(categoryName).toHaveValue('Místní změna');
-  await form
-    .getByRole('button', { name: 'Zahodit místní změny', exact: true })
-    .click();
+  await form.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Aktivovat hlasování', exact: true })
+    .getByRole('button', { name: 'Otevřít hlasování', exact: true })
     .click();
   await page
     .getByRole('form', { name: 'Aktivovat hlasování', exact: true })
@@ -209,6 +202,7 @@ test('organizer works directly with saved links, undo, imports and voting contro
   await page.route(`**/api/votings/${votingId}/close`, (route) =>
     route.abort('connectionfailed'),
   );
+  page.once('dialog', (dialog) => dialog.accept());
   await card.getByRole('button', { name: /^Uzavřít hlasování:/ }).click();
   await expect(card.getByRole('alert')).toContainText(
     'Uzavření hlasování se nepodařilo potvrdit. Prohlížeč se nedokázal spojit se serverem.',
@@ -222,10 +216,10 @@ test('organizer works directly with saved links, undo, imports and voting contro
   ).toBe('active');
   await page.unroute(`**/api/votings/${votingId}/close`);
 
+  page.once('dialog', (dialog) => dialog.accept());
   await card.getByRole('button', { name: /^Uzavřít hlasování:/ }).click();
-  await expect(
-    card.getByRole('button', { name: /^Znovu otevřít hlasování:/ }),
-  ).toBeEnabled();
+  // Progress lists open categories only; reopening lives on the Categories overview.
+  await expect(card).toHaveCount(0);
   expect(
     (
       await runtime.pool.query('SELECT status FROM votings WHERE id=$1', [
@@ -233,9 +227,16 @@ test('organizer works directly with saved links, undo, imports and voting contro
       ])
     ).rows[0].status,
   ).toBe('closed');
-  await card.getByRole('button', { name: /^Znovu otevřít hlasování:/ }).click();
+  await navigation.getByRole('link', { name: /\bKategorie\b/u }).click();
+  const overviewCard = page.getByRole('article', {
+    name: 'Finále',
+    exact: true,
+  });
+  await overviewCard
+    .getByRole('button', { name: /^Znovu otevřít hlasování:/ })
+    .click();
   await expect(
-    card.getByRole('button', { name: /^Uzavřít hlasování:/ }),
+    overviewCard.getByRole('button', { name: /^Uzavřít hlasování:/ }),
   ).toBeEnabled();
   expect(
     (

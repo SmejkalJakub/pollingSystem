@@ -9,8 +9,15 @@ export const votingStatuses = [
 export const ballotStatuses = ['draft', 'submitted', 'cancelled'] as const;
 export const juryGroupCodes = ['T', 'V'] as const;
 // Presentation names only; stored/API group codes remain stable.
-export const juryGroupLabel = (code: string | undefined) =>
-  code === 'T' ? 'Technická' : code === 'V' ? 'Veřejná' : (code ?? '');
+export function juryGroupLabel(code: string | undefined) {
+  if (code === 'T') {
+    return 'Technická';
+  }
+  if (code === 'V') {
+    return 'Veřejná';
+  }
+  return code ?? '';
+}
 export const votingStatusSchema = z.enum(votingStatuses);
 export const ballotStatusSchema = z.enum(ballotStatuses);
 export const jurorProgressSchema = z.enum([
@@ -111,7 +118,19 @@ export const eventSchema = eventInputSchema.extend({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
-export const eventListSchema = z.array(eventSchema);
+export const eventListSchema = z.array(eventSchema.strip());
+export const adminEventCardSchema = eventSchema.extend({
+  status: z.enum(['preparation', 'voting', 'closed']),
+  jurors: z.number().int().nonnegative(),
+  teams: z.number().int().nonnegative(),
+  categories: z.number().int().nonnegative(),
+  readyCategories: z.number().int().nonnegative(),
+  openCategories: z.number().int().nonnegative(),
+  submitted: z.number().int().nonnegative(),
+  expected: z.number().int().nonnegative(),
+});
+export const adminEventListSchema = z.array(adminEventCardSchema);
+export type AdminEventCard = z.infer<typeof adminEventCardSchema>;
 export const eventParamsSchema = z.strictObject({ eventId: z.uuid() });
 export type EventInput = z.infer<typeof eventInputSchema>;
 export type EventPatch = z.infer<typeof eventPatchSchema>;
@@ -232,27 +251,30 @@ export const votingConfigurationSchema = z
     allowNegativeVotes: z.boolean(),
   })
   .superRefine((value, ctx) => {
-    if (value.maxPlusVotes <= value.selectedPlaces)
+    if (value.maxPlusVotes <= value.selectedPlaces) {
       ctx.addIssue({
         code: 'custom',
         path: ['maxPlusVotes'],
         message: 'Positive votes must exceed the number of selected places.',
       });
+    }
     if (
       value.maxMinusVotes >
       Math.floor(value.maxPlusVotes / positiveVotesPerNegative)
-    )
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['maxMinusVotes'],
         message: 'Each negative requires two positive votes.',
       });
-    if (!value.allowNegativeVotes && value.maxMinusVotes !== 0)
+    }
+    if (!value.allowNegativeVotes && value.maxMinusVotes !== 0) {
       ctx.addIssue({
         code: 'custom',
         path: ['maxMinusVotes'],
         message: 'Disabled negative votes require a zero limit.',
       });
+    }
   });
 export type VotingConfiguration = z.infer<typeof votingConfigurationSchema>;
 export const votingDraftInputSchema = z.strictObject({
@@ -322,6 +344,10 @@ export const teamTableSnapshotSchema = z.strictObject({
   version: z.string().regex(/^[a-f0-9]{64}$/),
   teams: teamListSchema,
 });
+export const teamTableReadSchema = teamTableSnapshotSchema.extend({
+  categoryCounts: z.record(z.uuid(), z.number().int().nonnegative()),
+});
+export type TeamTableRead = z.infer<typeof teamTableReadSchema>;
 export const teamTableIssueSchema = z.strictObject({
   rowId: z.uuid(),
   field: z.enum(['name', 'description']),

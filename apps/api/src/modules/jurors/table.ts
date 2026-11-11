@@ -83,16 +83,21 @@ export function createJurorTable(
             displayName: row.displayName,
             groupCode: row.groupCode,
           });
-          if (parsed.success) return { id: row.id, ...parsed.data };
-          for (const issue of parsed.error.issues)
+          if (parsed.success) {
+            return { id: row.id, ...parsed.data };
+          }
+          for (const issue of parsed.error.issues) {
             issues.push({
               rowId: row.id,
               field:
                 issue.path[0] === 'displayName' ? 'displayName' : 'groupCode',
             });
+          }
           return row;
         });
-        if (issues.length) return { status: 'invalid' as const, issues };
+        if (issues.length) {
+          return { status: 'invalid' as const, issues };
+        }
         const current = await readRoster(client, eventId, locked);
         const byId = new Map(current.jurors.map((juror) => [juror.id, juror]));
         const groupByCode = new Map(
@@ -110,7 +115,7 @@ export function createJurorTable(
           }) &&
           (locked || groupByCode.size === 2)
         ) {
-          for (const row of rows)
+          for (const row of rows) {
             await ensureInitialJurorLink(
               client,
               vault,
@@ -118,37 +123,43 @@ export function createJurorTable(
               row.id,
               adminId,
             );
+          }
           return {
             status: 'saved' as const,
             snapshot: await readRoster(client, eventId, locked),
           };
         }
-        if (input.baseVersion !== current.version) throw conflict();
-        const ids = new Set(rows.map((row) => row.id));
-        if (current.jurors.some((juror) => !ids.has(juror.id)))
+        if (input.baseVersion !== current.version) {
           throw conflict();
+        }
+        const ids = new Set(rows.map((row) => row.id));
+        if (current.jurors.some((juror) => !ids.has(juror.id))) {
+          throw conflict();
+        }
         if (
           locked &&
           rows.some((row) => {
             const juror = byId.get(row.id);
             return (
-              !juror || juror.juryGroupId !== groupByCode.get(row.groupCode)
+              juror && juror.juryGroupId !== groupByCode.get(row.groupCode)
             );
           })
-        )
+        ) {
           throw rosterLocked();
-        if (!locked) {
-          for (const [code, name] of [
-            ['T', 'Technická porota'],
-            ['V', 'Druhá část poroty'],
-          ] as const) {
-            if (!groupByCode.has(code)) {
-              const added = await client.query(
-                'INSERT INTO jury_groups(event_id,code,name) VALUES ($1,$2,$3) RETURNING id',
-                [eventId, code, name],
-              );
-              groupByCode.set(code, added.rows[0].id);
-            }
+        }
+        for (const [code, name] of [
+          ['T', 'Technická porota'],
+          ['V', 'Druhá část poroty'],
+        ] as const) {
+          if (
+            !groupByCode.has(code) &&
+            (!locked || rows.some((row) => row.groupCode === code))
+          ) {
+            const added = await client.query(
+              'INSERT INTO jury_groups(event_id,code,name) VALUES ($1,$2,$3) RETURNING id',
+              [eventId, code, name],
+            );
+            groupByCode.set(code, added.rows[0].id);
           }
         }
         for (const row of rows) {
@@ -158,17 +169,20 @@ export function createJurorTable(
             if (
               juror.displayName !== row.displayName ||
               juror.juryGroupId !== groupId
-            )
+            ) {
               await client.query(
                 'UPDATE event_jurors SET display_name=$3,jury_group_id=$4,updated_at=statement_timestamp() WHERE event_id=$1 AND id=$2',
                 [eventId, row.id, row.displayName, groupId],
               );
+            }
           } else {
             const added = await client.query(
               'INSERT INTO event_jurors(id,event_id,display_name,jury_group_id) VALUES ($1,$2,$3,$4) ON CONFLICT(id) DO NOTHING RETURNING id',
               [row.id, eventId, row.displayName, groupId],
             );
-            if (!added.rowCount) throw conflict();
+            if (!added.rowCount) {
+              throw conflict();
+            }
           }
           await ensureInitialJurorLink(client, vault, eventId, row.id, adminId);
         }

@@ -1,187 +1,103 @@
-import { juryGroupLabel } from '@d21/contracts';
-import { useState } from 'react';
-import {
-  dashboardOverviewSchema,
-  type DashboardCategory,
-} from '@d21/contracts';
+import '../admin/operations.css';
+import { dashboardOverviewSchema, rosterSchema } from '@d21/contracts';
 import { DashboardRefresh } from './DashboardRefresh';
+import { ResourceState } from '../admin/ResourceState';
 import { useResource } from '../admin/useResource';
 import { DashboardState } from './DashboardState';
-import { CategoryCard, Progress } from './CategoryCard';
-import { problemLabels, progressLabels, timestamp } from './presentation';
+import { CategoryCard } from './CategoryCard';
+import { czechCount } from '@/lib/plural';
+import { ProgressMatrix } from './ProgressMatrix';
+import { clockTime, problemLabels, timestamp } from './presentation';
 
-function JurorOverview({ categories }: { categories: DashboardCategory[] }) {
-  const [filter, setFilter] = useState<'pending' | 'all'>('pending');
-  const [search, setSearch] = useState('');
-  const byJuror = new Map<
-    string,
-    {
-      id: string;
-      name: string;
-      group: string;
-      tasks: {
-        category: DashboardCategory;
-        progress: DashboardCategory['jurors'][number]['progress'];
-      }[];
-    }
-  >();
-  for (const category of categories.filter((c) => c.status !== 'draft')) {
-    for (const j of category.jurors) {
-      const current = byJuror.get(j.id) ?? {
-        id: j.id,
-        name: j.displayName,
-        group: juryGroupLabel(
-          category.groups.find((g) => g.id === j.groupId)?.code,
-        ),
-        tasks: [],
-      };
-      current.tasks.push({ category, progress: j.progress });
-      byJuror.set(j.id, current);
-    }
-  }
-  const visible = [...byJuror.values()]
-    .filter(
-      (j) =>
-        (filter === 'all' || j.tasks.some((t) => t.progress !== 'submitted')) &&
-        `${j.name} ${j.id}`
-          .toLocaleLowerCase('cs')
-          .includes(search.toLocaleLowerCase('cs')),
-    )
-    .sort(
-      (a, b) => a.name.localeCompare(b.name, 'cs') || a.id.localeCompare(b.id),
-    );
-  return (
-    <section className="mt-12" aria-labelledby="jurors-heading">
-      <h2 id="jurors-heading" className="text-2xl font-semibold">
-        Porotci a zbývající kategorie
-      </h2>
-      <p className="mt-3 text-sm text-muted-foreground">
-        Pouze oprávnění ke spuštěným kategoriím. Rozbalte porotce pro detail;
-        shodná jména rozlišuje ID.
-      </p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium">
-          Zobrazit
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as 'pending' | 'all')}
-            className="mt-2 min-h-11 w-full rounded-sm border bg-card px-3 focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <option value="pending">Čekající porotce</option>
-            <option value="all">Všechny oprávněné porotce</option>
-          </select>
-        </label>
-        <label className="text-sm font-medium">
-          Hledat jméno nebo ID
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="mt-2 min-h-11 w-full rounded-sm border bg-card px-3 focus-visible:outline-2 focus-visible:outline-ring"
-            type="search"
-          />
-        </label>
-      </div>
-      <p className="mt-4 text-sm text-muted-foreground" role="status">
-        Zobrazeno porotců: {visible.length}
-      </p>
-      <div className="mt-3 divide-y divide-border border-y border-border">
-        {visible.map((j) => (
-          <details key={j.id} className="py-2">
-            <summary className="min-h-11 cursor-pointer break-words py-3 text-sm outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
-              <span className="font-medium">{j.name}</span> · {j.group} ·
-              Odevzdáno{' '}
-              {j.tasks.filter((t) => t.progress === 'submitted').length} /{' '}
-              {j.tasks.length}
-              <span className="mt-1 block break-all pl-4 font-mono text-xs text-muted-foreground">
-                {j.id}
-              </span>
-            </summary>
-            <ul className="space-y-2 pb-4 pl-4 text-sm">
-              {j.tasks.map((t) => (
-                <li
-                  key={t.category.id}
-                  className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <a
-                    className="wizard-link min-w-0 break-words"
-                    href={`/admin/dashboard/votings/${t.category.id}`}
-                  >
-                    {t.category.name}
-                  </a>
-                  <span className="shrink-0 text-muted-foreground">
-                    {progressLabels[t.progress]}
-                    {t.category.status !== 'active' &&
-                    t.progress !== 'submitted'
-                      ? ' · Kategorie uzavřená'
-                      : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </details>
-        ))}
-      </div>
-      {!visible.length && (
-        <p className="mt-5 text-muted-foreground">
-          {byJuror.size
-            ? 'Tomuto filtru neodpovídá žádný porotce.'
-            : 'Zatím nejsou spuštěné kategorie s oprávněnými porotci.'}
-        </p>
-      )}
-    </section>
-  );
-}
 export function Dashboard({
   eventId,
   onExpired,
+  search,
 }: {
   eventId: string;
   onExpired: () => void;
+  search?: string;
 }) {
   const resource = useResource(
     `/dashboard/overview?eventId=${eventId}`,
     dashboardOverviewSchema,
     onExpired,
   );
+  const roster = useResource(
+    `/events/${eventId}/roster`,
+    rosterSchema,
+    onExpired,
+  );
   const data = resource.data;
+  const categoryId = new URLSearchParams(search).get('category');
+  const openCategories =
+    data?.categories.filter((category) => category.status === 'active') ?? [];
+  const invalidDrafts = openCategories.reduce(
+    (sum, category) => sum + category.counts.invalid,
+    0,
+  );
+  function refresh() {
+    resource.reload();
+    roster.reload();
+  }
   return (
     <>
       <DashboardState resource={resource} />
       {data && (
         <>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <h2
-              id="dashboard-heading"
-              tabIndex={-1}
-              className="section-title min-w-0 outline-none"
-            >
+          <div className="operations-page-head">
+            <h1 id="dashboard-heading" tabIndex={-1} className="outline-none">
               Průběh hlasování
-            </h2>
-            <DashboardRefresh resource={resource} />
+            </h1>
+            <p>
+              Načteno{' '}
+              <time dateTime={data.asOf} title={timestamp(data.asOf)}>
+                {clockTime(data.asOf)}
+              </time>
+            </p>
+            <DashboardRefresh
+              label="Obnovit"
+              resource={{
+                loading: resource.loading || roster.loading,
+                error: resource.error ?? roster.error,
+                reload: refresh,
+              }}
+            />
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Data k {timestamp(data.asOf)}. Obnovte přehled pro aktuální stav.
-          </p>
-          <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
-            {[
-              [
-                'Odevzdané lístky',
-                `${data.totals.submitted} / ${data.totals.expected}`,
-              ],
-              [
-                'Dokončené kategorie',
-                `${data.totals.completedCategories} / ${data.totals.categories}`,
-              ],
-              ['Čekající porotci', data.totals.pendingJurors],
-              ['Kategorie ke kontrole', data.totals.problemCategories],
-            ].map(([label, value]) => (
-              <div key={label} className="min-w-0 bg-card p-3">
-                <dt className="text-sm text-muted-foreground">{label}</dt>
-                <dd className="mt-1 break-words font-mono text-2xl font-medium">
-                  {value}
-                </dd>
-              </div>
-            ))}
+          <dl className="operations-kpis">
+            <div>
+              <dt>Odevzdané lístky</dt>
+              <dd>
+                {data.totals.submitted} <small>/ {data.totals.expected}</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Čekající porotci</dt>
+              <dd>{data.totals.pendingJurors}</dd>
+            </div>
+            <div>
+              <dt>Dokončené kategorie</dt>
+              <dd>
+                {data.totals.completedCategories}{' '}
+                <small>/ {data.totals.categories}</small>
+              </dd>
+            </div>
+            <div data-alert={data.totals.problemCategories > 0}>
+              <dt>Ke kontrole</dt>
+              <dd>
+                {data.totals.problemCategories}
+                {invalidDrafts > 0 && (
+                  <small>
+                    {' '}
+                    {czechCount(invalidDrafts, {
+                      one: 'neplatný návrh',
+                      few: 'neplatné návrhy',
+                      other: 'neplatných návrhů',
+                    }).replace(/^\d+ /, '')}
+                  </small>
+                )}
+              </dd>
+            </div>
           </dl>
           {data.totals.problemCategories > 0 && (
             <section
@@ -191,74 +107,54 @@ export function Dashboard({
               <h2 id="attention-heading" className="text-xl font-semibold">
                 Ke kontrole
               </h2>
-              {data.totals.problemCategories ? (
-                <ul className="mt-3 space-y-4">
-                  {data.categories
-                    .filter((c) => c.status !== 'draft' && c.problems.length)
-                    .map((c) => (
-                      <li key={c.id}>
-                        <a
-                          className="wizard-link break-words font-medium"
-                          href={`/admin/dashboard/votings/${c.id}`}
-                        >
-                          {c.name}
-                        </a>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
-                          {c.problems.map((p) => (
-                            <li key={p}>{problemLabels[p]}</li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  V uložených datech spuštěných kategorií nebyl zjištěn problém.
-                </p>
-              )}
+              <ul className="mt-3 space-y-4">
+                {data.categories
+                  .filter((c) => c.status !== 'draft' && c.problems.length)
+                  .map((c) => (
+                    <li key={c.id}>
+                      <a
+                        className="wizard-link break-words font-medium"
+                        href={`/admin/dashboard/votings/${c.id}`}
+                      >
+                        {c.name}
+                      </a>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        {c.problems.map((p) => (
+                          <li key={p}>{problemLabels[p]}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+              </ul>
             </section>
           )}
-          <section className="mt-6" aria-labelledby="categories-heading">
-            <h2 id="categories-heading" className="text-2xl font-semibold">
-              Kategorie ({data.categories.length})
-            </h2>
-            {data.categories.length ? (
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {data.categories.map((c) => (
-                  <CategoryCard
-                    key={c.id}
-                    category={c}
-                    onExpired={onExpired}
-                    onChanged={resource.reload}
-                    disabled={resource.loading}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="mt-5 text-muted-foreground">
-                Zatím nejsou vytvořené kategorie. Připravte je v části Příprava
-                → Kategorie.
-              </p>
-            )}
-          </section>
-          <details className="mt-6 text-sm text-muted-foreground">
-            <summary className="min-h-11 cursor-pointer py-3">
-              Jak se počítá průběh
-            </summary>
-            <div className="mt-6">
-              <Progress
-                {...data.totals}
-                label="Celkový průběh spuštěných kategorií"
-              />
+          <ResourceState
+            resource={roster}
+            errorTitle="Přístupy porotců se nepodařilo načíst"
+          />
+          <ProgressMatrix
+            key={categoryId}
+            eventId={eventId}
+            categories={data.categories}
+            roster={roster.data}
+            disabled={roster.loading || resource.loading}
+            reload={roster.reload}
+            onExpired={onExpired}
+            categoryId={categoryId}
+          />
+          {openCategories.length > 0 && (
+            <div className="operations-open-cards">
+              {openCategories.map((c) => (
+                <CategoryCard
+                  key={c.id}
+                  category={c}
+                  onExpired={onExpired}
+                  onChanged={resource.reload}
+                  disabled={resource.loading}
+                />
+              ))}
             </div>
-            <p className="mt-3">
-              Počítáme aktuálně odevzdané lístky vůči oprávněným dvojicím
-              porotce a kategorie. Koncepty se nezapočítávají. Hotovo znamená
-              odevzdání všech očekávaných lístků bez zjištěného problému;
-              kategorii tím neuzavíráme.
-            </p>
-          </details>
-          <JurorOverview categories={data.categories} />
+          )}
         </>
       )}
     </>

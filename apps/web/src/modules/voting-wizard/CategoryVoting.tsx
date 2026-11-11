@@ -1,53 +1,146 @@
-import { BallotSubmission } from './BallotSubmission';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  ballotValidationSchema,
-  type BallotIssue,
-  type BallotValidation,
-  type WizardStepDetail,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
+import type {
+  BallotDraft,
+  BallotIssue,
+  WizardStep,
+  WizardStepDetail,
 } from '@d21/contracts';
 import { toggleVote, validateBallot } from '@d21/voting-domain';
 import { Button } from '@/components/ui/button';
-import { ApiError, apiRequest } from '@/lib/api';
-import { useBallotDraft } from './useBallotDraft';
+import { ClosedCategory, LockIcon } from './CategoryAvailability';
+import { BallotSubmission } from './BallotSubmission';
 import { DraftPersistence } from './DraftPersistence';
-
+import { VoteBudget } from './VoteBudget';
+import { useBallotDraft } from './useBallotDraft';
+import type { useWizardNavigation } from './useWizardNavigation';
 import { messages } from './ballotMessages';
+
+const blockedMessages: Partial<Record<BallotIssue, string>> = {
+  PLUS_LIMIT: 'Všechny kladné hlasy jsou rozdané. Nejprve některý odeberte.',
+  MINUS_LIMIT: 'Všechny záporné hlasy jsou rozdané. Nejprve některý odeberte.',
+  NEGATIVE_ELIGIBILITY:
+    'Každý záporný hlas potřebuje dva rozdané kladné hlasy.',
+};
+
+function placesLabel(step: WizardStep) {
+  const places = step.selectedPlaces;
+  if (places === null) {
+    return 'počet míst neurčen';
+  }
+  if (step.kind === 'selection') {
+    return `${places} ${places <= 4 ? 'postupující' : 'postupujících'}`;
+  }
+  if (places === 1) {
+    return '1 vítěz';
+  }
+  return `${places} ${places <= 4 ? 'vítězové' : 'vítězů'}`;
+}
+
+function Instructions({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  const paragraph = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const target = paragraph.current;
+    if (!target) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      const twoLines = parseFloat(getComputedStyle(target).lineHeight) * 2;
+      setClipped(target.scrollHeight > Math.ceil(twoLines));
+    });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <>
+      <p
+        id="category-instructions"
+        ref={paragraph}
+        data-expanded={expanded}
+        className="wizard-instructions"
+      >
+        {text}
+      </p>
+      {clipped && (
+        <button
+          type="button"
+          className="wizard-instructions-toggle"
+          aria-expanded={expanded}
+          aria-controls="category-instructions"
+          onClick={() => setExpanded(!expanded)}
+        >
+          Zobrazit celé
+        </button>
+      )}
+    </>
+  );
+}
+
+function savedTime(ballot: BallotDraft) {
+  return new Intl.DateTimeFormat('cs-CZ', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(ballot.savedAt));
+}
 
 export function CategoryVoting({
   detail,
+  categoryNumber,
+  categoryCount,
+  headingRef,
   onAccessError,
-  onUnsavedChange,
+  onGuardChange,
+  onAvailabilityChange,
   onRefresh,
   refreshing,
-  completedAction,
+  navigation,
+  nextHref,
+  lastCategory,
+  nextAvailable,
+  onSaved,
+  onSubmitted,
 }: {
   detail: WizardStepDetail;
+  categoryNumber: number;
+  categoryCount: number;
+  headingRef: RefObject<HTMLHeadingElement | null>;
   onAccessError: (error: unknown) => void;
-  onUnsavedChange: (unsaved: boolean) => void;
+  onGuardChange: (dirty: boolean, busy: boolean) => void;
+  onAvailabilityChange: (id: string, closed: boolean) => void;
   onRefresh: () => void;
   refreshing: boolean;
-  completedAction: ReactNode;
+  navigation: ReturnType<typeof useWizardNavigation>;
+  nextHref: string;
+  lastCategory: boolean;
+  nextAvailable?: WizardStep;
+  onSaved: (ballot: BallotDraft) => void;
+  onSubmitted: (ballot: BallotDraft) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [blocked, setBlocked] = useState<BallotIssue>();
   const draft = useBallotDraft(detail, onAccessError);
   const { entries, setEntries } = draft;
-  useEffect(() => {
-    onUnsavedChange(draft.dirty || draft.busy);
-  }, [draft.dirty, draft.busy, onUnsavedChange]);
-  const [blocked, setBlocked] = useState<BallotIssue>();
-  const [verification, setVerified] = useState<{
-    detail: WizardStepDetail;
-    report: BallotValidation;
-  }>();
-  const verified =
-    verification?.detail === detail ? verification.report : undefined;
-  const [failed, setFailed] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const feedback = useRef<HTMLDivElement>(null);
   const submitButton = useRef<HTMLButtonElement>(null);
-  const controller = useRef<AbortController | null>(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const leavePrompt = useRef<HTMLDivElement>(null);
+  const actions = useRef<HTMLDivElement>(null);
+  const category = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    onGuardChange(draft.dirty, draft.busy || confirming);
+  }, [draft.dirty, draft.busy, confirming, onGuardChange]);
+  useEffect(() => {
+    if (navigation.pending && !confirming) {
+      leavePrompt.current?.focus({ preventScroll: true });
+    }
+  }, [navigation.pending, confirming]);
+
   const { step, items } = detail;
   const ids = items.map((item) => item.id);
   const local = validateBallot(step, ids, entries);
@@ -55,317 +148,378 @@ export function CategoryVoting({
     Boolean(draft.serverIssue) ||
     local.issues.some((issue) =>
       ['VOTING_UNAVAILABLE', 'CONFIGURATION_NOT_READY'].includes(issue),
-    ) ||
-    verified?.issues.some((issue) =>
-      [
-        'VOTING_UNAVAILABLE',
-        'CONFIGURATION_NOT_READY',
-        'UNKNOWN_ITEM',
-      ].includes(issue),
     );
+  const closed =
+    categoryUnavailable ||
+    (draft.remote ?? draft.saved)?.status === 'cancelled';
+  useLayoutEffect(() => {
+    onAvailabilityChange(step.id, closed);
+  }, [onAvailabilityChange, step.id, closed]);
+  const submitted = draft.saved?.status === 'submitted';
+  const readOnly = Boolean(draft.saved && draft.saved.status !== 'draft');
   const unavailable =
     categoryUnavailable ||
-    Boolean(draft.saved && draft.saved.status !== 'draft') ||
+    readOnly ||
     Boolean(draft.remote && draft.remote.status !== 'draft');
-  const readOnly = Boolean(draft.saved && draft.saved.status !== 'draft');
   const issues = [
     ...new Set([
       ...local.issues,
-      ...(verified?.issues ?? []),
       ...(draft.serverIssue ? [draft.serverIssue] : []),
     ]),
   ];
+  const votesDisabled = confirming || draft.busy || unavailable;
+  const cannotSubmit = votesDisabled || !local.valid || draft.needsComparison;
+  const cannotSave =
+    closed || confirming || draft.busy || !local.valid || draft.needsComparison;
 
   function toggle(itemId: string, value: 1 | -1) {
     const result = toggleVote(step, ids, entries, itemId, value);
+    const after = validateBallot(step, ids, result.entries);
+    if (
+      after.minusUsed - after.minusEntitlement >
+      Math.max(0, local.minusUsed - local.minusEntitlement)
+    ) {
+      setBlocked('NEGATIVE_ELIGIBILITY');
+      return;
+    }
+    if (result.blocked) {
+      setBlocked(result.blocked);
+      return;
+    }
     setEntries(result.entries);
-    setBlocked(result.blocked);
-    setVerified(undefined);
-    setFailed(false);
+    setBlocked(undefined);
   }
-  async function check() {
-    if (checking) return;
-    setChecking(true);
-    setVerified(undefined);
-    setFailed(false);
-    controller.current = new AbortController();
-    try {
-      const result = await apiRequest(
-        `/wizard/steps/${step.id}/validate`,
-        ballotValidationSchema,
-        {
-          method: 'POST',
-          body: { entries },
-          signal: controller.current.signal,
-        },
-      );
-      setVerified({ detail, report: result });
-    } catch (error) {
-      if (controller.current.signal.aborted) return;
-      if (error instanceof ApiError && [401, 403, 404].includes(error.status)) {
-        onAccessError(error);
-        return;
-      }
-      setFailed(true);
-    } finally {
-      if (!controller.current.signal.aborted) {
-        setChecking(false);
-        // Focus only after an explicit check, never while toggling a vote.
-        window.setTimeout(() => feedback.current?.focus(), 0);
+
+  function teamKeys(event: KeyboardEvent<HTMLOListElement>) {
+    if (
+      !window.matchMedia('(min-width: 1024px)').matches ||
+      votesDisabled ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      !(event.target instanceof HTMLButtonElement)
+    ) {
+      return;
+    }
+    const row = event.target.closest('li');
+    const id = row?.dataset.itemId;
+    if (!row || !id) {
+      return;
+    }
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      const adjacent =
+        event.key === 'ArrowUp'
+          ? row.previousElementSibling
+          : row.nextElementSibling;
+      adjacent
+        ?.querySelector<HTMLButtonElement>('button[data-sign="plus"]')
+        ?.focus();
+    } else if (event.key === '+' || event.key === '-' || event.key === '−') {
+      const sign = event.key === '+' ? 1 : -1;
+      if (sign === 1 || step.allowNegativeVotes) {
+        event.preventDefault();
+        if (!event.repeat) {
+          toggle(id, sign);
+        }
       }
     }
   }
+
+  async function save() {
+    const result = await draft.save();
+    if (!result || result === 'conflict') {
+      return false;
+    }
+    onSaved(result);
+    return true;
+  }
+
+  let status = 'Zatím neuloženo';
+  let saveState = 'new';
+  const time = draft.saved ? savedTime(draft.saved) : undefined;
+  if (submitted) {
+    status = 'Odevzdáno · uzamčeno';
+    saveState = 'submitted';
+  } else if (draft.dirty) {
+    status = 'Neuložené změny';
+    saveState = 'dirty';
+  } else if (time) {
+    status = `Návrh uložen · ${time}`;
+    saveState = 'saved';
+  }
+  let nextLabel = 'Další →';
+  let desktopNextLabel = 'Další kategorie →';
+  if (lastCategory) {
+    nextLabel = 'Souhrn →';
+    desktopNextLabel = nextLabel;
+  }
+  if (draft.dirty) {
+    nextLabel = lastCategory ? 'Uložit a souhrn' : 'Uložit a další';
+    desktopNextLabel = lastCategory ? nextLabel : 'Uložit a další kategorie →';
+  }
+
+  const pendingPrompt = navigation.pending && (
+    <div
+      ref={leavePrompt}
+      tabIndex={-1}
+      role="region"
+      aria-label="Neuložené změny"
+      className="wizard-leave-prompt"
+    >
+      <p>Máte neuložené změny v této kategorii.</p>
+      <div>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={draft.busy}
+          onClick={() => {
+            setEntries(draft.saved?.entries ?? []);
+            navigation.followPending();
+          }}
+        >
+          Zahodit
+        </Button>
+        <Button
+          type="button"
+          disabled={cannotSave || readOnly}
+          onClick={async () => {
+            if (!draft.dirty || (await save())) {
+              navigation.followPending();
+            }
+          }}
+        >
+          Uložit a přejít
+        </Button>
+      </div>
+    </div>
+  );
+  useLayoutEffect(() => {
+    const footer = actions.current;
+    const container = category.current;
+    if (!footer || !container) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      container.style.setProperty(
+        '--wizard-actions-height',
+        `${footer.offsetHeight}px`,
+      );
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [closed]);
+  const persistence = (
+    <DraftPersistence
+      draft={draft}
+      items={items}
+      unavailable={closed}
+      interactionDisabled={confirming}
+    />
+  );
+
   return (
-    <>
-      <div
-        className="sticky top-0 z-10 mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-y border-border bg-background py-2"
-        aria-label="Souhrn hlasů"
-      >
-        <div
-          className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm tabular-nums"
-          role="status"
-          aria-atomic="true"
-        >
-          <p>
-            Kladné{' '}
-            <strong>
-              {local.plusUsed}/{step.maxPlusVotes ?? '—'}
-            </strong>
-          </p>
-          <p>
-            Záporné{' '}
-            {step.allowNegativeVotes ? (
-              <>
-                <strong>
-                  {local.minusUsed}/{step.maxMinusVotes ?? '—'}
-                </strong>{' '}
-                <span className="text-muted-foreground">
-                  · zbývá {local.minusRemaining}
-                </span>
-              </>
-            ) : (
-              <span className="text-muted-foreground">nepovoleny</span>
-            )}
-          </p>
-        </div>
-        {draft.saved?.status === 'submitted'
-          ? completedAction
-          : !readOnly && (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  ref={submitButton}
-                  className="min-h-11"
-                  disabled={
-                    confirming ||
-                    checking ||
-                    draft.busy ||
-                    Boolean(unavailable) ||
-                    !local.valid ||
-                    draft.needsComparison
-                  }
-                  onClick={() => setConfirming(true)}
-                >
-                  Odevzdat kategorii
-                </Button>
-                <Button
-                  variant="outline"
-                  className="min-h-11"
-                  disabled={
-                    confirming ||
-                    checking ||
-                    draft.busy ||
-                    Boolean(categoryUnavailable) ||
-                    draft.needsComparison ||
-                    (Boolean(draft.saved) && !draft.dirty)
-                  }
-                  onClick={() => void draft.save()}
-                >
-                  {draft.busy && !confirming ? 'Ukládáme…' : 'Uložit návrh'}
-                </Button>
-              </div>
-            )}
-      </div>
-      <BallotSubmission
-        draft={draft}
-        valid={local.valid}
-        unavailable={Boolean(unavailable) || checking}
-        confirming={confirming}
-        setConfirming={setConfirming}
-        onCancel={() => {
-          setConfirming(false);
-          queueMicrotask(() => submitButton.current?.focus());
-        }}
-      />
-      <DraftPersistence
-        draft={draft}
-        items={items}
-        unavailable={Boolean(categoryUnavailable)}
-        interactionDisabled={confirming || checking}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
-      />
-      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-        {step.kind === 'selection' ? 'Postupujících' : 'Vítězů'}:{' '}
-        {step.selectedPlaces ?? 'Neuvedeno'}. Hlasy nemusíte využít všechny.
-        {step.allowNegativeVotes && ' Každý záporný hlas vyžaduje dva kladné.'}
-        {' Opětovné stisknutí hlas odebere; opačné znaménko jej nahradí.'}
-      </p>
-      <div aria-live="polite" aria-atomic="true" className="mt-4">
-        {issues.length > 0 && (
-          <div className="border-l-2 border-destructive bg-card p-4">
-            <p className="font-semibold">
-              {unavailable
-                ? 'Kategorie není dostupná'
-                : 'Výběr zatím není platný'}
-            </p>
-            <ul className="mt-2 space-y-2">
-              {issues.map((issue) => (
-                <li key={issue}>{messages[issue]}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {blocked && !issues.includes(blocked) && (
-          <p className="border-l-2 border-destructive p-4">
-            {messages[blocked]}
-          </p>
-        )}
-      </div>
-      {items.length ? (
-        <table
-          className="voting-table mt-6 w-full table-fixed text-left"
-          role="table"
-        >
-          <caption className="mb-3 text-left text-lg font-semibold">
-            Soutěžní týmy
-          </caption>
-          <thead className="text-sm text-muted-foreground">
-            <tr role="row">
-              <th scope="col" className="w-10 py-3 font-normal">
-                Č.
-              </th>
-              <th scope="col" className="py-3 font-normal">
-                Tým
-              </th>
-              <th scope="col" className="w-14 py-3 text-center font-normal">
-                Hlas +
-              </th>
-              <th scope="col" className="w-14 py-3 text-center font-normal">
-                Hlas −
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, index) => {
-              const value = entries.find(
-                (entry) => entry.votingItemId === item.id,
-              )?.voteValue;
-              return (
-                <tr
-                  key={item.id}
-                  role="row"
-                  className="border-t border-border align-top"
-                >
-                  <td
-                    role="cell"
-                    className="py-5 font-mono text-sm text-muted-foreground"
-                  >
-                    {index + 1}
-                  </td>
-                  <th
-                    role="rowheader"
-                    scope="row"
-                    className="min-w-0 py-4 pr-2 font-normal"
-                  >
-                    <span className="break-words font-semibold">
-                      {item.name}
-                    </span>
-                    {item.description && (
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                        {item.description}
-                      </p>
-                    )}
-                  </th>
-                  {([1, -1] as const).map((sign) => (
-                    <td role="cell" key={sign} className="py-4 text-center">
-                      <Button
-                        variant="outline"
-                        className={`relative min-h-11 min-w-11 scroll-mt-28 p-0 text-xl ${value === sign ? (sign === 1 ? 'border-2 border-ring bg-ring text-primary-foreground hover:bg-ring hover:text-primary-foreground dark:bg-ring dark:hover:bg-ring' : 'border-2 border-destructive bg-destructive text-primary-foreground hover:bg-destructive hover:text-primary-foreground dark:bg-destructive dark:hover:bg-destructive') : ''}`}
-                        aria-label={`${sign === 1 ? 'Kladný' : 'Záporný'} hlas: ${item.name}, tým ${index + 1}`}
-                        aria-pressed={value === sign}
-                        disabled={
-                          confirming ||
-                          checking ||
-                          draft.busy ||
-                          Boolean(unavailable) ||
-                          (sign === -1 && !step.allowNegativeVotes)
-                        }
-                        onClick={() => toggle(item.id, sign)}
-                      >
-                        {sign === 1 ? '+' : '−'}
-                        {value === sign && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute right-0.5 top-0 text-xs"
-                          >
-                            ✓
-                          </span>
-                        )}
-                      </Button>
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      ) : (
-        <p className="py-8 text-muted-foreground">
-          V této kategorii zatím nejsou žádné týmy. Obraťte se na organizátora.
+    <div ref={category} className="wizard-voting" data-closed={closed}>
+      <header className="wizard-category-heading">
+        <p className="wizard-eyebrow">
+          {step.kind === 'selection' ? 'Výběrové kolo' : 'Finále'} ·{' '}
+          {placesLabel(step)} · kategorie {categoryNumber} z {categoryCount}
         </p>
-      )}
-      {!readOnly && (
-        <details className="mt-5 border-t border-border">
-          <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">
-            Kontrola výběru na serveru
-          </summary>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="ghost"
-              className="min-h-11"
-              onClick={check}
-              disabled={
-                confirming || checking || draft.busy || Boolean(unavailable)
-              }
-            >
-              {checking ? 'Kontrolujeme…' : 'Zkontrolovat výběr'}
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Kontrola nic neukládá
-            </span>
-          </div>
-          <div
-            ref={feedback}
-            tabIndex={-1}
-            className="mt-4 scroll-mt-44 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-            role="status"
-          >
-            {verified && (
-              <p className={verified.valid ? 'text-ring' : 'text-destructive'}>
-                {verified.valid
-                  ? 'Server potvrdil platný výběr. Kontrola neukládá změny ani neodevzdává hlasy.'
-                  : 'Server výběr nepotvrdil. Opravte uvedené chyby.'}
+        <h1 ref={headingRef} tabIndex={-1} id="category-title">
+          {step.name}
+        </h1>
+        {step.instructions && <Instructions text={step.instructions} />}
+      </header>
+
+      {closed ? (
+        <div className="wizard-closed-content">
+          <ClosedCategory
+            items={items}
+            ballot={draft.remote ?? draft.saved}
+            next={nextAvailable}
+            dirty={draft.dirty}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+          />
+          {pendingPrompt}
+          {persistence}
+        </div>
+      ) : (
+        <>
+          <section className="wizard-teams" aria-label="Týmy">
+            {submitted && (
+              <p className="wizard-locked" role="status">
+                <LockIcon /> Odevzdáno a uzamčeno. Úpravy může povolit jen
+                organizátor.
               </p>
             )}
-            {failed && (
-              <p className="text-destructive">
-                Kontrola se nezdařila. Váš výběr zůstává na stránce.
-                Zkontrolujte připojení a zkuste kontrolu znovu.
+            <div aria-live="polite" aria-atomic="true">
+              {issues.length > 0 && (
+                <div className="feedback-error mb-3">
+                  <p className="font-semibold">
+                    {unavailable
+                      ? 'Kategorie není dostupná'
+                      : 'Výběr zatím není platný'}
+                  </p>
+                  <ul className="mt-2 space-y-2">
+                    {issues.map((issue) => (
+                      <li key={issue}>{messages[issue]}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            {persistence}
+            {readOnly && (
+              <Button
+                variant="outline"
+                className="my-3 min-h-11"
+                onClick={onRefresh}
+                disabled={refreshing}
+              >
+                Obnovit stav lístku
+              </Button>
+            )}
+            {items.length ? (
+              <ol
+                className="wizard-team-list"
+                role="list"
+                aria-label="Soutěžní týmy"
+                onKeyDown={teamKeys}
+              >
+                {items.map((item, index) => {
+                  const value = entries.find(
+                    (entry) => entry.votingItemId === item.id,
+                  )?.voteValue;
+                  const signs = step.allowNegativeVotes
+                    ? ([1, -1] as const)
+                    : ([1] as const);
+                  return (
+                    <li
+                      key={item.id}
+                      data-item-id={item.id}
+                      data-vote={value}
+                      className="wizard-team"
+                    >
+                      <span className="wizard-team-index" aria-hidden="true">
+                        {index + 1}
+                      </span>
+                      <div className="wizard-team-copy">
+                        <p>{item.name}</p>
+                        {item.description && <p>{item.description}</p>}
+                      </div>
+                      <div className="wizard-team-actions">
+                        {signs.map((sign) => (
+                          <button
+                            key={sign}
+                            type="button"
+                            className="wizard-sign"
+                            data-sign={sign === 1 ? 'plus' : 'minus'}
+                            aria-label={`${sign === 1 ? 'Kladný' : 'Záporný'} hlas: ${item.name}`}
+                            aria-pressed={value === sign}
+                            disabled={votesDisabled}
+                            onClick={() => toggle(item.id, sign)}
+                          >
+                            {sign === 1 ? '+' : '−'}
+                          </button>
+                        ))}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className="py-8 text-muted-foreground">
+                V této kategorii zatím nejsou žádné týmy. Obraťte se na
+                organizátora.
               </p>
             )}
-          </div>
-        </details>
+          </section>
+
+          <aside className="wizard-side" aria-label="Vaše hlasy">
+            <VoteBudget step={step} local={local} teamCount={items.length} />
+            <p className="wizard-blocked" role="status" hidden={!blocked}>
+              {blocked ? (blockedMessages[blocked] ?? messages[blocked]) : null}
+            </p>
+            <div ref={actions} className="wizard-actions">
+              {pendingPrompt}
+              <div className="wizard-save-row" data-state={saveState}>
+                <p role="status">{status}</p>
+                {!readOnly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      cannotSave || (Boolean(draft.saved) && !draft.dirty)
+                    }
+                    onClick={() => void save()}
+                  >
+                    {draft.busy && !confirming ? 'Ukládáme…' : 'Uložit návrh'}
+                  </Button>
+                )}
+              </div>
+              {time && !readOnly && (
+                <p className="wizard-last-saved">
+                  Naposledy uloženo {time}. Uložený návrh se nezapočítává, dokud
+                  kategorii neodevzdáte.
+                </p>
+              )}
+              <div className="wizard-action-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    confirming ||
+                    draft.busy ||
+                    (draft.dirty && (cannotSave || unavailable))
+                  }
+                  onClick={async () => {
+                    if (!draft.dirty || (await save())) {
+                      navigation.navigate(nextHref, true);
+                    }
+                  }}
+                >
+                  <span className="wizard-next-phone">{nextLabel}</span>
+                  <span className="wizard-next-desktop">
+                    {desktopNextLabel}
+                  </span>
+                </Button>
+                {!readOnly && (
+                  <Button
+                    ref={submitButton}
+                    type="button"
+                    disabled={cannotSubmit}
+                    onClick={() => setConfirming(true)}
+                  >
+                    Odevzdat kategorii
+                  </Button>
+                )}
+              </div>
+              <p className="wizard-key-hint">
+                Klávesy: šipky ↑ ↓ mezi týmy, + a − pro hlas.
+              </p>
+            </div>
+          </aside>
+        </>
       )}
-    </>
+
+      {confirming && !readOnly && (
+        <BallotSubmission
+          detail={detail}
+          draft={draft}
+          local={local}
+          unavailable={unavailable}
+          onCancel={() => {
+            setConfirming(false);
+            requestAnimationFrame(() => submitButton.current?.focus());
+          }}
+          onConflict={() => setConfirming(false)}
+          onSubmitted={(ballot) => {
+            setConfirming(false);
+            onSubmitted(ballot);
+          }}
+        />
+      )}
+    </div>
   );
 }

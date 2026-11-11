@@ -35,7 +35,9 @@ export function rebaseSetup(
   local: VotingSetupValues,
   current: VotingSetupSnapshot,
 ): VotingSetupValues | null {
-  if (!current.editable) return null;
+  if (!current.editable) {
+    return null;
+  }
   const old = setupValues(base),
     remote = setupValues(current);
   if (
@@ -47,8 +49,9 @@ export function rebaseSetup(
           local.items.find((entry) => entry.id === item.id),
         ),
     )
-  )
+  ) {
     return null;
+  }
   const items = remote.items.map((item) => {
     const previous = old.items.find((entry) => entry.id === item.id),
       edited = local.items.find((entry) => entry.id === item.id);
@@ -56,12 +59,14 @@ export function rebaseSetup(
       ? edited
       : item;
   });
-  for (const item of local.items)
+  for (const item of local.items) {
     if (
       !old.items.some((entry) => entry.id === item.id) &&
       !items.some((entry) => entry.id === item.id)
-    )
+    ) {
       items.push(item);
+    }
+  }
   return {
     name: local.name !== old.name ? local.name : remote.name,
     instructions:
@@ -82,21 +87,23 @@ export function rebaseSetup(
   };
 }
 export const setupFieldLabels: Record<string, string> = {
-  name: 'Název hlasování',
-  instructions: 'Instrukce pro porotu',
-  kind: 'Typ hlasování',
+  name: 'Název',
+  instructions: 'Instrukce pro porotce (nepovinné)',
+  kind: 'Typ',
   'configuration.selectedPlaces': 'Počet postupujících týmů / vítězů',
-  'configuration.maxPlusVotes': 'Maximum kladných hlasů',
-  'configuration.maxMinusVotes': 'Maximum záporných hlasů',
+  'configuration.maxPlusVotes': 'Kladných hlasů na porotce',
+  'configuration.maxMinusVotes': 'Záporných hlasů',
   'configuration.allowNegativeVotes': 'Záporné hlasy',
-  juryGroupIds: 'Oprávněná porota',
+  juryGroupIds: 'Kdo hlasuje',
 };
 
 export function setupFieldError(field: string) {
-  if (field.endsWith('.teamId'))
+  if (field.endsWith('.teamId')) {
     return 'Vyberte tým tohoto eventu, který v kategorii není zařazený dvakrát.';
-  if (field.endsWith('.displayOrder'))
+  }
+  if (field.endsWith('.displayOrder')) {
     return 'Zadejte celý nezáporný počet, nejvýše 2147483647.';
+  }
   return (
     (
       {
@@ -124,7 +131,9 @@ export function addAllEventTeams(
 ): VotingSetupValues {
   const included = new Set(values.items.map((item) => item.teamId));
   const missing = teams.filter((team) => !included.has(team.id));
-  if (!missing.length) return values;
+  if (!missing.length) {
+    return values;
+  }
   const items = values.items.map((item) => ({ ...item }));
   let nextOrder = items.reduce(
     (next, item) => Math.max(next, (item.displayOrder ?? -1) + 1),
@@ -132,13 +141,15 @@ export function addAllEventTeams(
   );
   for (const team of missing) {
     const blank = items.find((item) => item.teamId === null);
-    if (blank) blank.teamId = team.id;
-    else
+    if (blank) {
+      blank.teamId = team.id;
+    } else {
       items.push({
         id: crypto.randomUUID(),
         teamId: team.id,
         displayOrder: Math.min(nextOrder++, 2147483647),
       });
+    }
   }
   return { ...values, items };
 }

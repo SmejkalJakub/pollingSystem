@@ -1,5 +1,9 @@
 # Design reference
 
+## Admin redesign R7 — 2026-11-11
+
+The [Progress artboard](../design/ux-redesign/artboards/AdminProgress.dc.html) guides the KPI strip, filters, sticky-name matrix and category cards. The [Results artboard](../design/ux-redesign/artboards/AdminResults.dc.html) guides the category navigation, ranking and participation layout, cutoff treatment and vote matrix. Both use the existing blue/navy admin shell and theme tokens. Ranking rows stack their counts at phone widths. The two matrices scroll within labelled keyboard-focusable regions. Browser and visual acceptance are pending as recorded in [R7 progress](../implementation/progress.md#uxui-redesign-r7--implemented-2026-11-11).
+
 ## Current refinement — 2026-11-10
 
 The user requests a less sterile interface and provides [DashHack](https://dashhack-production.up.railway.app) as inspiration. Read-only native-browser inspection covered its home and the ATT Hackathon Junior 2026 Teams workspace. Adapt blue accents, navy surfaces, softer panel corners and compact direct navigation to the existing voting product. The current refinement introduces a blue/light workspace with a navy header and a dark palette for dark browser preference. Functional requirements, voting rules and existing access mechanics remain authoritative. [Organizer workflow scope and validation](organizer-usability.md).

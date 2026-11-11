@@ -1,8 +1,13 @@
-import { type APIRequestContext, type Page } from '@playwright/test';
+import {
+  type APIRequestContext,
+  type Page,
+  type TestInfo,
+} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import ExcelJS from 'exceljs';
 import { z } from 'zod';
 import {
+  ballotDraftSchema,
   eventSchema,
   juryGroupListSchema,
   jurorListSchema,
@@ -33,6 +38,19 @@ async function api(
 }
 
 async function accessible(page: Page) {
+  // Audit settled colours, not a colour-scheme or hover transition in progress.
+  await page.evaluate(async () => {
+    await Promise.all(
+      document
+        .getAnimations()
+        // Infinite indicators never finish; transitions do.
+        .filter(
+          (animation) =>
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        )
+        .map((animation) => animation.finished.catch(() => {})),
+    );
+  });
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze();
@@ -42,18 +60,58 @@ async function accessible(page: Page) {
       targets: nodes.map((n) => n.target),
     })),
   ).toEqual([]);
+  // Empty when the page does not scroll sideways; otherwise names the culprits.
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
+    await page.evaluate(() => {
+      const width = document.documentElement.scrollWidth;
+      if (width <= innerWidth) {
+        return [];
+      }
+      const wide = Array.from(document.querySelectorAll('body *'))
+        .filter((element) => element.getBoundingClientRect().right > innerWidth)
+        .slice(0, 6)
+        .map((element) => `${element.tagName}.${element.className}`);
+      return [`scrollWidth ${width} > ${innerWidth}`, ...wide];
+    }),
+  ).toEqual([]);
 }
 
-async function saveForm(page: Page, name: string) {
-  await page
-    .getByRole('form', { name, exact: true })
-    .getByRole('button', { name: 'Uložit', exact: true })
-    .click();
+async function captureR3(page: Page, testInfo: TestInfo, state: string) {
+  if (testInfo.project.name !== 'desktop') {
+    return;
+  }
+  const viewport = page.viewportSize()!;
+  for (const width of [390, 1280, 1440]) {
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.screenshot({
+        path: testInfo.outputPath(`r3-${state}-${width}-${scheme}.png`),
+      });
+    }
+  }
+  await page.setViewportSize(viewport);
+  await page.emulateMedia({ colorScheme: null });
+}
+
+async function captureR7(page: Page, testInfo: TestInfo, screen: string) {
+  if (testInfo.project.name !== 'desktop') {
+    return;
+  }
+  const viewport = page.viewportSize()!;
+  for (const width of [390, 1440]) {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme });
+      await accessible(page);
+      await page.screenshot({
+        path: testInfo.outputPath(`r7-${screen}-${width}-${colorScheme}.png`),
+        fullPage: true,
+      });
+    }
+  }
+  await page.setViewportSize(viewport);
+  await page.emulateMedia({ colorScheme: null });
 }
 
 test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and XLSX agree', async ({
@@ -70,16 +128,24 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     page.getByRole('heading', { name: 'Vaše eventy' }),
   ).toBeVisible();
   await accessible(page);
-  await page.getByRole('button', { name: 'Nový event', exact: true }).click();
+  await page.getByRole('button', { name: '+ Nový event', exact: true }).click();
   await page
     .getByLabel('Název eventu', { exact: true })
     .fill('Integrovaný test');
-  await saveForm(page, 'Nový event');
+  await page
+    .getByRole('form', { name: 'Nový event', exact: true })
+    .getByRole('button', { name: 'Vytvořit a přidat týmy →', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/admin\/events\/[0-9a-f-]+\?setup=teams$/);
   const eventId = new URL(page.url()).pathname.split('/').at(-1)!;
   eventSchema.parse(await api(page.request, 'GET', `/events/${eventId}`));
-  await page.getByRole('link', { name: 'Porotci', exact: true }).click();
-  await page.getByRole('button', { name: 'Nový porotce', exact: true }).click();
+  await page.getByRole('link', { name: /\bPorotci(?: |$)/u }).click();
+  await page
+    .getByRole('textbox', { name: 'Přidat porotce', exact: true })
+    .fill('Nový porotce');
+  await page
+    .getByRole('textbox', { name: 'Přidat porotce', exact: true })
+    .press('Enter');
   await page
     .getByLabel('Jméno porotce, řádek 1', { exact: true })
     .fill('Porotce T1');
@@ -97,21 +163,27 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
   );
   expect(groups.map((group) => group.code)).toEqual(['T', 'V']);
   // Repetitive roster entries use the real guarded HTTP API; no SQL setup bypasses activation.
-  for (const group of groups)
+  for (const group of groups) {
     for (let i = group.code === 'T' ? 2 : 1; i <= 5; i++) {
       await api(page.request, 'POST', `/events/${eventId}/jurors`, {
         displayName: `Porotce ${group.code}${i}`,
         juryGroupId: group.id,
       });
     }
+  }
   const jurors = jurorListSchema.parse(
     await api(page.request, 'GET', `/events/${eventId}/jurors`),
   );
   await page
-    .getByRole('navigation', { name: 'Příprava', exact: true })
-    .getByRole('link', { name: 'Týmy', exact: true })
+    .getByRole('group', { name: 'Příprava', exact: true })
+    .getByRole('link', { name: /Týmy(?: |$)/u })
     .click();
-  await page.getByRole('button', { name: 'Nový tým', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Přidat tým', exact: true })
+    .fill('Nový tým');
+  await page
+    .getByRole('textbox', { name: 'Přidat tým', exact: true })
+    .press('Enter');
   await page.getByLabel('Název týmu, řádek 1', { exact: true }).fill('Tým 1');
   await page
     .getByLabel('Popis týmu, řádek 1', { exact: true })
@@ -122,36 +194,33 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
   await expect(
     page.getByText('Tabulka týmů byla uložena.', { exact: true }),
   ).toBeVisible();
-  for (let i = 2; i <= 8; i++)
+  for (let i = 2; i <= 8; i++) {
     await api(page.request, 'POST', `/events/${eventId}/teams`, {
       name: `Tým ${i}`,
       description: `Popis týmu ${i}`,
     });
+  }
   const teams = teamListSchema.parse(
     await api(page.request, 'GET', `/events/${eventId}/teams`),
   );
   await page
-    .getByRole('navigation', { name: 'Příprava', exact: true })
-    .getByRole('link', { name: 'Kategorie', exact: true })
+    .getByRole('group', { name: 'Příprava', exact: true })
+    .getByRole('link', { name: /\bKategorie(?: |$)/u })
     .click();
   await page
-    .getByRole('button', { name: 'Nové hlasování', exact: true })
+    .getByRole('button', { name: 'Nová kategorie', exact: true })
     .click();
-  await page.getByLabel('Název hlasování', { exact: true }).fill('Výběr');
-  await page
-    .getByLabel('Typ hlasování', { exact: true })
-    .selectOption('selection');
+  await page.getByLabel('Název', { exact: true }).fill('Výběr');
+  await page.getByRole('radio', { name: 'Výběrové kolo', exact: true }).check();
   await page
     .getByRole('button', { name: 'Uložit kategorii', exact: true })
     .click();
   await expect(page).toHaveURL(/\/admin\/votings\/[0-9a-f-]+$/);
   const selection = page.url().split('/').at(-1)!;
-  await page
-    .getByLabel('Počet postupujících týmů (slotů)', { exact: true })
-    .fill('1');
-  await page.getByLabel('Maximum kladných hlasů', { exact: true }).fill('2');
-  await page.getByLabel('Maximum záporných hlasů', { exact: true }).fill('1');
-  await page.getByLabel('Záporné hlasy', { exact: true }).selectOption('yes');
+  await page.getByLabel('Počet postupujících týmů', { exact: true }).fill('1');
+  await page.getByLabel('Kladných hlasů na porotce', { exact: true }).fill('2');
+  await page.getByLabel('Záporných hlasů', { exact: true }).fill('1');
+  await page.getByRole('radio', { name: 'Povolit', exact: true }).check();
   await page
     .getByRole('button', { name: 'Uložit kategorii', exact: true })
     .click();
@@ -163,11 +232,12 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     await api(page.request, 'PUT', `/votings/${id}/allowed-groups`, {
       juryGroupIds: allowed,
     });
-    for (const [i, team] of teams.entries())
+    for (const [i, team] of teams.entries()) {
       await api(page.request, 'POST', `/votings/${id}/items`, {
         teamId: team.id,
         displayOrder: i,
       });
+    }
     candidates.set(
       id,
       votingItemListSchema
@@ -181,7 +251,7 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
   );
   await page.reload();
   await page
-    .getByRole('button', { name: 'Aktivovat hlasování', exact: true })
+    .getByRole('button', { name: 'Otevřít hlasování', exact: true })
     .click();
   await page.getByRole('button', { name: 'Aktivovat', exact: true }).click();
   await expect(
@@ -240,14 +310,91 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
           ),
         ).url;
       await jurorPage.goto(link);
+      if (code === 'T') {
+        await expect(
+          jurorPage.getByRole('heading', { name: 'Vítejte v porotě' }),
+        ).toBeVisible();
+        await accessible(jurorPage);
+        await captureR3(jurorPage, testInfo, 'entry');
+      }
       await jurorPage
-        .getByRole('button', { name: 'Pokračovat k přehledu', exact: true })
+        .getByRole('button', { name: 'Pokračovat k hlasování', exact: true })
         .click();
-      await expect(jurorPage).toHaveURL(/\/wizard$/);
       expect(new URL(jurorPage.url()).hash).toBe('');
+      // Wait for redemption to finish before reusing the session cookie.
+      await expect(jurorPage).toHaveURL(/\/wizard\/steps\/[0-9a-f-]{36}$/);
       const current = wizardCurrentSchema.parse(
         await api(jurorPage.request, 'GET', '/wizard/current'),
       );
+      const [first, second] = current.steps;
+      await expect(jurorPage).toHaveURL(`/wizard/steps/${first!.id}`);
+      const jurorDocument = await jurorPage.evaluate(
+        () => performance.timeOrigin,
+      );
+      const jurorNav = jurorPage.getByRole('navigation', {
+        name: 'Kategorie',
+        exact: true,
+      });
+      const firstTab = jurorNav.locator(`[href="/wizard/steps/${first!.id}"]`);
+      const secondTab = jurorNav.locator(
+        `[href="/wizard/steps/${second!.id}"]`,
+      );
+      const firstVote = jurorPage
+        .getByRole('button', { name: /^Kladný hlas:/ })
+        .first();
+      const leavePrompt = jurorPage.getByRole('region', {
+        name: 'Neuložené změny',
+      });
+      await expect(firstTab).toHaveAttribute('aria-current', 'page');
+      await firstVote.click();
+      await secondTab.click();
+      await expect(leavePrompt).toHaveText(
+        /Máte neuložené změny v této kategorii/,
+      );
+      await expect(jurorPage).toHaveURL(`/wizard/steps/${first!.id}`);
+      await expect(firstVote).toHaveAttribute('aria-pressed', 'true');
+      const unsaved = wizardStepDetailSchema.parse(
+        await api(jurorPage.request, 'GET', `/wizard/steps/${first!.id}`),
+      );
+      expect(unsaved.ballot).toBeNull();
+      await leavePrompt
+        .getByRole('button', { name: 'Zahodit', exact: true })
+        .click();
+      await expect(secondTab).toHaveAttribute('aria-current', 'page');
+      await firstVote.click();
+      await jurorPage.goBack();
+      await expect(leavePrompt).toBeVisible();
+      await expect(jurorPage).toHaveURL(`/wizard/steps/${second!.id}`);
+      await expect(firstVote).toHaveAttribute('aria-pressed', 'true');
+      await leavePrompt
+        .getByRole('button', { name: 'Zahodit', exact: true })
+        .click();
+      await expect(firstVote).toHaveAttribute('aria-pressed', 'false');
+      await jurorPage.goForward();
+      await expect(
+        jurorPage.getByRole('heading', { name: second!.name, exact: true }),
+      ).toBeFocused();
+      await firstTab.click();
+      await expect(
+        jurorPage.getByRole('heading', { name: first!.name, exact: true }),
+      ).toBeFocused();
+      expect(await jurorPage.evaluate(() => performance.timeOrigin)).toBe(
+        jurorDocument,
+      );
+      if (testInfo.project.name === 'desktop') {
+        const secondVote = jurorPage
+          .getByRole('button', { name: /^Kladný hlas:/ })
+          .nth(1);
+        await firstVote.focus();
+        await firstVote.press('ArrowDown');
+        await expect(secondVote).toBeFocused();
+        await secondVote.press('+');
+        await expect(secondVote).toHaveAttribute('aria-pressed', 'true');
+        await secondVote.press('+');
+        await expect(secondVote).toHaveAttribute('aria-pressed', 'false');
+        await secondVote.press('ArrowUp');
+        await expect(firstVote).toBeFocused();
+      }
       const allowed = categories.filter(
         (c) => c.group === 'both' || c.group === code,
       );
@@ -288,16 +435,35 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
         expect(target!.width).toBeGreaterThanOrEqual(44);
         expect(target!.height).toBeGreaterThanOrEqual(44);
         if (category.name === 'Prezentace') {
-          for (const button of await negative.all())
-            await expect(button).toBeDisabled();
+          await expect(negative).toHaveCount(0);
+          expect(
+            (
+              await jurorPage.request.post(
+                `/api/wizard/steps/${category.id}/submit`,
+                {
+                  data: {
+                    expectedRevision: null,
+                    entries: [
+                      {
+                        votingItemId: candidates.get(category.id)![0],
+                        voteValue: -1,
+                      },
+                    ],
+                  },
+                  headers: { 'X-D21-Request': '1' },
+                },
+              )
+            ).status(),
+          ).toBe(409);
         } else {
           await negative.nth(2).click();
+          await expect(negative.nth(2)).toHaveAttribute(
+            'aria-pressed',
+            'false',
+          );
           await expect(
-            jurorPage.getByRole('button', {
-              name: 'Odevzdat kategorii',
-              exact: true,
-            }),
-          ).toBeDisabled();
+            jurorPage.getByText(/Každý záporný hlas potřebuje dva/),
+          ).toBeVisible();
           const invalid = await jurorPage.request.post(
             `/api/wizard/steps/${category.id}/submit`,
             {
@@ -314,7 +480,6 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
             },
           );
           expect(invalid.status()).toBe(409);
-          await negative.nth(2).click();
         }
         await positive.nth(0).click();
         await expect(positive.nth(0)).toHaveAttribute('aria-pressed', 'true');
@@ -324,34 +489,135 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
         await positive.nth(0).press('Space');
         if (category.name !== 'Prezentace') {
           await positive.nth(1).click();
-          // Opposite-sign replacement is retained even when it reduces negative entitlement.
           await negative.nth(0).click();
-          await expect(positive.nth(0)).toHaveAttribute(
-            'aria-pressed',
-            'false',
-          );
-          await positive.nth(0).click();
+          await expect(positive.nth(0)).toHaveAttribute('aria-pressed', 'true');
           await negative.nth(2).click();
         }
-        await jurorPage
-          .getByRole('button', { name: 'Uložit návrh', exact: true })
-          .click();
-        await expect(
-          jurorPage.getByText(
-            'Návrh je uložený. Hlasy zatím nejsou odevzdané.',
-            { exact: true },
-          ),
-        ).toBeVisible();
-        await jurorPage.reload();
+        if (category.id === current.steps[0]!.id) {
+          const advance = jurorPage.getByRole('button', {
+            name: /Uložit a další/,
+          });
+          const draftPath = `**/api/wizard/steps/${category.id}/ballot-draft`;
+          await jurorPage.route(draftPath, async (route) => {
+            if (route.request().method() === 'PUT') {
+              await route.abort('connectionfailed');
+            } else {
+              await route.continue();
+            }
+          });
+          await advance.click();
+          await expect(
+            jurorPage.getByText(
+              /Změnu hlasovacího lístku se nepodařilo potvrdit/,
+            ),
+          ).toBeVisible();
+          await expect(positive.nth(0)).toHaveAttribute('aria-pressed', 'true');
+          await jurorPage.unroute(draftPath);
+          await secondTab.click();
+          await leavePrompt
+            .getByRole('button', { name: 'Uložit a přejít', exact: true })
+            .click();
+          await expect(jurorPage).toHaveURL(`/wizard/steps/${second!.id}`);
+          await jurorPage.goto(`/wizard/steps/${category.id}`);
+        } else {
+          await jurorPage
+            .getByRole('button', { name: 'Uložit návrh', exact: true })
+            .click();
+          await expect(
+            jurorPage.getByText(
+              'Návrh je uložený. Hlasy zatím nejsou odevzdané.',
+              { exact: true },
+            ),
+          ).toBeVisible();
+          await jurorPage.reload();
+        }
         await expect(positive.nth(0)).toHaveAttribute('aria-pressed', 'true');
         const detail = wizardStepDetailSchema.parse(
           await api(jurorPage.request, 'GET', `/wizard/steps/${category.id}`),
         );
-        if (category.id === selection)
-          savedRequests.set(code, {
-            expectedRevision: detail.ballot!.revision,
-            entries: detail.ballot!.entries,
+        if (code === 'T' && category.id === first!.id) {
+          const detailUrl = `/wizard/steps/${category.id}`;
+          const elsewhere = ballotDraftSchema.parse(
+            await api(jurorPage.request, 'PUT', `${detailUrl}/ballot-draft`, {
+              expectedRevision: detail.ballot!.revision,
+              entries: [],
+            }),
+          );
+          await jurorPage.evaluate(() =>
+            document.dispatchEvent(new Event('visibilitychange')),
+          );
+          const comparison = jurorPage.getByRole('dialog', {
+            name: 'Hlasy se mezitím změnily',
           });
+          await expect(comparison.getByRole('heading')).toBeFocused();
+          await expect(
+            comparison.locator('tr[data-different="true"]').first(),
+          ).toBeVisible();
+          await accessible(jurorPage);
+          await captureR3(jurorPage, testInfo, 'conflict');
+          await comparison
+            .getByRole('button', { name: 'Ponechat můj výběr' })
+            .click();
+          await expect(comparison).toHaveCount(0);
+          await expect(positive.first()).toHaveAttribute(
+            'aria-pressed',
+            'true',
+          );
+          expect(
+            wizardStepDetailSchema.parse(
+              await api(jurorPage.request, 'GET', detailUrl),
+            ).ballot,
+          ).toMatchObject({
+            revision: elsewhere.revision,
+            entries: [],
+          });
+
+          await api(page.request, 'POST', `/votings/${category.id}/close`, {});
+          await jurorPage.evaluate(() =>
+            document.dispatchEvent(new Event('visibilitychange')),
+          );
+          const closed = jurorPage.getByRole('region', {
+            name: 'Hlasování v této kategorii je uzavřené',
+          });
+          await expect(
+            closed.getByText(/Uložený návrh:.*Prázdný lístek/),
+          ).toBeVisible();
+          await expect(
+            closed.getByText('Neuložené změny zůstávají na této stránce.'),
+          ).toBeVisible();
+          await expect(
+            jurorPage.getByRole('link', { name: /Můžete pokračovat/ }),
+          ).toBeVisible();
+          await expect(positive).toHaveCount(0);
+          await accessible(jurorPage);
+          await captureR3(jurorPage, testInfo, 'closed');
+          await api(page.request, 'POST', `/votings/${category.id}/reopen`, {});
+          await closed
+            .getByRole('button', { name: 'Zkontrolovat znovu' })
+            .click();
+          await expect(positive.first()).toHaveAttribute(
+            'aria-pressed',
+            'true',
+          );
+          await jurorPage
+            .getByRole('button', { name: 'Uložit návrh', exact: true })
+            .click();
+          await expect(
+            jurorPage.getByText(
+              'Návrh je uložený. Hlasy zatím nejsou odevzdané.',
+              { exact: true },
+            ),
+          ).toBeVisible();
+        }
+        if (category.id === selection) {
+          const saved = wizardStepDetailSchema.parse(
+            await api(jurorPage.request, 'GET', `/wizard/steps/${category.id}`),
+          ).ballot!;
+          savedRequests.set(code, {
+            expectedRevision: saved.revision,
+            entries: saved.entries,
+          });
+        }
         await accessible(jurorPage);
         if (code === 'T' && category.name === 'Celkový vítěz') {
           await positive.last().scrollIntoViewIfNeeded();
@@ -366,64 +632,170 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
           });
         }
       }
-      await jurorPage.goto('/wizard/review');
-      await expect(
-        jurorPage.getByRole('heading', { name: 'Rekapitulace a odevzdání' }),
-      ).toBeVisible();
-      const boxes = jurorPage.getByRole('checkbox');
+      const beforeSummary = await jurorPage.evaluate(
+        () => performance.timeOrigin,
+      );
+      const summaryTab = jurorNav.locator('[href="/wizard/review"]');
+      await summaryTab.click();
+      const summaryHeading = jurorPage.getByRole('heading', {
+        name: 'Souhrn hlasování',
+        exact: true,
+      });
+      await expect(summaryHeading).toBeFocused();
+      await expect(summaryTab).toHaveAttribute('aria-current', 'page');
+      expect(await jurorPage.evaluate(() => performance.timeOrigin)).toBe(
+        beforeSummary,
+      );
+      const cards = jurorPage.getByRole('list', {
+        name: 'Uložené hlasy podle kategorií',
+      });
+      await expect(cards.getByRole('listitem')).toHaveCount(3);
+      const boxes = cards.getByRole('checkbox');
       await expect(boxes).toHaveCount(3);
+      await expect(
+        jurorPage.getByRole('button', {
+          name: 'Vyberte kategorie k odevzdání',
+        }),
+      ).toBeDisabled();
+      if (code === 'T') {
+        const detailUrl = `/wizard/steps/${second!.id}`;
+        const original = wizardStepDetailSchema.parse(
+          await api(jurorPage.request, 'GET', detailUrl),
+        ).ballot!;
+        const savedElsewhere = ballotDraftSchema.parse(
+          await api(jurorPage.request, 'PUT', `${detailUrl}/ballot-draft`, {
+            expectedRevision: original.revision,
+            entries: [],
+          }),
+        );
+        const refreshSummary = jurorPage.getByRole('button', {
+          name: 'Ověřit aktuální stav',
+          exact: true,
+        });
+        const loadSummary = jurorPage.getByRole('button', {
+          name: 'Načíst aktuální přehled',
+          exact: true,
+        });
+        await boxes.first().check();
+        await refreshSummary.click();
+        await expect(loadSummary).toBeVisible();
+        await expect(boxes.first()).toBeDisabled();
+        await loadSummary.click();
+        await expect(boxes.first()).not.toBeChecked();
+        await expect(
+          cards.getByText('Prázdný lístek', { exact: true }),
+        ).toBeVisible();
+        await api(jurorPage.request, 'PUT', `${detailUrl}/ballot-draft`, {
+          expectedRevision: savedElsewhere.revision,
+          entries: original.entries,
+        });
+        await refreshSummary.click();
+        await loadSummary.click();
+      }
       for (const box of await boxes.all()) {
         await expect(box).not.toBeChecked();
         await box.check();
       }
       await accessible(jurorPage);
-      await jurorPage
-        .getByRole('button', {
-          name: 'Odevzdat vybrané kategorie',
-          exact: true,
-        })
+      if (code === 'T' && testInfo.project.name === 'desktop') {
+        for (const width of [390, 1280, 1440]) {
+          for (const scheme of ['light', 'dark'] as const) {
+            await jurorPage.setViewportSize({ width, height: 900 });
+            await jurorPage.emulateMedia({ colorScheme: scheme });
+            await jurorPage.screenshot({
+              path: testInfo.outputPath(`r2-summary-${width}-${scheme}.png`),
+            });
+            await jurorPage
+              .getByRole('button', {
+                name: 'Odevzdat vybrané (3)',
+                exact: true,
+              })
+              .click();
+            await jurorPage.screenshot({
+              path: testInfo.outputPath(`r2-sheet-${width}-${scheme}.png`),
+            });
+            await jurorPage.keyboard.press('Escape');
+          }
+        }
+        await jurorPage.setViewportSize(page.viewportSize()!);
+        await jurorPage.emulateMedia({ colorScheme });
+      }
+      const openSummarySheet = jurorPage.getByRole('button', {
+        name: 'Odevzdat vybrané (3)',
+        exact: true,
+      });
+      const summarySheet = jurorPage.getByRole('dialog', {
+        name: 'Odevzdat 3 kategorie?',
+        exact: true,
+      });
+      const confirmSummary = summarySheet.getByRole('button', {
+        name: 'Potvrdit odevzdání',
+        exact: true,
+      });
+      await openSummarySheet.click();
+      await expect(summarySheet.getByRole('heading')).toBeFocused();
+      await expect(summarySheet.getByRole('listitem')).toHaveCount(3);
+      await summarySheet
+        .getByRole('button', { name: 'Zpět k úpravám', exact: true })
         .click();
-      await expect(
-        jurorPage.getByRole('heading', { name: 'Potvrdit vybrané kategorie?' }),
-      ).toBeFocused();
-      await jurorPage
-        .getByRole('button', { name: 'Zpět k výběru', exact: true })
-        .click();
-      await expect(
-        jurorPage.getByRole('button', {
-          name: 'Odevzdat vybrané kategorie',
-          exact: true,
-        }),
-      ).toBeFocused();
-      await jurorPage
-        .getByRole('button', {
-          name: 'Odevzdat vybrané kategorie',
-          exact: true,
-        })
-        .press('Enter');
+      await expect(openSummarySheet).toBeFocused();
+      await openSummarySheet.press('Enter');
+      await accessible(jurorPage);
+      let firstRequest: string | null = null;
+      if (code === 'T') {
+        await jurorPage.route('**/api/wizard/final-submit', async (route) => {
+          if (!firstRequest) {
+            firstRequest = route.request().postData();
+            await route.abort('connectionfailed');
+          } else {
+            expect(route.request().postData()).toBe(firstRequest);
+            await route.continue();
+          }
+        });
+        await confirmSummary.click();
+        await expect(summarySheet.getByRole('alert')).toBeFocused();
+      }
       const submissionResponse = jurorPage.waitForResponse(
         (response) =>
           response.url().endsWith('/api/wizard/final-submit') &&
           response.request().method() === 'POST',
       );
-      await jurorPage
-        .getByRole('button', {
-          name: 'Potvrdit a odevzdat vybrané',
-          exact: true,
-        })
-        .click();
+      if (code === 'T') {
+        await summarySheet
+          .getByRole('button', {
+            name: 'Zopakovat stejné odevzdání',
+            exact: true,
+          })
+          .click();
+      } else {
+        await confirmSummary.click();
+      }
       const response = await submissionResponse;
       expect(response.status(), await response.text()).toBe(200);
       const submitted = wizardFinalSubmitSchema.parse(await response.json());
       expect(
         submitted.results.every((result) => result.outcome === 'submitted'),
       ).toBe(true);
+      if (code === 'T') {
+        await jurorPage.unroute('**/api/wizard/final-submit');
+      }
+      await expect(summarySheet).toHaveCount(0);
+      await expect(summaryHeading).toBeVisible();
       await expect(
-        jurorPage.getByRole('heading', {
-          name: 'Potvrzení hlasování',
+        jurorPage.getByText('Potvrzeno: 3 z 3 vybraných kategorií.', {
           exact: true,
         }),
       ).toBeVisible();
+      await expect(
+        jurorPage.getByText('Všechny kategorie jsou odevzdané.', {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(boxes).toHaveCount(0);
+      await expect(jurorPage).toHaveURL('/wizard/confirmation');
+      expect(await jurorPage.evaluate(() => performance.timeOrigin)).toBe(
+        beforeSummary,
+      );
       // Exact HTTP replay does not create an extra current ballot or audit snapshot.
       await api(
         jurorPage.request,
@@ -443,9 +815,9 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
         ).status(),
       ).toBe(409);
       await jurorPage.reload();
+      await expect(summaryHeading).toBeVisible();
       await expect(
-        jurorPage.getByRole('heading', {
-          name: 'Potvrzení hlasování',
+        jurorPage.getByText('Všechny kategorie jsou odevzdané.', {
           exact: true,
         }),
       ).toBeVisible();
@@ -453,13 +825,67 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     }
     await page.goto(`/admin/events/${eventId}/dashboard`);
     await expect(
-      page.getByRole('heading', { name: 'Integrovaný test', exact: true }),
+      page.getByRole('button', { name: 'Integrovaný test', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Průběh hlasování', exact: true }),
     ).toBeVisible();
     const dashboard = dashboardOverviewSchema.parse(
       await api(page.request, 'GET', `/dashboard/overview?eventId=${eventId}`),
     );
     expect(dashboard.totals.submitted).toBe(6);
     expect(dashboard.totals.expected).toBe(30);
+    const progress = page
+      .getByRole('region', { name: 'Matice průběhu', exact: true })
+      .getByRole('table');
+    const pendingFilter = page.getByRole('button', { name: /^Čekající \(/ });
+    await expect(pendingFilter).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      progress.getByRole('rowheader', { name: /^Porotce T1\b/ }),
+    ).toHaveCount(0);
+    await expect(
+      progress.getByText('Bez návrhu', { exact: true }).first(),
+    ).toBeVisible();
+    await expect(
+      progress.getByText('— nehlasuje', { exact: true }).first(),
+    ).toBeVisible();
+    await captureR7(page, testInfo, 'progress');
+    const technicalCategory = categories.find(
+      (category) => category.group === 'T',
+    )!;
+    await page.getByRole('button', { name: 'Technická', exact: true }).click();
+    await expect(
+      progress.getByRole('rowheader', { name: /^Porotce V/ }),
+    ).toHaveCount(0);
+    const jurorRow = progress.getByRole('row', { name: /^Porotce T1\b/ });
+    await jurorRow
+      .getByLabel('Další možnosti: Porotce T1', { exact: true })
+      .click();
+    await jurorRow
+      .getByRole('link', {
+        name: `Odemknout odevzdaný lístek… · ${technicalCategory.name}`,
+      })
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/dashboard/votings/${technicalCategory.id}\\?unlock=`),
+    );
+    const unlock = page.getByRole('form', {
+      name: 'Odemknout lístek: Porotce T1',
+      exact: true,
+    });
+    await expect(unlock).toBeVisible();
+    await unlock.getByRole('button', { name: 'Zrušit', exact: true }).click();
+    await expect(unlock).toHaveCount(0);
+    await page.goBack();
+    await expect(pendingFilter).toHaveAttribute('aria-pressed', 'true');
+    const refresh = page.getByRole('button', { name: 'Obnovit', exact: true });
+    await expect(refresh).toBeEnabled();
+    const read = page.waitForResponse((response) =>
+      response.url().includes('/api/dashboard/overview?'),
+    );
+    await refresh.click();
+    expect((await read).ok()).toBe(true);
+    await expect(refresh).toBeFocused();
     await accessible(page);
     await page.goto(`/admin/events/${eventId}/results`);
     await expect(
@@ -499,11 +925,49 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
       30,
     );
     await download.delete();
-    await page.goto(`/admin/results/votings/${selection}`);
     await expect(
-      page.getByRole('heading', { name: 'Hlasy porotců', exact: true }),
+      page.getByRole('heading', { name: /^Hlasy porotců/ }),
+    ).toHaveCount(0);
+    await expect(page.getByText('Porotce T1', { exact: true })).toHaveCount(0);
+    await page
+      .getByRole('navigation', { name: 'Výsledky podle kategorií' })
+      .getByRole('link', { name: 'Výběr · průběžný', exact: true })
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/results/votings/${selection}$`),
+    );
+    await expect(
+      page.getByRole('heading', { name: 'Hlasy porotců · Výběr', exact: true }),
     ).toBeVisible();
-    await expect(page.getByText('Započteno · odevzdáno').first()).toBeVisible();
+    const voteMatrix = page
+      .getByRole('region', { name: 'Matice hlasů porotců', exact: true })
+      .getByRole('table');
+    await expect(
+      voteMatrix.getByText(/^v \d{1,2}:\d{2} · započteno$/).first(),
+    ).toBeVisible();
+    const expectedScores = selected.rows.map((row) => String(row.score));
+    const scores = voteMatrix
+      .getByRole('row', { name: /^Skóre\b/ })
+      .getByRole('cell');
+    expect((await scores.allTextContents()).slice(0, -1)).toEqual(
+      expectedScores,
+    );
+    await page.getByRole('button', { name: 'Technická', exact: true }).click();
+    await expect(
+      voteMatrix.getByRole('rowheader', { name: /^Porotce V/ }),
+    ).toHaveCount(0);
+    expect((await scores.allTextContents()).slice(0, -1)).toEqual(
+      expectedScores,
+    );
+    await page.getByRole('button', { name: /^Jen započtení/ }).click();
+    await expect(
+      voteMatrix.getByRole('rowheader', { name: /^Porotce / }),
+    ).toHaveCount(selected.counts.submitted);
+    await page.getByRole('button', { name: /^Všichni \(/ }).click();
+    await expect(
+      voteMatrix.getByRole('rowheader', { name: /^Porotce / }),
+    ).toHaveCount(selected.counts.expected);
+    await captureR7(page, testInfo, 'results');
     await accessible(page);
     await api(page.request, 'POST', `/votings/${selection}/close`, {});
     const jurorPage = contexts[0]!.pages()[0]!;
@@ -591,8 +1055,9 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
         await context.close();
       }
     }
-    for (const category of categories)
+    for (const category of categories) {
       await api(page.request, 'POST', `/votings/${category.id}/close`, {});
+    }
     const final = resultsOverviewSchema.parse(
       await api(page.request, 'GET', `/results/overview?eventId=${eventId}`),
     );
@@ -607,7 +1072,7 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     ).toBe(10);
     await page.goto(`/admin/events/${eventId}/results`);
     await expect(
-      page.getByRole('heading', { name: 'Výsledky hlasování', exact: true }),
+      page.getByRole('heading', { name: 'Výsledky', exact: true }),
     ).toBeVisible();
     await accessible(page);
     await page.screenshot({
@@ -649,18 +1114,78 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
       .getByRole('button', { name: /^Kladný hlas:/ })
       .nth(1)
       .click();
-    await jurorPage
-      .getByRole('button', { name: 'Odevzdat kategorii', exact: true })
-      .click();
-    await jurorPage
-      .getByRole('button', { name: 'Potvrdit odevzdání', exact: true })
-      .click();
+    const submit = jurorPage.getByRole('button', {
+      name: 'Odevzdat kategorii',
+      exact: true,
+    });
+    const sheet = jurorPage.getByRole('dialog', {
+      name: `Odevzdat „${technical.name}“?`,
+    });
+    const confirm = sheet.getByRole('button', {
+      name: 'Potvrdit odevzdání',
+      exact: true,
+    });
+    const cancel = sheet.getByRole('button', {
+      name: 'Zpět k úpravám',
+      exact: true,
+    });
+    const beforeSubmitDocument = await jurorPage.evaluate(
+      () => performance.timeOrigin,
+    );
+    await submit.click();
+    await expect(sheet.getByRole('heading')).toBeFocused();
+    await jurorPage.keyboard.press('Shift+Tab');
+    await expect(confirm).toBeFocused();
+    await jurorPage.keyboard.press('Tab');
+    await expect(cancel).toBeFocused();
+    await jurorPage.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await expect(submit).toBeFocused();
+    await submit.click();
+    await accessible(jurorPage);
+    if (testInfo.project.name === 'desktop') {
+      for (const width of [390, 1280, 1440]) {
+        for (const scheme of ['light', 'dark'] as const) {
+          await jurorPage.setViewportSize({ width, height: 900 });
+          await jurorPage.emulateMedia({ colorScheme: scheme });
+          await jurorPage.screenshot({
+            path: testInfo.outputPath(`r1-submit-${width}-${scheme}.png`),
+          });
+          await jurorPage.keyboard.press('Escape');
+          await expect(submit).toBeFocused();
+          await jurorPage.screenshot({
+            path: testInfo.outputPath(`r1-category-${width}-${scheme}.png`),
+          });
+          await submit.click();
+        }
+      }
+      await jurorPage.setViewportSize(page.viewportSize()!);
+      await jurorPage.emulateMedia({ colorScheme });
+    }
+    await confirm.click();
+    await expect(jurorPage).toHaveURL('/wizard/review');
     await expect(
-      jurorPage.getByRole('heading', {
-        name: 'Odevzdané hlasování',
+      jurorPage.getByText(`Kategorie ${technical.name} byla odevzdána.`, {
         exact: true,
       }),
+    ).toBeAttached();
+    expect(await jurorPage.evaluate(() => performance.timeOrigin)).toBe(
+      beforeSubmitDocument,
+    );
+    await jurorPage
+      .getByRole('navigation', { name: /\bKategorie(?: |$)/u })
+      .locator(`[href="/wizard/steps/${technical.id}"]`)
+      .click();
+    await expect(
+      jurorPage.getByText(
+        'Odevzdáno a uzamčeno. Úpravy může povolit jen organizátor.',
+        { exact: true },
+      ),
     ).toBeVisible();
+    await expect(
+      jurorPage.getByRole('button', { name: /^Kladný hlas:/ }).first(),
+    ).toBeDisabled();
+    await expect(submit).toHaveCount(0);
     await api(page.request, 'POST', `/votings/${technical.id}/close`, {});
     const replaced = resultsOverviewSchema
       .parse(
@@ -679,6 +1204,8 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
       ).rows[0].count,
     ).toBe(31);
   } finally {
-    for (const context of contexts) await context.close();
+    for (const context of contexts) {
+      await context.close();
+    }
   }
 });

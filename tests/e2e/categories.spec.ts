@@ -19,7 +19,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
     })
   ).json();
   const groups = [];
-  for (const code of ['T', 'V'])
+  for (const code of ['T', 'V']) {
     groups.push(
       await (
         await page.request.post(`/api/events/${event.id}/jury-groups`, {
@@ -28,8 +28,9 @@ test('combined category setup preserves atomicity, exact retries, comparison and
         })
       ).json(),
     );
+  }
   const teams = [];
-  for (let i = 0; i < 7; i++)
+  for (let i = 0; i < 7; i++) {
     teams.push(
       await (
         await page.request.post(`/api/events/${event.id}/teams`, {
@@ -41,16 +42,19 @@ test('combined category setup preserves atomicity, exact retries, comparison and
         })
       ).json(),
     );
+  }
   let failInitialRead = true;
   await page.route('**/api/events/*/votings/*/setup', async (route) => {
     if (route.request().method() === 'GET' && failInitialRead) {
       failInitialRead = false;
       await route.abort('connectionfailed');
-    } else await route.continue();
+    } else {
+      await route.continue();
+    }
   });
   await page.goto(`/admin/events/${event.id}?setup=categories`);
   await page
-    .getByRole('button', { name: 'Nové hlasování', exact: true })
+    .getByRole('button', { name: 'Nová kategorie', exact: true })
     .press('Enter');
   const form = page.getByRole('form', {
     name: 'Příprava kategorie',
@@ -60,7 +64,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
     name: 'Uložit kategorii',
     exact: true,
   });
-  const name = form.getByLabel('Název hlasování', { exact: true });
+  const name = form.getByLabel('Název', { exact: true });
   await expect(page.getByRole('alert')).toBeFocused();
   await page.getByRole('button', { name: 'Zkusit znovu', exact: true }).click();
   await page.unroute('**/api/events/*/votings/*/setup');
@@ -70,7 +74,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
   await expect(name).toHaveAttribute('aria-invalid', 'true');
   await form
     .getByRole('alert')
-    .getByRole('link', { name: 'Název hlasování', exact: true })
+    .getByRole('link', { name: 'Název', exact: true })
     .click();
   await expect(name).toBeFocused();
   expect(
@@ -82,22 +86,21 @@ test('combined category setup preserves atomicity, exact retries, comparison and
   ).toBe(0);
   await name.fill('Kombinovaná kategorie');
   await expect(name).toHaveAttribute('aria-invalid', 'true');
-  await form.getByLabel('Typ hlasování', { exact: true }).selectOption('final');
+  await form.getByRole('radio', { name: 'Finále', exact: true }).check();
   await form
-    .getByLabel('Instrukce pro porotu', { exact: true })
+    .getByLabel('Instrukce pro porotce (nepovinné)', { exact: true })
     .fill('První instrukce');
   await form.getByLabel('Počet vítězů', { exact: true }).fill('1');
-  await form.getByLabel('Maximum kladných hlasů', { exact: true }).fill('2');
-  await form.getByLabel('Maximum záporných hlasů', { exact: true }).fill('1');
-  await form.getByLabel('Záporné hlasy', { exact: true }).selectOption('yes');
+  await form.getByLabel('Kladných hlasů na porotce', { exact: true }).fill('2');
+  await form.getByLabel('Záporných hlasů', { exact: true }).fill('1');
+  await form.getByRole('radio', { name: 'Povolit', exact: true }).check();
+  await form.getByRole('checkbox', { name: /^Technická porota/ }).check();
+  await form.getByRole('checkbox', { name: /^Veřejná porota/ }).check();
   await form
-    .getByLabel('Technická — Vlastní porota T', { exact: true })
-    .check();
-  await form.getByLabel('Veřejná — Vlastní porota V', { exact: true }).check();
+    .getByText('Upravit přiřazení a přesné pořadí', { exact: true })
+    .click();
   for (let i = 0; i < 5; i++) {
-    await form
-      .getByRole('button', { name: 'Přidat položku', exact: true })
-      .click();
+    await form.getByRole('button', { name: 'Přidat tým', exact: true }).click();
     await expect(
       form.getByLabel(`Tým, položka ${i + 1}`, { exact: true }),
     ).toBeFocused();
@@ -105,9 +108,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
       .getByLabel(`Tým, položka ${i + 1}`, { exact: true })
       .selectOption(teams[i].id);
   }
-  await form
-    .getByRole('button', { name: 'Přidat položku', exact: true })
-    .click();
+  await form.getByRole('button', { name: 'Přidat tým', exact: true }).click();
   await form
     .getByRole('button', { name: 'Odebrat novou položku 6', exact: true })
     .click();
@@ -142,9 +143,11 @@ test('combined category setup preserves atomicity, exact retries, comparison and
     );
   // A connection failure preserves all entered values and creates no partial category.
   await page.route('**/api/events/*/votings/*/setup', async (route) => {
-    if (route.request().method() === 'PUT')
+    if (route.request().method() === 'PUT') {
       await route.abort('connectionfailed');
-    else await route.continue();
+    } else {
+      await route.continue();
+    }
   });
   await save.click();
   await expect(form.getByRole('alert')).toBeFocused();
@@ -158,7 +161,9 @@ test('combined category setup preserves atomicity, exact retries, comparison and
       expect(response.status()).toBe(200);
       committed = await stored();
       await route.abort('connectionfailed');
-    } else await route.continue();
+    } else {
+      await route.continue();
+    }
   });
   await save.click();
   await expect(form.getByRole('alert')).toBeFocused();
@@ -174,7 +179,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
   ).toHaveCount(0);
   await name.fill('Moje změna');
   await expect(
-    page.getByRole('button', { name: 'Aktivovat hlasování', exact: true }),
+    page.getByRole('button', { name: 'Otevřít hlasování', exact: true }),
   ).toBeDisabled();
   expect(
     (
@@ -195,7 +200,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
   await expect(name).toHaveValue('Moje změna');
   await expect(save).toBeDisabled();
   await form
-    .getByRole('button', { name: 'Načíst aktuální přípravu', exact: true })
+    .getByRole('button', { name: 'Obnovit nastavení', exact: true })
     .click();
   await expect(
     form.getByRole('region', { name: 'Porovnání přípravy', exact: true }),
@@ -208,7 +213,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
     .click();
   await expect(name).toHaveValue('Moje změna');
   await expect(
-    form.getByLabel('Instrukce pro porotu', { exact: true }),
+    form.getByLabel('Instrukce pro porotce (nepovinné)', { exact: true }),
   ).toHaveValue('Vzdálené instrukce');
   await save.click();
   await expect(
@@ -223,7 +228,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
     ).rows.map((row) => row.id),
   ).toContain(remoteItem.id);
   await page
-    .getByRole('button', { name: 'Aktivovat hlasování', exact: true })
+    .getByRole('button', { name: 'Otevřít hlasování', exact: true })
     .click();
   await expect(name).toBeDisabled();
   await page
@@ -232,20 +237,12 @@ test('combined category setup preserves atomicity, exact retries, comparison and
     .click();
   await expect(name).toBeEnabled();
   await expect(
-    page.getByRole('button', { name: 'Aktivovat hlasování', exact: true }),
+    page.getByRole('button', { name: 'Otevřít hlasování', exact: true }),
   ).toBeFocused();
   // Dirty refresh retains input until the explicit comparison choice.
   await name.fill('Neuložené');
-  await form
-    .getByRole('button', { name: 'Načíst aktuální přípravu', exact: true })
-    .click();
   await expect(name).toHaveValue('Neuložené');
-  await form
-    .getByRole('button', {
-      name: 'Zahodit moje změny a načíst aktuální',
-      exact: true,
-    })
-    .click();
+  await form.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await expect(name).toHaveValue('Moje změna');
   // Audit the final editable state after control transitions settle.
   await page.waitForTimeout(200);
@@ -261,21 +258,26 @@ test('combined category setup preserves atomicity, exact retries, comparison and
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await form
+    .getByText('Upravit přiřazení a přesné pořadí', { exact: true })
+    .click();
   for (const control of [
     save,
     name,
-    form.getByRole('button', { name: 'Přidat položku', exact: true }),
-  ])
+    form.getByRole('button', { name: 'Přidat tým', exact: true }),
+  ]) {
     expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
   await page.screenshot({
     path: testInfo.outputPath('stage5-categories.png'),
     fullPage: true,
   });
-  for (const group of groups)
+  for (const group of groups) {
     await runtime.pool.query(
       "INSERT INTO event_jurors(event_id,jury_group_id,display_name) SELECT $1,$2,'Test juror' FROM generate_series(1,5)",
       [event.id, group.id],
     );
+  }
   await name.fill('Po aktivaci nelze uložit');
   expect(
     (
@@ -289,7 +291,7 @@ test('combined category setup preserves atomicity, exact retries, comparison and
   await save.click();
   await expect(form.getByRole('alert')).toContainText('Kategorie se změnila');
   await form
-    .getByRole('button', { name: 'Načíst aktuální přípravu', exact: true })
+    .getByRole('button', { name: 'Obnovit nastavení', exact: true })
     .click();
   await expect(
     form.getByRole('button', {

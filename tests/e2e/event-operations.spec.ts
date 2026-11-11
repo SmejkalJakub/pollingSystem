@@ -52,36 +52,47 @@ test('public-only event supports all teams, arbitrary jury sizes and working Exc
   ).toBe(true);
   await page.goto(`/admin/events/${event.id}?setup=categories`);
   await page
-    .getByRole('button', { name: 'Nové hlasování', exact: true })
+    .getByRole('button', { name: 'Nová kategorie', exact: true })
     .click();
   const form = page.getByRole('form', {
     name: 'Příprava kategorie',
     exact: true,
   });
-  await form.getByLabel('Název hlasování', { exact: true }).fill('Předvýběr');
+  await form.getByLabel('Název', { exact: true }).fill('Předvýběr');
+  await form.getByRole('radio', { name: 'Výběrové kolo', exact: true }).check();
+  await form.getByLabel('Počet postupujících týmů', { exact: true }).fill('6');
   await form
-    .getByLabel('Typ hlasování', { exact: true })
-    .selectOption('selection');
+    .getByLabel('Kladných hlasů na porotce', { exact: true })
+    .fill('10');
+  await form.getByLabel('Záporných hlasů', { exact: true }).fill('3');
+  await form.getByRole('radio', { name: 'Povolit', exact: true }).check();
+  await form.getByRole('checkbox', { name: /^Veřejná porota/ }).check();
   await form
-    .getByLabel('Počet postupujících týmů (slotů)', { exact: true })
-    .fill('6');
-  await form.getByLabel('Maximum kladných hlasů', { exact: true }).fill('10');
-  await form.getByLabel('Maximum záporných hlasů', { exact: true }).fill('3');
-  await form.getByLabel('Záporné hlasy', { exact: true }).selectOption('yes');
-  await form.getByLabel('Veřejná — Druhá část poroty', { exact: true }).check();
-  await form
-    .getByRole('button', { name: 'Přidat položku', exact: true })
+    .getByText('Upravit přiřazení a přesné pořadí', { exact: true })
     .click();
+  await form.getByRole('button', { name: 'Přidat tým', exact: true }).click();
+  const team = form.getByRole('checkbox', { name: 'Tým 3', exact: true });
+  await team.check();
+  await expect(team).toBeChecked();
+  await team.uncheck();
+  await expect(team).not.toBeChecked();
+  await form.getByRole('button', { name: 'Přidat tým', exact: true }).click();
   const bulk = form.getByRole('button', {
     name: 'Přidat všechny týmy eventu',
     exact: true,
   });
   await bulk.press('Enter');
   await expect(
-    form.getByLabel('Tým, položka 1', { exact: true }),
+    form.getByRole('heading', {
+      name: 'Týmy v kategorii · 21 z 21',
+      exact: true,
+    }),
   ).toBeFocused();
   await expect(
-    form.getByRole('heading', { name: 'Týmy v hlasování (21)', exact: true }),
+    form.getByRole('heading', {
+      name: 'Týmy v kategorii · 21 z 21',
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(bulk).toBeDisabled();
   await expect(
@@ -110,14 +121,94 @@ test('public-only event supports all teams, arbitrary jury sizes and working Exc
   await page.reload();
   await expect(bulk).toBeDisabled();
   await expect(
-    form.getByRole('heading', { name: 'Týmy v hlasování (21)', exact: true }),
+    form.getByRole('heading', {
+      name: 'Týmy v kategorii · 21 z 21',
+      exact: true,
+    }),
   ).toBeVisible();
+  await expect(team).toBeChecked();
+  await expect(team).toBeDisabled();
+  const moved = await runtime.pool.query(
+    'SELECT display_order FROM voting_items WHERE voting_id=$1 AND team_id=$2',
+    [votingId, teams[2]!.id],
+  );
+  await form
+    .getByRole('button', { name: 'Posunout Tým 3 výš', exact: true })
+    .click();
+  const save = form.getByRole('button', {
+    name: 'Uložit kategorii',
+    exact: true,
+  });
+  await save.click();
+  await expect(
+    form.getByText('Kategorie byla uložena.', { exact: true }),
+  ).toBeVisible();
+  expect(
+    (
+      await runtime.pool.query(
+        'SELECT id,team_id FROM voting_items WHERE voting_id=$1 ORDER BY id',
+        [votingId],
+      )
+    ).rows,
+  ).toEqual(stored);
+  expect(
+    (
+      await runtime.pool.query(
+        'SELECT display_order FROM voting_items WHERE voting_id=$1 AND team_id=$2',
+        [votingId, teams[2]!.id],
+      )
+    ).rows[0].display_order,
+  ).toBeLessThan(moved.rows[0].display_order);
+  const originalViewport = page.viewportSize()!;
+  async function capture(surface: string) {
+    for (const width of [390, 1440]) {
+      for (const colorScheme of ['light', 'dark'] as const) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ colorScheme });
+        await page.evaluate(() => window.scrollTo(0, 0));
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        await page.screenshot({
+          path: testInfo.outputPath(
+            `r6-${surface}-${width}-${colorScheme}.png`,
+          ),
+        });
+      }
+    }
+    await page.setViewportSize(originalViewport);
+    await page.emulateMedia({
+      colorScheme: testInfo.project.use.colorScheme ?? 'light',
+    });
+  }
+  if (testInfo.project.name === 'desktop') {
+    await capture('editor');
+  }
   await page.screenshot({
     path: testInfo.outputPath('all-event-teams.png'),
     fullPage: true,
   });
+  await page.getByRole('link', { name: '← Kategorie', exact: true }).click();
+  const readyCard = page.getByRole('article', {
+    name: 'Předvýběr',
+    exact: true,
+  });
+  await expect(readyCard).toContainText('Připraveno');
+  const open = readyCard.getByRole('button', {
+    name: 'Otevřít hlasování',
+    exact: true,
+  });
+  await open.click();
+  await readyCard
+    .getByRole('form', { name: 'Aktivovat hlasování', exact: true })
+    .getByRole('button', { name: 'Zrušit', exact: true })
+    .click();
+  await expect(open).toBeFocused();
+  await readyCard.getByRole('link', { name: 'Upravit', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Aktivovat hlasování', exact: true })
+    .getByRole('button', { name: 'Otevřít hlasování', exact: true })
     .click();
   await page
     .getByRole('form', { name: 'Aktivovat hlasování', exact: true })
@@ -133,9 +224,62 @@ test('public-only event supports all teams, arbitrary jury sizes and working Exc
       ])
     ).rows[0].status,
   ).toBe('active');
+  await page.goto(`/admin/events/${event.id}?setup=categories`);
+  const category = page.getByRole('article', {
+    name: 'Předvýběr',
+    exact: true,
+  });
+  await expect(category).toContainText('Odevzdáno 0 / 14');
+  await expect(
+    category.getByRole('link', { name: 'Průběh', exact: true }),
+  ).toHaveAttribute('href', `/admin/dashboard/votings/${votingId}`);
+  await expect(
+    page.getByText('Osobní odkazy vytvořeny pro všechny', { exact: true }),
+  ).toBeVisible();
+  const draft = await (
+    await page.request.post(`/api/events/${event.id}/votings`, {
+      headers,
+      data: { name: 'Další koncept', kind: 'final', instructions: '' },
+    })
+  ).json();
+  await page.reload();
+  await expect(
+    page.getByRole('article', { name: 'Další koncept' }),
+  ).toContainText('Před otevřením chybí:');
+  if (testInfo.project.name === 'desktop') {
+    await capture('overview');
+  }
+  expect(
+    (
+      await runtime.pool.query('SELECT status FROM votings WHERE id=$1', [
+        draft.id,
+      ])
+    ).rows[0].status,
+  ).toBe('draft');
+  const close = category.getByRole('button', { name: /^Uzavřít hlasování:/ });
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await close.click();
+  await expect(category).toContainText('Otevřeno');
+  page.once('dialog', (dialog) => dialog.accept());
+  await close.click();
+  await expect(category).toContainText('Uzavřeno');
+  await expect(
+    category.getByRole('link', { name: 'Výsledky', exact: true }),
+  ).toHaveAttribute('href', `/admin/results/votings/${votingId}`);
+  await category
+    .getByRole('button', { name: /^Znovu otevřít hlasování:/ })
+    .click();
+  await expect(category).toContainText('Otevřeno');
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
   await page.goto(`/admin/events/${event.id}`);
   const downloadButton = page.getByRole('button', {
-    name: 'Stáhnout odkazy porotců (XLSX)',
+    name: 'Stáhnout odkazy (XLSX)',
     exact: true,
   });
   await expect(downloadButton).toBeEnabled();
@@ -200,9 +344,11 @@ test('public-only event supports all teams, arbitrary jury sizes and working Exc
     const juror = await context.newPage();
     await juror.goto(link);
     await juror
-      .getByRole('button', { name: 'Pokračovat k přehledu', exact: true })
+      .getByRole('button', { name: 'Pokračovat k hlasování', exact: true })
       .click();
-    await expect(juror.getByText('Předvýběr', { exact: true })).toBeVisible();
+    await expect(
+      juror.getByRole('heading', { name: 'Předvýběr', exact: true }),
+    ).toBeVisible();
   } finally {
     await context.close();
   }

@@ -24,7 +24,14 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
     name: 'Uložit tabulku',
     exact: true,
   });
-  const add = page.getByRole('button', { name: 'Nový porotce', exact: true });
+  const add = page.getByRole('textbox', {
+    name: 'Přidat porotce',
+    exact: true,
+  });
+  async function addRow(name: string) {
+    await add.fill(name);
+    await add.press('Enter');
+  }
   const values = async () =>
     (
       await runtime.pool.query(
@@ -59,14 +66,16 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    for (const control of [save, add, field(1)]) {
+    for (const control of [add, field(1)]) {
       const box = await control.boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
   }
   await page.goto(`/admin/events/${event.id}?setup=jurors`);
-  await add.press('Enter');
+  await addRow('Dočasné jméno');
   await expect(field(1)).toBeFocused();
+  await field(1).fill('');
+  expect((await save.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await save.click();
   await expect(page.getByRole('alert')).toBeFocused();
   await expect(field(1)).toHaveAttribute('aria-invalid', 'true');
@@ -81,10 +90,11 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
   await expect(
     page.getByText('Tabulka porotců byla uložena.', { exact: true }),
   ).toBeVisible();
+  // Jury group names are edited in the event settings view.
+  await page.goto(`/admin/events/${event.id}?setup=settings`);
   await page
     .getByRole('button', { name: 'Upravit část Technická', exact: true })
     .click();
-  await expect(field(1)).toBeDisabled();
   await page
     .getByLabel('Název části poroty', { exact: true })
     .fill('Moje technická porota');
@@ -95,8 +105,9 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
   await expect(
     page.getByRole('heading', { name: 'Moje technická porota', exact: true }),
   ).toBeVisible();
+  await page.goto(`/admin/events/${event.id}?setup=jurors`);
   await expect(field(1)).toBeEnabled();
-  await page.getByText('Vložit ze spreadsheetu', { exact: true }).click();
+  await page.getByText('Vložit z Excelu', { exact: true }).click();
   const paste = page.getByLabel('Řádky z tabulky', { exact: true });
   const preview = page.getByRole('button', {
     name: 'Přidat řádky do tabulky',
@@ -108,12 +119,37 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
   await paste.fill('Name\tX');
   await preview.click();
   await expect(page.getByRole('alert')).toBeVisible();
+  await paste.fill('Porotce k vrácení\tT');
+  await preview.click();
+  await expect(page.getByText('Vloženo 1 řádek ze schránky.')).toBeVisible();
+  await expect(page.getByText('NOVÝ', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Vrátit vložení' }).click();
+  await expect(field(2)).toHaveCount(0);
+  expect(await values()).toHaveLength(1);
+  await page.getByText('Vložit z Excelu', { exact: true }).click();
   await paste.fill('Stejný porotce\tT\r\nStejný porotce\tV');
   await preview.click();
   expect(await values()).toHaveLength(1);
   await expect(field(2)).toBeFocused();
   await expect(field(3, 'Část poroty')).toHaveValue('V');
   await audit();
+  if (testInfo.project.name === 'desktop') {
+    const viewport = page.viewportSize()!;
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const colorScheme of ['light', 'dark'] as const) {
+        await page.emulateMedia({ colorScheme });
+        await audit();
+        await page.screenshot({
+          path: testInfo.outputPath(`r5-jurors-${width}-${colorScheme}.png`),
+          fullPage: true,
+        });
+      }
+    }
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: null });
+  }
+
   await page.route(`**${path}`, (route) =>
     route.request().method() === 'PUT'
       ? route.abort('connectionfailed')
@@ -126,7 +162,9 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
   await page.unroute(`**${path}`);
   // Real backend commits, then transport loses the response. Retry must not add duplicates.
   await page.route(`**${path}`, async (route) => {
-    if (route.request().method() !== 'PUT') return route.continue();
+    if (route.request().method() !== 'PUT') {
+      return route.continue();
+    }
     const response = await route.fetch();
     expect(response.status()).toBe(200);
     await route.abort('connectionfailed');
@@ -225,15 +263,9 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
     'Moje změna',
   );
   await field(1).fill('Neuložené hodnoty');
-  await page
-    .getByRole('button', { name: 'Obnovit porotu', exact: true })
-    .click();
-  await expect(field(1)).toHaveValue('Neuložené hodnoty');
-  await page
-    .getByRole('button', { name: 'Zahodit moje změny a načíst aktuální' })
-    .click();
+  await page.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await expect(field(1)).not.toHaveValue('Neuložené hodnoty');
-  await add.click();
+  await addRow('Dočasný porotce');
   await page.getByRole('button', { name: 'Odebrat nový řádek 5' }).click();
   expect(await values()).toHaveLength(4);
   await audit();
@@ -241,8 +273,8 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
     path: testInfo.outputPath('stage4-jurors.png'),
     fullPage: true,
   });
-  await add.click();
-  await field(5).fill('Nesmí vzniknout po uzamčení');
+  await addRow('Porotce přidaný po aktivaci');
+  await expect(field(5)).toBeFocused();
   await field(5, 'Část poroty').selectOption('V');
   await runtime.pool.query(
     "INSERT INTO votings(event_id,name,kind,status) VALUES ($1,'Started','final','active')",
@@ -253,15 +285,18 @@ test('juror table saves atomically with preview, retained errors, conflicts and 
   await page
     .getByRole('button', { name: 'Načíst aktuální pro porovnání' })
     .click();
-  await expect(
-    page.getByRole('button', { name: 'Použít moje změny po kontrole' }),
-  ).toBeDisabled();
   await page
-    .getByRole('button', { name: 'Zahodit moje změny a načíst aktuální' })
+    .getByRole('button', { name: 'Použít moje změny po kontrole' })
     .click();
-  await expect(add).toBeDisabled();
-  await expect(field(1, 'Část poroty')).toBeDisabled();
-  expect(await values()).toHaveLength(4);
+  const lockedRow = page.getByRole('row').filter({ has: field(1) });
+  await expect(lockedRow.getByText(/^(Technická|Veřejná)$/)).toBeVisible();
+  await expect(field(1, 'Část poroty')).toHaveCount(0);
+  await expect(add).toBeEnabled();
+  await save.click();
+  await expect(
+    page.getByText('Tabulka porotců byla uložena.', { exact: true }),
+  ).toBeVisible();
+  expect(await values()).toHaveLength(5);
   await field(1).fill('Oprava při uzamčení');
   await save.click();
   await expect(

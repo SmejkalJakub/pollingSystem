@@ -42,24 +42,18 @@ function AppRoutes() {
     document.title = adminLogin ? 'D21 — Administrace' : 'D21 — Hlasování';
   }, [adminLogin]);
 
-  if (adminLogin) return <AuthScreen />;
-  const step = /^\/wizard\/steps\/([0-9a-f-]{36})$/i.exec(path);
+  if (adminLogin) {
+    return <AuthScreen />;
+  }
   if (
     path === '/' ||
     path === '/wizard' ||
-    step ||
+    /^\/wizard\/steps\/[0-9a-f-]{36}$/i.test(path) ||
     path === '/wizard/review' ||
     path === '/wizard/confirmation'
-  )
-    return (
-      <JurorPortal
-        stepId={step?.[1]}
-        reviewPage={
-          path === '/wizard/review' || path === '/wizard/confirmation'
-        }
-        confirmationPage={path === '/wizard/confirmation'}
-      />
-    );
+  ) {
+    return <JurorPortal />;
+  }
   return (
     <>
       <AppHeader />

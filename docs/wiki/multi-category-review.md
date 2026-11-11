@@ -1,5 +1,11 @@
 # Multi-category review and independent final submission
 
+## Redesign R2 — 2026-11-11
+
+The **Souhrn** tab opens the same screen at `/wizard/review` and `/wizard/confirmation`. It shows completion progress and a card for each available category. Each card links to the category and shows its saved team choices and state. Eligible drafts start unchecked. Use **Odevzdat vybrané** to open the confirmation sheet and review the selected categories and vote counts.
+
+Individual outcomes appear on Souhrn and successful categories immediately count toward its progress. A changed server snapshot still requires **Načíst aktuální přehled** before selecting categories again. A transport failure still offers **Zopakovat stejné odevzdání** with the exact same confirmed request. See [validation and handoff](../implementation/next-session.md). The older interface descriptions below are historical where they differ from this section.
+
 Phase 9 is DONE, finalized 2026-10-18. Validation and limitations: [progress](../implementation/progress.md).
 
 ## Approved workflow

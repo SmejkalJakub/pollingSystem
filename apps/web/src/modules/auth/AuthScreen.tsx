@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AdminWorkspace } from '@/modules/admin/AdminWorkspace';
 import type { SessionResponse } from '@d21/contracts';
-import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ApiError, authRequest, requestProblem } from '@/lib/api';
@@ -28,7 +27,9 @@ export function AuthScreen() {
     const controller = new AbortController();
     authRequest('/auth/session', { signal: controller.signal })
       .then((session) => {
-        if (!controller.signal.aborted) setState(session);
+        if (!controller.signal.aborted) {
+          setState(session);
+        }
       })
       .catch((cause) => {
         if (!controller.signal.aborted) {
@@ -40,13 +41,19 @@ export function AuthScreen() {
   }, [attempt]);
 
   useEffect(() => {
-    if (error) errorRef.current?.focus();
+    if (error) {
+      errorRef.current?.focus();
+    }
   }, [error]);
   useEffect(() => {
-    if (authenticated) headingRef.current?.focus();
+    if (authenticated) {
+      headingRef.current?.focus();
+    }
   }, [authenticated]);
   useEffect(() => {
-    if (!expiresAt) return;
+    if (!expiresAt) {
+      return;
+    }
     const expire = () => {
       setState({ authenticated: false });
       setNotice('Přihlášení vypršelo. Přihlaste se prosím znovu.');
@@ -57,15 +64,18 @@ export function AuthScreen() {
     );
     const controller = new AbortController();
     const refresh = () => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
       authRequest('/auth/session', { signal: controller.signal })
         .then((session) => {
           if (!controller.signal.aborted) {
             setState(session);
-            if (!session.authenticated)
+            if (!session.authenticated) {
               setNotice(
                 'Přihlášení již není platné. Přihlaste se prosím znovu.',
               );
+            }
           }
         })
         .catch(() => {
@@ -82,7 +92,9 @@ export function AuthScreen() {
 
   async function login(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError('');
     setNotice('');
@@ -103,7 +115,9 @@ export function AuthScreen() {
   }
 
   async function logout() {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -123,13 +137,13 @@ export function AuthScreen() {
       ref={errorRef}
       tabIndex={-1}
       role="alert"
-      className="mt-5 text-sm leading-relaxed text-destructive outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+      className="mt-2 text-sm leading-relaxed text-destructive outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
     >
       {error}
     </p>
   );
 
-  if (authenticated && state.principal.kind === 'admin')
+  if (authenticated && state.principal.kind === 'admin') {
     return (
       <AdminWorkspace
         onExpired={onExpired}
@@ -138,13 +152,136 @@ export function AuthScreen() {
         error={errorNotice}
       />
     );
+  }
+
+  let content;
+  if (state === 'loading') {
+    content = (
+      <p role="status" className="mt-8 text-muted-foreground">
+        Ověřujeme přihlášení…
+      </p>
+    );
+  } else if (state === 'unavailable') {
+    content = (
+      <section className="feedback-error mt-8" aria-label="Ověření přihlášení">
+        <p className="feedback-error-title">Přihlášení se nepodařilo ověřit</p>
+        {errorNotice}
+        <Button
+          className="mt-5 min-h-11"
+          onClick={() => {
+            setError('');
+            setState('loading');
+            setAttempt((value) => value + 1);
+          }}
+        >
+          Zkusit znovu
+        </Button>
+      </section>
+    );
+  } else if (authenticated) {
+    content = (
+      <section
+        className="mt-8 border border-border bg-card p-6"
+        aria-label="Přihlášená administrace"
+      >
+        <p className="font-medium">{state.principal.displayName}</p>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          {state.principal.kind === 'admin'
+            ? 'Přístup pro správu a garanci je aktivní.'
+            : 'Přístup porotce je aktivní. Administrace je dostupná pouze organizátorům.'}
+        </p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          {state.expiresAt ? (
+            <>
+              Přihlášení platí do{' '}
+              {new Intl.DateTimeFormat('cs-CZ', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              }).format(new Date(state.expiresAt))}
+              .{' '}
+            </>
+          ) : (
+            'Přihlášení nemá časové omezení.'
+          )}
+        </p>
+        <Button
+          className="mt-6 min-h-11 w-full"
+          disabled={busy}
+          onClick={logout}
+        >
+          {busy ? 'Odhlašování…' : 'Odhlásit se'}
+        </Button>
+      </section>
+    );
+  } else {
+    content = (
+      <>
+        <p
+          id="login-help"
+          className="mt-4 leading-relaxed text-muted-foreground"
+        >
+          Pro organizátory a garanty. Porotci se přihlašují svým osobním
+          odkazem.
+        </p>
+        <form
+          onSubmit={login}
+          aria-describedby="login-help"
+          aria-busy={busy}
+          className="mt-5"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="password" className="block text-sm font-medium">
+              Heslo
+            </label>
+            <Button
+              type="button"
+              variant="link"
+              className="min-h-11 px-0"
+              disabled={busy}
+              onClick={() => setVisible((value) => !value)}
+            >
+              {visible ? 'Skrýt heslo' : 'Zobrazit heslo'}
+            </Button>
+          </div>
+          <Input
+            className="min-h-12 rounded-[10px] border-control-border"
+            id="password"
+            name="password"
+            type={visible ? 'text' : 'password'}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            required
+            maxLength={256}
+            disabled={busy}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? 'login-error' : undefined}
+          />
+          {errorNotice}
+          <Button
+            type="submit"
+            disabled={busy}
+            className="mt-4 min-h-12 w-full rounded-xl"
+          >
+            {busy ? 'Přihlašování…' : 'Přihlásit se'}
+          </Button>
+        </form>
+        <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+          Přihlášení platí 12 hodin.
+        </p>
+      </>
+    );
+  }
 
   return (
-    <>
-      <AppHeader section="Administrace" />
-      <main id="main" className="mx-auto max-w-md px-6 py-12 sm:py-24">
+    <div className="admin-login-page">
+      <main id="main" className="admin-login-card">
+        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+          <span className="admin-brand admin-login-brand">D21</span>
+          Administrace
+        </div>
         <h1 ref={headingRef} tabIndex={-1} className="page-title outline-none">
-          {authenticated ? 'Jste přihlášeni.' : 'Vstup do administrace'}
+          {authenticated ? 'Jste přihlášeni.' : 'Přihlášení'}
         </h1>
         {notice && (
           <p
@@ -154,122 +291,9 @@ export function AuthScreen() {
             {notice}
           </p>
         )}
-        {state === 'loading' ? (
-          <p role="status" className="mt-8 text-muted-foreground">
-            Ověřujeme přihlášení…
-          </p>
-        ) : state === 'unavailable' ? (
-          <section
-            className="feedback-error mt-8"
-            aria-label="Ověření přihlášení"
-          >
-            <p className="feedback-error-title">
-              Přihlášení se nepodařilo ověřit
-            </p>
-            {errorNotice}
-            <Button
-              className="mt-5 min-h-11"
-              onClick={() => {
-                setError('');
-                setState('loading');
-                setAttempt((value) => value + 1);
-              }}
-            >
-              Zkusit znovu
-            </Button>
-          </section>
-        ) : authenticated ? (
-          <section
-            className="mt-8 border border-border bg-card p-6"
-            aria-label="Přihlášená administrace"
-          >
-            <p className="font-medium">{state.principal.displayName}</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {state.principal.kind === 'admin'
-                ? 'Přístup pro správu a garanci je aktivní.'
-                : 'Přístup porotce je aktivní. Administrace je dostupná pouze organizátorům.'}
-            </p>
-            <p className="mt-4 text-sm text-muted-foreground">
-              {state.expiresAt ? (
-                <>
-                  Přihlášení platí do{' '}
-                  {new Intl.DateTimeFormat('cs-CZ', {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                  }).format(new Date(state.expiresAt))}
-                  .{' '}
-                </>
-              ) : (
-                'Přihlášení nemá časové omezení.'
-              )}
-            </p>
-            <Button
-              className="mt-6 min-h-11 w-full"
-              disabled={busy}
-              onClick={logout}
-            >
-              {busy ? 'Odhlašování…' : 'Odhlásit se'}
-            </Button>
-          </section>
-        ) : (
-          <>
-            <p
-              id="login-help"
-              className="mt-4 leading-relaxed text-muted-foreground"
-            >
-              Zadejte společné heslo, které jste dostali od organizátora.
-            </p>
-            <form
-              onSubmit={login}
-              aria-describedby="login-help"
-              aria-busy={busy}
-              className="mt-8 border border-border bg-card p-6"
-            >
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-medium"
-              >
-                Heslo
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type={visible ? 'text' : 'password'}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                required
-                maxLength={256}
-                disabled={busy}
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'login-error' : undefined}
-              />
-              {errorNotice}
-              <Button
-                type="button"
-                variant="ghost"
-                className="mt-3"
-                disabled={busy}
-                aria-pressed={visible}
-                onClick={() => setVisible((value) => !value)}
-              >
-                {visible ? 'Skrýt heslo' : 'Zobrazit heslo'}
-              </Button>
-              <Button
-                type="submit"
-                disabled={busy}
-                className="mt-4 min-h-11 w-full"
-              >
-                {busy ? 'Přihlašování…' : 'Přihlásit se'}
-              </Button>
-            </form>
-            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-              Nemáte heslo? Obraťte se na organizátora akce.
-            </p>
-          </>
-        )}
+        {content}
         {authenticated && errorNotice}
       </main>
-    </>
+    </div>
   );
 }

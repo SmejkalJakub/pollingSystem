@@ -1,5 +1,25 @@
 # Juror entry and voting interactions
 
+## Redesign R3 — 2026-11-11
+
+A personal link opens **Vítejte v porotě**. **Pokračovat k hlasování** redeems it and opens the existing wizard route. The bare landing explains how to obtain a link. Invalid, incomplete and failed redemptions show feedback in the same layout.
+
+When a draft changes elsewhere, **Hlasy se mezitím změnily** compares **Tady** and **Uloženo**. Keeping local choices prepares them for another explicit save. Loading the saved version replaces the local choices. Submitted or locked remote ballots offer only the load action. Escape dismisses the sheet and **Porovnat změny** reopens it.
+
+Closed or unavailable categories show a lock and any saved draft. **Zkontrolovat znovu** checks availability and local edits stay in memory if the category reopens while the juror remains on the page. The continuation link follows the existing unsaved-change guard. When the juror has no categories, the wizard and both summary routes show a refreshable empty state.
+
+[Validation and handoff](../implementation/next-session.md).
+
+## Redesign R1 — 2026-11-11
+
+The juror workspace opens the first active unsubmitted category from `/wizard`, or opens **Souhrn** if no active category is outstanding. Categories have deep links. The tabs and browser history switch views in the same document. When choices are unsaved, **Zahodit** restores the last saved version and moves on. **Uložit a přejít** moves only after the draft save succeeds.
+
+The phone editor has category pills, sticky counters, team cards and a fixed footer. From 1024 px it shows a category rail, team list and voting aside. With focus on a team vote control, arrows move to adjacent teams and plus/minus toggles that team's choice. **Odevzdat kategorii** opens a confirmation with current choices. Successful submission locks the category and advances the wizard. R2 adds the [Souhrn screen](multi-category-review.md#redesign-r2--2026-11-11) with the existing review and confirmation routes.
+
+[Validation and handoff](../implementation/next-session.md). Older interface descriptions below are historical where they differ from this section.
+
+The 2026-11-11 organizer and juror update presents overview and review as tables. The bottom action saves changed votes as a draft before proceeding, and leaves the juror in the editor when the save fails or needs comparison. Vote controls refuse edits that would introduce or worsen a negative-vote eligibility violation. Server validation remains authoritative, and submitting still requires explicit confirmation.
+
 The [streamlined workflow](streamlined-workflow.md) opens the overview from the personal-link response and brings ballot actions beside the vote counters. Server-only checking is optional; draft and submission rules are unchanged.
 
 Phases 5–8 are DONE as of 2026-10-17; actual validation and limitations are recorded in [progress](../implementation/progress.md). Phase 6 adds verified temporary category interactions and authoritative validation. Phase 7 draft persistence is now implemented; independent category submission and administrator-only unlocking are now implemented in Phase 8; review remains Phase 9. See the Phase 7 section below for current behavior; earlier Phase 5/6 descriptions are historical.
@@ -15,7 +35,7 @@ Names are display information only. Event ID in a link is a lookup scope, not au
 ## Entry and navigation
 
 - `/` remains the juror entry surface and has no public administration link. Organizer links use `/#event=<event UUID>&key=<random secret>`.
-- The secret stays in the URL fragment, which HTTP requests/referrers omit. The page strips it from the address bar on entry, including same-document hash navigation. It retains it only in component memory for retry. Explicit **Pokračovat k přehledu** redeems it; no link-prefetch GET creates a session.
+- The secret stays in the URL fragment, which HTTP requests/referrers omit. The page strips it from the address bar on entry, including same-document hash navigation. It retains it only in component memory for retry. Explicit **Pokračovat k hlasování** redeems it; no link-prefetch GET creates a session.
 - `/wizard` displays current identity, event, group and authorized category links.
 - `/wizard/steps/:stepId` is a directly loadable, refreshable category page. The stable step ID is the voting UUID. Browser URLs restore navigation position; there is no persisted wizard or ballot progress record.
 - Categories sort selection before final, then creation time and UUID. Entries sort by configured display order then UUID; corrected shared team descriptions are read through their references.
@@ -50,7 +70,7 @@ Migrations 0000–0003 remain unchanged. Phase 6 retains these authorization/lif
 
 ## Phase 6 interactions and validation
 
-Same-sign click removes a vote; opposite sign replaces it atomically. Stored maxima and negative disable are enforced in controls. Actual-cast negative eligibility is at most one negative per two positives, also capped by the configured maximum. Unused votes are allowed. The user explicitly chose to retain edits reducing eligibility, show invalidity and allow correction, without auto-removing other votes. The local invalid-state display also explains newly selected negatives without sufficient positives; server validation never marks these valid.
+Same-sign click removes a vote; opposite sign replaces it atomically. Stored maxima and negative disable are enforced in controls. Actual-cast negative eligibility is at most one negative per two positives, also capped by the configured maximum. Unused votes are allowed. The user explicitly chose to retain edits reducing eligibility, show invalidity and allow correction, without auto-removing other votes. Superseded on 2026-11-11: client vote controls now refuse edits that would introduce or worsen a negative-vote eligibility violation ([decision](../implementation/decisions.md)). Saved drafts that are already invalid still load and can be corrected. The local invalid-state display also explains newly selected negatives without sufficient positives; server validation never marks these valid.
 
 Selection exists only in component memory on the current category page; navigation/refresh/logout/expiry resets it. The screen states that checking does not save or submit. Successful visibility revalidation retains same-category selection. Sign controls expose pressed state, sign/checkmark and semantic colors. Mobile uses the desktop table's semantics in a narrow grid; counters remain sticky and keyboard focus has scroll clearance.
 

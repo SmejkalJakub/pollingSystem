@@ -56,7 +56,7 @@ describe('juror paste and stale-roster safety', () => {
       'groupCode',
     ]);
   });
-  it('permits name corrections after freeze, but blocks local additions and assignments', () => {
+  it('permits name corrections and new jurors after freeze while protecting existing assignments', () => {
     const locked = { ...base, locked: true };
     expect(
       canRebase(
@@ -74,7 +74,7 @@ describe('juror paste and stale-roster safety', () => {
         base,
         locked,
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
   it('never recreates externally removed saved memberships with pending edits', () => {
     expect(

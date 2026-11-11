@@ -31,18 +31,18 @@ test('compact event workspace keeps context, deep links, preparation and recover
   });
   const base = `/admin/events/${event.id}`;
   const eventNav = page.getByRole('navigation', { name: 'Event', exact: true });
-  const preparation = page.getByRole('navigation', {
+  const preparation = page.getByRole('group', {
     name: 'Příprava',
     exact: true,
   });
-  async function section(name: string) {
+  async function section(name: string, title = name) {
     await expect(
-      eventNav.getByRole('link', { name, exact: true }),
+      eventNav.getByRole('link', {
+        name: new RegExp(`(?:^| )${name}(?: |$)`, 'u'),
+      }),
     ).toHaveAttribute('aria-current', 'page');
-    await expect(eventNav.getByRole('link')).toHaveCount(5);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      event.name,
-    );
+    await expect(eventNav.getByRole('link')).toHaveCount(6);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
     // Category collections load independently of the event heading. Audit settled
     // controls, not their transition from disabled loading state to enabled.
     await expect(page.getByText('Načítání…', { exact: true })).toHaveCount(0);
@@ -76,16 +76,16 @@ test('compact event workspace keeps context, deep links, preparation and recover
   }
   await page.goto(base);
   await expect(
-    page.getByRole('button', { name: 'Nový porotce', exact: true }),
+    page.getByRole('textbox', { name: 'Přidat porotce', exact: true }),
   ).toBeVisible();
   await expect(
-    preparation.getByRole('link', { name: 'Porotci', exact: true }),
+    preparation.getByRole('link', { name: /\bPorotci(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
   await expect(
-    page.getByRole('button', { name: 'Nový tým', exact: true }),
+    page.getByRole('textbox', { name: 'Přidat tým', exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Nové hlasování', exact: true }),
+    page.getByRole('button', { name: 'Nová kategorie', exact: true }),
   ).toHaveCount(0);
   await section('Porotci');
   await page.screenshot({
@@ -99,7 +99,9 @@ test('compact event workspace keeps context, deep links, preparation and recover
     .getByRole('link', { name: 'Přeskočit na obsah', exact: true })
     .press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
-  await page.getByText('Nastavení eventu', { exact: true }).click();
+  await eventNav
+    .getByRole('link', { name: 'Nastavení eventu', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Upravit event', exact: true })
     .press('Enter');
@@ -124,21 +126,24 @@ test('compact event workspace keeps context, deep links, preparation and recover
     page.getByText('Event byl uložen.', { exact: true }),
   ).toBeVisible();
   await expect(page.getByText('Upravený popis', { exact: true })).toBeVisible();
-  await preparation
-    .getByRole('link', { name: 'Týmy', exact: true })
-    .press('Enter');
+  await preparation.getByRole('link', { name: /Týmy(?: |$)/u }).press('Enter');
   await expect(page).toHaveURL(`${runtime.origin}${base}?setup=teams`);
   await expect(
-    page.getByRole('button', { name: 'Nový tým', exact: true }),
+    page.getByRole('textbox', { name: 'Přidat tým', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Nový porotce', exact: true }),
+    page.getByRole('textbox', { name: 'Přidat porotce', exact: true }),
   ).toHaveCount(0);
   await page.reload();
   await expect(
-    preparation.getByRole('link', { name: 'Týmy', exact: true }),
+    preparation.getByRole('link', { name: /Týmy(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
-  await page.getByRole('button', { name: 'Nový tým', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Přidat tým', exact: true })
+    .fill('Nový tým');
+  await page
+    .getByRole('textbox', { name: 'Přidat tým', exact: true })
+    .press('Enter');
   await page
     .getByLabel('Název týmu, řádek 1', { exact: true })
     .fill('Tým s uchovaným názvem');
@@ -168,21 +173,19 @@ test('compact event workspace keeps context, deep links, preparation and recover
     path: testInfo.outputPath('workspace-teams.png'),
     fullPage: true,
   });
-  await preparation
-    .getByRole('link', { name: 'Kategorie', exact: true })
-    .click();
+  await preparation.getByRole('link', { name: /\bKategorie(?: |$)/u }).click();
   await expect(
-    page.getByRole('heading', { name: 'Kategorie hlasování', exact: true }),
+    page.getByRole('heading', { name: 'Kategorie', exact: true }),
   ).toBeVisible();
   await page.goBack();
   await expect(
-    preparation.getByRole('link', { name: 'Týmy', exact: true }),
+    preparation.getByRole('link', { name: /Týmy(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
   await page.goForward();
   await expect(
-    preparation.getByRole('link', { name: 'Kategorie', exact: true }),
+    preparation.getByRole('link', { name: /\bKategorie(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
-  await section('Kategorie');
+  await section('Kategorie', 'Kategorie');
   await page.screenshot({
     path: testInfo.outputPath('workspace-categories.png'),
     fullPage: true,
@@ -191,12 +194,10 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(page).toHaveURL(
     `${runtime.origin}/admin/votings/${category.id}`,
   );
-  await section('Kategorie');
-  await page
-    .getByRole('link', { name: '← Všechny kategorie', exact: true })
-    .click();
+  await section('Kategorie', category.name);
+  await page.getByRole('link', { name: '← Kategorie', exact: true }).click();
   await expect(
-    preparation.getByRole('link', { name: 'Kategorie', exact: true }),
+    preparation.getByRole('link', { name: /\bKategorie(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
   await eventNav
     .getByRole('link', { name: 'Průběh hlasování', exact: true })
@@ -204,7 +205,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(
     page.getByRole('heading', { name: 'Průběh hlasování', exact: true }),
   ).toBeVisible();
-  await section('Průběh hlasování');
+  await section('Průběh hlasování', 'Průběh hlasování');
   await page.screenshot({
     path: testInfo.outputPath('workspace-progress.png'),
     fullPage: true,
@@ -213,12 +214,12 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(
     page.getByRole('heading', { name: category.name, exact: true }),
   ).toBeVisible();
-  await section('Průběh hlasování');
+  await section('Průběh hlasování', event.name);
   await eventNav.getByRole('link', { name: 'Výsledky', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Výsledky hlasování', exact: true }),
+    page.getByRole('heading', { name: 'Výsledky', exact: true }),
   ).toBeVisible();
-  await section('Výsledky');
+  await section('Výsledky', 'Výsledky');
   await page.screenshot({
     path: testInfo.outputPath('workspace-results.png'),
     fullPage: true,
@@ -227,18 +228,18 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(
     page.getByRole('heading', { name: category.name, exact: true }),
   ).toBeVisible();
-  await section('Výsledky');
-  await eventNav.getByRole('link', { name: 'Porotci', exact: true }).click();
+  await section('Výsledky', 'Výsledky');
+  await eventNav.getByRole('link', { name: /\bPorotci(?: |$)/u }).click();
   await expect(
-    preparation.getByRole('link', { name: 'Porotci', exact: true }),
+    preparation.getByRole('link', { name: /\bPorotci(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
   // Unknown view names safely fall back to jurors, with no domain action.
   await page.goto(`${base}?setup=unknown`);
   await expect(
-    preparation.getByRole('link', { name: 'Porotci', exact: true }),
+    preparation.getByRole('link', { name: /\bPorotci(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
   await page.goto(`/admin/events/${other.id}?setup=teams`);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(other.name);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Týmy');
   await expect(
     page.getByText('Tým s uchovaným názvem', { exact: true }),
   ).toHaveCount(0);
@@ -281,15 +282,11 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await page.route(`**/api/events/${event.id}/teams/table`, (route) =>
     route.abort('connectionfailed'),
   );
-  await page.getByRole('button', { name: 'Obnovit týmy', exact: true }).click();
+  await eventNav.getByRole('link', { name: /\bPorotci(?: |$)/u }).click();
+  await eventNav.getByRole('link', { name: /\bTýmy(?: |$)/u }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await expect(
-    page.getByLabel('Název týmu, řádek 1', { exact: true }),
-  ).toHaveValue('Tým s uchovaným názvem');
   await page.unroute(`**/api/events/${event.id}/teams/table`);
-  await page
-    .getByRole('button', { name: 'Obnovit týmy', exact: true })
-    .press('Enter');
+  await page.reload();
   await expect(
     page.getByLabel('Název týmu, řádek 1', { exact: true }),
   ).toHaveValue('Tým s uchovaným názvem');
@@ -305,6 +302,6 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await page.getByLabel('Heslo', { exact: true }).fill(runtime.password);
   await page.getByLabel('Heslo', { exact: true }).press('Enter');
   await expect(
-    preparation.getByRole('link', { name: 'Týmy', exact: true }),
+    preparation.getByRole('link', { name: /Týmy(?: |$)/u }),
   ).toHaveAttribute('aria-current', 'page');
 });

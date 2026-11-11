@@ -25,29 +25,51 @@ export function JurorRows({
   onExpired,
   onChanged,
   disabled,
+  initialBallot,
+  unlockUnavailable,
+  pendingOnly = false,
 }: {
   category: DashboardCategory;
   ballots: AdminBallot[];
   onExpired: () => void;
   onChanged: () => void;
   disabled: boolean;
+  initialBallot?: AdminBallot;
+  unlockUnavailable?: boolean;
+  pendingOnly?: boolean;
 }) {
-  const [selected, setSelected] = useState<AdminBallot>();
+  const [selected, setSelected] = useState(initialBallot);
+  const [missingTarget] = useState(unlockUnavailable);
   const [notice, setNotice] = useState('');
   const feedback = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    if (notice) feedback.current?.focus();
+    if (notice) {
+      feedback.current?.focus();
+    }
   }, [notice]);
   const byJuror = new Map(ballots.map((ballot) => [ballot.jurorId, ballot]));
+  const visible = pendingOnly
+    ? c.jurors.filter((juror) => juror.progress !== 'submitted')
+    : c.jurors;
   return (
     <>
+      {missingTarget && (
+        <p role="status" className="mt-4 text-sm">
+          Vybraný porotce nemá aktuální odevzdaný lístek.
+        </p>
+      )}
+      {pendingOnly && visible.length === 0 && (
+        <p className="mt-4 text-sm">
+          Všichni oprávnění porotci odevzdali lístek.
+        </p>
+      )}
       {notice && (
         <p ref={feedback} tabIndex={-1} role="status" className="mt-4 text-sm">
           {notice}
         </p>
       )}
       <ul className="mt-5 divide-y divide-border">
-        {c.jurors.map((j) => (
+        {visible.map((j) => (
           <li
             key={j.id}
             className="flex min-w-0 flex-wrap justify-between gap-3 py-4"
@@ -76,15 +98,16 @@ export function JurorRows({
               >
                 {progressLabels[j.progress]}
               </p>
-              {j.submittedAt ? (
+              {j.submittedAt && (
                 <p className="mt-1 text-muted-foreground">
                   Odevzdáno {timestamp(j.submittedAt)}
                 </p>
-              ) : j.savedAt ? (
+              )}
+              {!j.submittedAt && j.savedAt && (
                 <p className="mt-1 text-muted-foreground">
                   Uloženo {timestamp(j.savedAt)}
                 </p>
-              ) : null}
+              )}
               {byJuror.get(j.id)?.status === 'submitted' && (
                 <Button
                   type="button"
@@ -127,9 +150,11 @@ export function JurorRows({
 export function CategoryDetail({
   votingId,
   onExpired,
+  search,
 }: {
   votingId: string;
   onExpired: () => void;
+  search?: string;
 }) {
   const resource = useResource(
     `/dashboard/votings/${votingId}`,
@@ -137,10 +162,17 @@ export function CategoryDetail({
     onExpired,
   );
   const data = resource.data;
+  const query = new URLSearchParams(search);
+  const unlockJurorId = query.get('unlock');
+  const pendingOnly = query.get('filter') === 'pending';
   const ballots = useResource(
     `/votings/${votingId}/ballots`,
     adminBallotsSchema,
     onExpired,
+  );
+  const initialBallot = ballots.data?.find(
+    (ballot) =>
+      ballot.jurorId === unlockJurorId && ballot.status === 'submitted',
   );
   return (
     <>
@@ -232,7 +264,11 @@ export function CategoryDetail({
           )}
           <section className="mt-8" aria-labelledby="eligible-jurors">
             <h2 id="eligible-jurors" className="text-xl font-semibold">
-              Oprávnění porotci ({data.category.counts.expected})
+              {pendingOnly ? 'Čekající porotci' : 'Oprávnění porotci'} (
+              {pendingOnly
+                ? data.category.counts.pending
+                : data.category.counts.expected}
+              )
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               {data.category.status === 'draft'
@@ -244,16 +280,22 @@ export function CategoryDetail({
               errorTitle="Hlasovací lístky se nepodařilo načíst"
             />
             {data.category.jurors.length ? (
-              <JurorRows
-                category={data.category}
-                ballots={ballots.data ?? []}
-                onExpired={onExpired}
-                disabled={ballots.loading || resource.loading}
-                onChanged={() => {
-                  resource.reload();
-                  ballots.reload();
-                }}
-              />
+              (!unlockJurorId || ballots.data) && (
+                <JurorRows
+                  key={search}
+                  initialBallot={initialBallot}
+                  unlockUnavailable={Boolean(unlockJurorId && !initialBallot)}
+                  pendingOnly={pendingOnly}
+                  category={data.category}
+                  ballots={ballots.data ?? []}
+                  onExpired={onExpired}
+                  disabled={ballots.loading || resource.loading}
+                  onChanged={() => {
+                    resource.reload();
+                    ballots.reload();
+                  }}
+                />
+              )
             ) : (
               <p className="mt-5 text-muted-foreground">
                 Žádní oprávnění porotci.

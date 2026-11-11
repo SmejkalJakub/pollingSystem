@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @theme inline {
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -15,8 +16,31 @@
   --color-accent-foreground: var(--foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
+  --color-control-border: var(--control-border);
   --color-input: var(--border);
   --color-ring: var(--ring);
+  --color-primary-hover: var(--primary-hover);
+  --color-border-subtle: var(--border-subtle);
+  --color-table-head: var(--table-head);
+  --color-selected-plus-bg: var(--selected-plus-bg);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-row-bg: var(--destructive-row-bg);
+  --color-destructive-text: var(--destructive-text);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-row-bg: var(--warning-row-bg);
+  --color-warning-text: var(--warning-text);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+  --color-header-muted: var(--header-muted);
+  --color-header-accent: var(--header-accent);
+  --color-header-line: var(--header-line);
+  --color-header-divider: var(--header-divider);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
@@ -35,6 +59,28 @@
   --border: #cbd5e5;
   --control-border: #7b8ca8;
   --ring: #2356c7;
+  --primary-hover: #1a4299;
+  --border-subtle: #e3e9f3;
+  --table-head: #f7f9fd;
+  --selected-plus-bg: #f3f7ff;
+  --destructive-foreground: #fff;
+  --destructive-soft: #fbe9eb;
+  --destructive-row-bg: #fdf3f4;
+  --destructive-text: #8c1f2c;
+  --success: #1f7a4d;
+  --success-foreground: #fff;
+  --success-soft: #e3f3ea;
+  --success-text: #155a37;
+  --warning: #e0a43a;
+  --warning-soft: #fdf1dc;
+  --warning-row-bg: #fdf8ec;
+  --warning-text: #7a4d06;
+  --header: #182640;
+  --header-foreground: #fff;
+  --header-muted: #c9d4ea;
+  --header-accent: #9bbbff;
+  --header-line: #4a5b7c;
+  --header-divider: #33456b;
   --radius: 0.625rem;
 }
 
@@ -52,6 +98,28 @@
     --border: #465670;
     --control-border: #8295b5;
     --ring: #9bbbff;
+    --primary-hover: #b3caff;
+    --border-subtle: #38475e;
+    --table-head: #242f42;
+    --selected-plus-bg: #263b60;
+    --destructive-foreground: #32141b;
+    --destructive-soft: #492832;
+    --destructive-row-bg: #3e2731;
+    --destructive-text: #ffb8c1;
+    --success: #8cdbaf;
+    --success-foreground: #113122;
+    --success-soft: #213d33;
+    --success-text: #a3ebc2;
+    --warning: #efba62;
+    --warning-soft: #3e301c;
+    --warning-row-bg: #33291d;
+    --warning-text: #ffd58d;
+    --header: #182640;
+    --header-foreground: #fff;
+    --header-muted: #c9d4ea;
+    --header-accent: #9bbbff;
+    --header-line: #4a5b7c;
+    --header-divider: #33456b;
   }
 }
 
@@ -96,25 +164,6 @@
   .section-title {
     @apply break-words text-2xl font-bold leading-tight tracking-tight sm:text-[1.75rem];
   }
-  .event-heading {
-    @apply mb-6 border-b border-border pb-5;
-  }
-  .event-navigation {
-    @apply mt-5 grid gap-3 sm:flex sm:flex-wrap sm:gap-5;
-  }
-  .event-nav-label {
-    @apply mb-1.5 block text-sm font-semibold text-muted-foreground;
-  }
-  .event-nav-links {
-    @apply flex flex-wrap gap-1.5;
-  }
-  .event-navigation a {
-    @apply inline-flex min-h-11 items-center justify-center rounded-md border bg-card px-3 py-2 text-center text-sm font-semibold leading-tight outline-offset-2 hover:border-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring;
-    border-color: var(--control-border);
-  }
-  .event-navigation a[aria-current='page'] {
-    @apply border-primary bg-primary text-primary-foreground;
-  }
   .feedback-error {
     @apply rounded-lg border border-destructive/40 bg-card p-4 sm:p-5;
   }
@@ -157,27 +206,6 @@
   .team-table thead {
     @apply bg-secondary;
   }
-}
-
-@media (max-width: 639px) {
-  .voting-table,
-  .voting-table thead,
-  .voting-table tbody {
-    display: block;
-  }
-  .voting-table tr {
-    display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr) 3.5rem 3.5rem;
-  }
-  .voting-table caption {
-    display: block;
-  }
-  .voting-table th {
-    width: auto;
-  }
-}
-.voting-table button {
-  scroll-margin-top: 11rem;
 }
 
 .dashboard-progress {
@@ -257,11 +285,29 @@
   }
 }
 
-/* Keep editable team rows readable without horizontal scrolling on phones. */
+/* Rosters retain their table semantics at every size. */
+.team-table {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  border-spacing: 0;
+  border-collapse: separate;
+}
 .team-table th,
 .team-table td {
-  padding: 0.75rem 0.5rem;
+  padding: 0.875rem;
   border-bottom: 1px solid var(--border);
+}
+.team-table thead th:first-child {
+  border-top-left-radius: 0.75rem;
+}
+.team-table thead th:last-child {
+  border-top-right-radius: 0.75rem;
+}
+.team-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.team-table tbody tr:nth-child(even):not(:focus-within) {
+  background: color-mix(in srgb, var(--secondary) 36%, var(--card));
 }
 @media (max-width: 639px) {
   .team-table,
@@ -276,8 +322,11 @@
     display: none;
   }
   .team-table tr {
-    padding: 0.75rem 0;
+    padding: 0.75rem;
     border-bottom: 1px solid var(--border);
+  }
+  .team-table tr:last-child {
+    border-bottom: 0;
   }
   .team-table td,
   .team-table th {

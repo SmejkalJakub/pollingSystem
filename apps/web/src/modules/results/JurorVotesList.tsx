@@ -1,41 +1,81 @@
-import { juryGroupLabel } from '@d21/contracts';
-import type { JurorVotes, ResultsCategory } from '@d21/contracts';
-import { progressLabels, timestamp } from '../dashboard/presentation';
+import {
+  juryGroupLabel,
+  type JurorVotes,
+  type ResultsCategory,
+} from '@d21/contracts';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  clockTime,
+  progressLabels,
+  timestamp,
+} from '../dashboard/presentation';
+import { countedTeamTotals } from './matrix-totals';
 
-function teamNames(
-  votes: JurorVotes,
-  value: 1 | -1,
-  items: Map<string, { name: string; displayOrder: number }>,
-) {
-  return votes.entries
-    .filter((e) => e.voteValue === value)
-    .map((e) => items.get(e.votingItemId))
-    .filter((i) => i !== undefined)
-    .sort((a, b) => a.displayOrder - b.displayOrder)
-    .map((i) => i.name);
-}
+const statusOrder: Record<JurorVotes['progress'], number> = {
+  submitted: 0,
+  in_progress: 1,
+  invalid_draft: 2,
+  locked: 3,
+  not_started: 4,
+};
 
-function VoteLine({ label, names }: { label: string; names: string[] }) {
+function VoteMark({
+  value,
+  team,
+  counted,
+}: {
+  value?: number;
+  team: string;
+  counted: boolean;
+}) {
+  if (!value) {
+    return <span className="sr-only">Bez hlasu: {team}</span>;
+  }
+  const label = value === 1 ? 'Kladný' : 'Záporný';
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:gap-3">
-      <dt className="shrink-0 text-muted-foreground sm:w-24">{label}</dt>
-      <dd className="min-w-0 break-words">
-        {names.length ? names.join(', ') : '—'}
-      </dd>
-    </div>
+    <span
+      role="img"
+      aria-label={`${label}${counted ? ' hlas' : ', nezapočteno'}: ${team}`}
+      className="operations-vote"
+      data-vote={value}
+      data-counted={counted}
+    >
+      {value === 1 ? '✓' : '✕'}
+    </span>
   );
 }
 
-function statusNote(votes: JurorVotes) {
-  if (votes.counted) {
-    return votes.submittedAt
-      ? `Započteno · odevzdáno ${timestamp(votes.submittedAt)}`
-      : 'Započteno';
+function ballotStatus(progress: JurorVotes['progress']) {
+  if (progress === 'not_started') {
+    return 'Bez návrhu';
   }
-  if (votes.savedAt) {
-    return `Nezapočteno · uloženo ${timestamp(votes.savedAt)}`;
+  return progressLabels[progress];
+}
+
+function BallotNote({ juror }: { juror: JurorVotes }) {
+  if (juror.counted) {
+    const suffix = juror.entries.length ? 'započteno' : 'prázdný lístek';
+    if (!juror.submittedAt) {
+      return <>{suffix}</>;
+    }
+    return (
+      <>
+        v{' '}
+        <time dateTime={juror.submittedAt} title={timestamp(juror.submittedAt)}>
+          {clockTime(juror.submittedAt)}
+        </time>{' '}
+        · {suffix}
+      </>
+    );
   }
-  return 'Nezapočteno';
+  if (juror.progress === 'not_started') {
+    return <>zatím nic neuložil</>;
+  }
+  if (juror.progress === 'invalid_draft') {
+    return <>nezapočteno · vyžaduje opravu</>;
+  }
+  return <>nezapočteno</>;
 }
 
 export function JurorVotesList({
@@ -45,58 +85,230 @@ export function JurorVotesList({
   category: ResultsCategory;
   jurorVotes: JurorVotes[];
 }) {
-  const items = new Map(c.rows.map((r) => [r.id, r]));
+  const [filter, setFilter] = useState<'all' | 'counted' | 'T' | 'V'>('all');
+  const groups = new Map(c.groups.map((group) => [group.id, group.code]));
+  const nameCounts = new Map<string, number>();
+  for (const juror of jurorVotes) {
+    nameCounts.set(
+      juror.displayName,
+      (nameCounts.get(juror.displayName) ?? 0) + 1,
+    );
+  }
+  const visible = jurorVotes
+    .filter(
+      (juror) =>
+        filter === 'all' ||
+        (filter === 'counted'
+          ? juror.counted
+          : groups.get(juror.groupId) === filter),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.counted) - Number(a.counted) ||
+        statusOrder[a.progress] - statusOrder[b.progress] ||
+        (b.submittedAt ?? b.savedAt ?? '').localeCompare(
+          a.submittedAt ?? a.savedAt ?? '',
+        ) ||
+        a.displayName.localeCompare(b.displayName, 'cs') ||
+        a.jurorId.localeCompare(b.jurorId),
+    );
+  const totals = countedTeamTotals(
+    c.rows.map((row) => row.id),
+    jurorVotes,
+  );
+  const filters = [
+    ['all', `Všichni (${jurorVotes.length})`],
+    [
+      'counted',
+      `Jen započtení (${jurorVotes.filter((juror) => juror.counted).length})`,
+    ],
+    ['T', 'Technická'],
+    ['V', 'Veřejná'],
+  ] as const;
+  const footer = [
+    ['plus', 'Započteno kladných'],
+    ['minus', 'Započteno záporných'],
+    ['score', 'Skóre'],
+  ] as const;
   return (
-    <section
-      className="mt-6 min-w-0 border border-border bg-card p-5 sm:p-6"
-      aria-labelledby={`juror-votes-${c.id}`}
-    >
-      <h2 id={`juror-votes-${c.id}`} className="text-xl font-semibold">
-        Hlasy porotců
+    <section className="mt-7 min-w-0" aria-labelledby={`juror-votes-${c.id}`}>
+      <h2
+        id={`juror-votes-${c.id}`}
+        className="break-words text-xl font-semibold"
+      >
+        Hlasy porotců · {c.name}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        Jednotlivé volby aktuálně oprávněných porotců, včetně uložených
-        neodevzdaných návrhů. Do výsledků se započítávají pouze odevzdané
-        lístky.
+      <p className="mt-2 text-sm text-muted-foreground">
+        Řádky jsou porotci, sloupce týmy v pořadí výsledků. Do výsledků se
+        počítají jen odevzdané lístky.
       </p>
-      {jurorVotes.length ? (
-        <ul className="mt-5 divide-y divide-border border-t border-border">
-          {jurorVotes.map((j) => (
-            <li key={j.jurorId} className="py-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="break-words font-medium">{j.displayName}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {juryGroupLabel(
-                      c.groups.find((g) => g.id === j.groupId)?.code,
-                    )}{' '}
-                    · {statusNote(j)}
-                  </p>
-                </div>
-                <span
-                  className={`border px-2 py-0.5 text-xs font-medium ${j.counted ? 'border-ring text-ring' : 'border-border text-muted-foreground'}`}
-                >
-                  {progressLabels[j.progress]}
-                </span>
-              </div>
-              {j.progress === 'not_started' ? (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Porotce zatím nic neuložil.
-                </p>
-              ) : (
-                <dl className="mt-3 space-y-2 text-sm">
-                  <VoteLine label="Pozitivní" names={teamNames(j, 1, items)} />
-                  <VoteLine label="Negativní" names={teamNames(j, -1, items)} />
-                </dl>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-5 text-sm text-muted-foreground">
-          Kategorie nemá oprávněné porotce.
+      <div
+        role="group"
+        aria-label="Filtrovat hlasy porotců"
+        className="my-4 flex flex-wrap gap-2"
+      >
+        {filters.map(([value, label]) => (
+          <Button
+            key={value}
+            variant="outline"
+            className="operations-filter rounded-full"
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+      <ul
+        aria-label="Legenda"
+        className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs"
+      >
+        {[
+          { value: 1, counted: true, label: 'kladný hlas' },
+          { value: -1, counted: true, label: 'záporný hlas' },
+          { value: 1, counted: false, label: 'uložený návrh — nezapočteno' },
+        ].map(({ value, counted, label }) => (
+          <li key={label} className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="operations-vote"
+              data-vote={value}
+              data-counted={counted}
+            >
+              {value === 1 ? '✓' : '✕'}
+            </span>
+            {label}
+          </li>
+        ))}
+      </ul>
+      {visible.length === 0 && (
+        <p role="status" className="mb-3 text-sm text-muted-foreground">
+          {jurorVotes.length
+            ? 'Tomuto filtru neodpovídá žádný porotce.'
+            : 'Kategorie nemá oprávněné porotce.'}
         </p>
       )}
+      <div
+        className="operations-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label="Matice hlasů porotců"
+      >
+        <table className="operations-table text-sm tabular-nums">
+          <thead>
+            <tr>
+              <th scope="col">Porotce</th>
+              {c.rows.map((team) => (
+                <th
+                  key={team.id}
+                  scope="col"
+                  className="min-w-24 max-w-40 break-words text-center"
+                >
+                  <span className="block text-xs text-muted-foreground">
+                    {team.rank}.
+                  </span>
+                  {team.name}
+                  {c.rows.some(
+                    (other) => other.id !== team.id && other.name === team.name,
+                  ) && (
+                    <span className="block text-xs text-muted-foreground">
+                      ID {(team.teamId ?? team.id).slice(0, 8)}
+                    </span>
+                  )}
+                </th>
+              ))}
+              <th scope="col" className="whitespace-nowrap text-center">
+                + / −
+              </th>
+              <th scope="col" className="min-w-40">
+                Stav lístku
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((juror, index) => {
+              const entries = new Map(
+                juror.entries.map((entry) => [
+                  entry.votingItemId,
+                  entry.voteValue,
+                ]),
+              );
+              const plus = juror.entries.filter(
+                (entry) => entry.voteValue === 1,
+              ).length;
+              const minus = juror.entries.filter(
+                (entry) => entry.voteValue === -1,
+              ).length;
+              return (
+                <tr
+                  key={juror.jurorId}
+
+                  className={
+                    index > 0 && visible[index - 1]?.counted && !juror.counted
+                      ? 'operations-divider'
+                      : undefined
+                  }
+                >
+                  <th
+                    scope="row"
+                    className={
+                      juror.counted
+                        ? 'font-semibold'
+                        : 'font-semibold text-muted-foreground'
+                    }
+                  >
+                    {juror.displayName}
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      {juryGroupLabel(groups.get(juror.groupId))}
+                      {(nameCounts.get(juror.displayName) ?? 0) > 1 &&
+                        ` · ID ${juror.jurorId.slice(0, 8)}`}
+                    </span>
+                  </th>
+                  {c.rows.map((team) => (
+                    <td key={team.id} className="text-center">
+                      <VoteMark
+                        value={entries.get(team.id)}
+                        team={team.name}
+                        counted={juror.counted}
+                      />
+                    </td>
+                  ))}
+                  <td className="whitespace-nowrap text-center">
+                    {plus} / {minus}
+                  </td>
+                  <td>
+                    <span
+                      className="operations-pill"
+                      data-progress={juror.progress}
+                    >
+                      {ballotStatus(juror.progress)}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      <BallotNote juror={juror} />
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            {footer.map(([field, label]) => (
+              <tr key={field}>
+                <th scope="row">{label}</th>
+                {c.rows.map((team) => (
+                  <td key={team.id} className="text-center font-semibold">
+                    {totals.get(team.id)?.[field]}
+                  </td>
+                ))}
+                <td colSpan={2} />
+              </tr>
+            ))}
+          </tfoot>
+        </table>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Součty v patičce se shodují s tabulkou pořadí výše.
+      </p>
     </section>
   );
 }

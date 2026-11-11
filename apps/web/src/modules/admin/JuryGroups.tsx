@@ -35,7 +35,10 @@ export function JuryGroups({
   }
   return (
     <>
-      <section className="mt-6" aria-labelledby="groups-title">
+      <section
+        className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6"
+        aria-labelledby="groups-title"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2
             id="groups-title"
@@ -57,13 +60,13 @@ export function JuryGroups({
             return (
               <div
                 key={code}
-                className="min-w-0 border border-border bg-card px-4 py-3"
+                className="min-w-0 rounded-xl border border-border bg-card px-4 py-3"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <span className="font-mono text-sm font-semibold">
-                    POROTA {juryGroupLabel(code)}
+                  <span className="text-sm font-semibold">
+                    {juryGroupLabel(code)} porota
                   </span>
-                  <span className="font-mono text-sm text-muted-foreground">
+                  <span className="text-sm tabular-nums text-muted-foreground">
                     {count} členů
                   </span>
                 </div>

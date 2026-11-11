@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Týmy</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button,input,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column">
+  <header style="background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+      <span style="background: #fff; color: #182640; font-weight: 700; font-size: 13px; padding: 4px 7px; border-radius: 6px">D21</span>
+      <a href="#" style="color: #c9d4ea; text-decoration: none; font-size: 14px">Eventy</a>
+      <span style="color: #6c7da0" aria-hidden="true">/</span>
+      <button style="min-height: 40px; padding: 0 12px; border: 1px solid #4a5b7c; border-radius: 10px; background: transparent; color: #fff; font-weight: 600; font-size: 14px">Ukázkový hackathon 2026 <span aria-hidden="true">▾</span></button>
+      <button style="margin-left: auto; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: #fff; font-size: 14px">Odhlásit se</button>
+    </div>
+    <nav aria-label="Event" style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; gap: 4px; overflow-x: auto">
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Porotci 14</a>
+      <a href="#" aria-current="page" style="padding: 12px 14px; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; border-bottom: 3px solid #9bbbff; white-space: nowrap">Týmy 8</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Kategorie 2/3</a>
+      <span style="width: 1px; background: #33456b; margin: 10px 8px" aria-hidden="true"></span>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Průběh hlasování</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Výsledky</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Nastavení eventu</a>
+    </nav>
+  </header>
+
+  <main style="flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 28px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+    <div style="flex: 999 1 640px; min-width: 0">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700">Týmy</h1>
+        <p style="margin: 0; color: #52627a">Sdílené pro všechny kategorie eventu.</p>
+      </div>
+      <div style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 700px">
+          <caption style="position: absolute; width: 1px; height: 1px; overflow: hidden">Tabulka týmů</caption>
+          <thead>
+            <tr style="text-align: left; color: #52627a; font-size: 13px; background: #f7f9fd">
+              <th scope="col" style="padding: 10px 16px; width: 40px; font-weight: 600">#</th>
+              <th scope="col" style="padding: 10px 8px; width: 220px; font-weight: 600">Název týmu</th>
+              <th scope="col" style="padding: 10px 8px; font-weight: 600">Popis <span style="font-weight: 400">(nepovinný, vidí porotci)</span></th>
+              <th scope="col" style="padding: 10px 16px; width: 150px; font-weight: 600">V kategoriích</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 8px 16px; color: #52627a">1</td><td style="padding: 8px"><input aria-label="Název týmu 1" value="Atlas" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; background: transparent"></td><td style="padding: 8px"><input aria-label="Popis týmu 1" value="Plánování směn pro nemocnice" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; background: transparent"></td><td style="padding: 8px 16px; color: #52627a">3</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 8px 16px; color: #52627a">2</td><td style="padding: 8px"><input aria-label="Název týmu 2" value="Borealis" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; background: transparent"></td><td style="padding: 8px"><input aria-label="Popis týmu 2" value="Mapa dostupnosti nabíječek" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; background: transparent"></td><td style="padding: 8px 16px; color: #52627a">3</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3; background: #f3f7ff"><td style="padding: 8px 16px; color: #52627a">3</td><td style="padding: 8px"><input aria-label="Název týmu 3" value="Cirrus" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid #2356c7; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600"></td><td style="padding: 8px"><input aria-label="Popis týmu 3" value="Hlasový asistent pro seniory a jejich rodiny" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid #2356c7; border-radius: 8px; padding: 0 10px; font-size: 14px"></td><td style="padding: 8px 16px; color: #52627a">3</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 8px 16px; color: #52627a">4</td><td style="padding: 8px"><input aria-label="Název týmu 4" value="Delta Labs" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; background: transparent"></td><td style="padding: 8px"><input aria-label="Popis týmu 4" value="Detekce úniků vody senzory" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; background: transparent"></td><td style="padding: 8px 16px; color: #52627a">2</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 8px 16px; color: #52627a">5</td><td style="padding: 8px"><input aria-label="Název týmu 5" value="Echo" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; background: transparent"></td><td style="padding: 8px"><input aria-label="Popis týmu 5" value="Přepis přednášek v reálném čase" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; background: transparent"></td><td style="padding: 8px 16px; color: #52627a">3</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 8px 16px; color: #52627a">6</td><td style="padding: 8px"><input aria-label="Název týmu 6" value="Fjord" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 600; background: transparent"></td><td style="padding: 8px"><input aria-label="Popis týmu 6" value="" placeholder="Bez popisu" style="width: 100%; box-sizing: border-box; min-height: 40px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; font-size: 14px; background: transparent"></td><td style="padding: 8px 16px; color: #52627a">2</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 8px 16px; color: #7b8ca8">+</td><td colspan="3" style="padding: 8px"><input aria-label="Přidat tým" placeholder="Název nového týmu" style="width: 100%; max-width: 360px; box-sizing: border-box; min-height: 40px; border: 1px dashed #7b8ca8; border-radius: 8px; padding: 0 10px; font-size: 14px"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside style="flex: 1 1 280px; max-width: 340px; background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 18px 20px">
+      <h2 style="margin: 0 0 6px; font-size: 16px">Vložit více týmů najednou</h2>
+      <p style="margin: 0 0 12px; font-size: 14px; color: #52627a">Zkopírujte dva sloupce z Excelu (název, popis) a vložte je sem. Před uložením uvidíte náhled.</p>
+      <label style="display: block; font-size: 13px; font-weight: 600">Data z tabulky
+        <textarea rows="6" placeholder="Atlas&#9;Plánování směn…" style="margin-top: 6px; width: 100%; box-sizing: border-box; border: 1px dashed #7b8ca8; border-radius: 10px; padding: 10px; font-size: 14px; resize: vertical"></textarea>
+      </label>
+      <button style="margin-top: 10px; width: 100%; min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600">Zobrazit náhled</button>
+    </aside>
+  </main>
+
+  <div style="position: sticky; bottom: 0; background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <p style="margin: 0; flex: 1 1 300px; font-size: 14px"><strong>1 neuložená změna</strong> · Cirrus</p>
+      <button style="min-height: 44px; padding: 0 14px; border: 1px solid #6c7da0; border-radius: 10px; background: transparent; color: #fff; font-weight: 600">Zahodit</button>
+      <button style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #fff; color: #182640; font-weight: 600">Uložit tabulku</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

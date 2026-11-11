@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Hlasy změněny jinde</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.4">
+  <header style="background: #182640; color: #fff; padding: 12px 16px 10px; display: flex; align-items: center; gap: 12px">
+    <span style="background: #fff; color: #182640; font-weight: 700; font-size: 12px; padding: 4px 6px; border-radius: 6px">D21</span>
+    <div style="flex: 1"><p style="margin: 0; font-weight: 600; font-size: 14px">Jana Nováková · Technická porota</p><p style="margin: 0; font-size: 12px; color: #c9d4ea">Ukázkový hackathon 2026</p></div>
+  </header>
+  <div style="background: #fff; padding: 14px 16px; border-bottom: 1px solid #cbd5e5">
+    <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #52627a">Finále · 1 vítěz</p>
+    <h1 style="margin: 2px 0 0; font-size: 22px; font-weight: 700">Nejlepší technické řešení</h1>
+  </div>
+  <div style="flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; opacity: .5" aria-hidden="true">
+    <div style="height: 64px; border-radius: 14px; background: #f3f7ff; border: 1.5px solid #2356c7"></div>
+    <div style="height: 64px; border-radius: 14px; background: #fff; border: 1px solid #cbd5e5"></div>
+    <div style="height: 64px; border-radius: 14px; background: #f3f7ff; border: 1.5px solid #2356c7"></div>
+  </div>
+
+  <div style="position: absolute; inset: 0; background: rgba(24, 38, 64, .45); display: flex; align-items: flex-end">
+    <section role="dialog" aria-modal="true" aria-labelledby="c" style="width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding: 8px 16px 20px; box-sizing: border-box">
+      <div style="width: 40px; height: 4px; border-radius: 2px; background: #cbd5e5; margin: 0 auto 14px" aria-hidden="true"></div>
+      <h2 id="c" style="margin: 0; font-size: 19px; font-weight: 700">Hlasy se mezitím změnily</h2>
+      <p style="margin: 4px 0 14px; font-size: 13px; color: #52627a">Uložený návrh byl upraven na jiném zařízení nebo v jiné záložce. Váš výběr zůstal zachovaný — vyberte, kterou verzi ponechat.</p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 14px">
+        <caption style="position: absolute; width: 1px; height: 1px; overflow: hidden">Porovnání vašeho výběru a uložené verze</caption>
+        <thead><tr style="text-align: left; color: #52627a; font-size: 12px"><th style="padding: 6px 0; font-weight: 600">Tým</th><th style="padding: 6px 8px; font-weight: 600; text-align: center">Tady</th><th style="padding: 6px 8px; font-weight: 600; text-align: center">Uloženo</th></tr></thead>
+        <tbody>
+          <tr style="border-top: 1px solid #e3e9f3"><th scope="row" style="padding: 8px 0; text-align: left; font-weight: 500">Atlas</th><td style="text-align: center"><span style="display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: #2356c7; color: #fff; align-items: center; justify-content: center; font-weight: 700">+</span></td><td style="text-align: center"><span style="display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: #2356c7; color: #fff; align-items: center; justify-content: center; font-weight: 700">+</span></td></tr>
+          <tr style="border-top: 1px solid #e3e9f3; background: #fdf8ec"><th scope="row" style="padding: 8px 0 8px 6px; text-align: left; font-weight: 600">Cirrus</th><td style="text-align: center"><span style="display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: #2356c7; color: #fff; align-items: center; justify-content: center; font-weight: 700">+</span></td><td style="text-align: center; color: #52627a; font-size: 13px">žádný</td></tr>
+          <tr style="border-top: 1px solid #e3e9f3; background: #fdf8ec"><th scope="row" style="padding: 8px 0 8px 6px; text-align: left; font-weight: 600">Echo</th><td style="text-align: center; color: #52627a; font-size: 13px">žádný</td><td style="text-align: center"><span style="display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: #2356c7; color: #fff; align-items: center; justify-content: center; font-weight: 700">+</span></td></tr>
+        </tbody>
+      </table>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button style="min-height: 48px; border: 0; background: #2356c7; color: #fff; border-radius: 12px; font-size: 15px; font-weight: 600">Ponechat můj výběr</button>
+        <button style="min-height: 48px; border: 1px solid #7b8ca8; background: #fff; color: #182640; border-radius: 12px; font-size: 15px; font-weight: 600">Načíst uloženou verzi</button>
+      </div>
+      <p style="margin: 10px 0 0; font-size: 12px; color: #52627a">Rozdílné řádky jsou zvýrazněné. „Ponechat můj výběr“ ho připraví k dalšímu uložení.</p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

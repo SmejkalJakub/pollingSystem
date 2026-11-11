@@ -24,7 +24,10 @@ test('team table saves atomically with preview, retained errors, conflicts and r
     name: 'Uložit tabulku',
     exact: true,
   });
-  const add = page.getByRole('button', { name: 'Nový tým', exact: true });
+  const add = page.getByRole('textbox', {
+    name: 'Přidat tým',
+    exact: true,
+  });
   const values = async () =>
     (
       await runtime.pool.query(
@@ -60,14 +63,17 @@ test('team table saves atomically with preview, retained errors, conflicts and r
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    for (const control of [save, add, field(1)]) {
+    for (const control of [add, field(1)]) {
       const box = await control.boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
   }
   await page.goto(`/admin/events/${event.id}?setup=teams`);
+  await add.fill('Dočasný tým');
   await add.press('Enter');
   await expect(field(1)).toBeFocused();
+  await field(1).fill('');
+  expect((await save.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await save.click();
   await expect(page.getByRole('alert')).toBeFocused();
   await expect(field(1)).toHaveAttribute('aria-invalid', 'true');
@@ -81,10 +87,9 @@ test('team table saves atomically with preview, retained errors, conflicts and r
   await expect(
     page.getByText('Tabulka týmů byla uložena.', { exact: true }),
   ).toBeVisible();
-  await page.getByText('Vložit ze spreadsheetu', { exact: true }).click();
-  const paste = page.getByLabel('Řádky z tabulky', { exact: true });
+  const paste = page.getByLabel('Data z tabulky', { exact: true });
   const preview = page.getByRole('button', {
-    name: 'Přidat řádky do tabulky',
+    name: 'Zobrazit náhled',
     exact: true,
   });
   await paste.fill('A\tB\tC');
@@ -101,6 +106,23 @@ test('team table saves atomically with preview, retained errors, conflicts and r
   await expect(field(2)).toBeFocused();
   await expect(field(3, 'Popis týmu')).toHaveValue('Více\nřádků a "uvozovky"');
   await audit();
+  if (testInfo.project.name === 'desktop') {
+    const viewport = page.viewportSize()!;
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const colorScheme of ['light', 'dark'] as const) {
+        await page.emulateMedia({ colorScheme });
+        await audit();
+        await page.screenshot({
+          path: testInfo.outputPath(`r5-teams-${width}-${colorScheme}.png`),
+          fullPage: true,
+        });
+      }
+    }
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: null });
+  }
+
   await page.route(`**${path}`, (route) =>
     route.request().method() === 'PUT'
       ? route.abort('connectionfailed')
@@ -113,7 +135,9 @@ test('team table saves atomically with preview, retained errors, conflicts and r
   await page.unroute(`**${path}`);
   // Real backend commits, then transport loses the response. Retry must not add duplicates.
   await page.route(`**${path}`, async (route) => {
-    if (route.request().method() !== 'PUT') return route.continue();
+    if (route.request().method() !== 'PUT') {
+      return route.continue();
+    }
     const response = await route.fetch();
     expect(response.status()).toBe(200);
     await route.abort('connectionfailed');
@@ -183,13 +207,13 @@ test('team table saves atomically with preview, retained errors, conflicts and r
     'Moje změna',
   );
   await field(1).fill('Neuložené hodnoty');
-  await page.getByRole('button', { name: 'Obnovit týmy', exact: true }).click();
-  await expect(field(1)).toHaveValue('Neuložené hodnoty');
-  await page
-    .getByRole('button', { name: 'Zahodit moje změny a načíst aktuální' })
-    .click();
+  await page.getByRole('button', { name: 'Zahodit', exact: true }).click();
   await expect(field(1)).not.toHaveValue('Neuložené hodnoty');
-  await add.click();
+  const quickAdd = add;
+  await quickAdd.fill('Přidaný klávesou Enter');
+  await quickAdd.press('Enter');
+  await expect(field(5)).toHaveValue('Přidaný klávesou Enter');
+  await expect(field(5)).toBeFocused();
   await page.getByRole('button', { name: 'Odebrat nový řádek 5' }).click();
   expect(await values()).toHaveLength(4);
   await audit();

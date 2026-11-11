@@ -1,5 +1,19 @@
 # Organizer usability — 2026-11-10
 
+## Admin redesign R5 — 2026-11-11
+
+**Porotci** shows the T/V split, **Vložit z Excelu** and **Stáhnout odkazy (XLSX)** beside the roster title. The paste preview stages rows marked **NOVÝ**. **Vrátit vložení** removes the latest staged batch. Saved links remain copyable during unrelated edits. The **⋯** disclosure contains membership and access actions with the existing confirmations. **Obnovit odkaz…** opens confirmation beside a revoked link.
+
+**Týmy** shows the number of categories using each team. **Vložit více týmů najednou** stages a preview in the table. Both rosters support adding a named row by pressing Enter in the field below the table. The navy footer shows changed rows and rows needing correction, with explicit save, discard and restoration of discarded edits. Conflict comparison appears above the table. [Validation and handoff](../implementation/next-session.md).
+
+## Admin redesign R4 — 2026-11-11
+
+On **Vaše eventy**, select a preparation card to open Jurors, an active event to open Progress, or a closed event to open Results. **+ Nový event** opens the inline form and **Vytvořit a přidat týmy →** saves the event and opens Teams. Event cards and the header report saved counts and preparation progress. Ballot totals count current submissions from eligible jurors across started categories.
+
+The event switcher in the navy header opens the same section of another event. When switching from a category detail, it opens that section's overview. Escape closes the menu and returns focus to its button. The second row scrolls horizontally and includes **Nastavení eventu**, which opens the metadata form at `?setup=settings`. The usual unsaved-change warning applies to event and section switches.
+
+The login card keeps password visibility, inline error feedback and the existing 12-hour admin session. See [validation and handoff](../implementation/next-session.md).
+
 Status: **DONE locally, 2026-11-10**. The user approved implementing the Impeccable review, then supplied [DashHack](https://dashhack-production.up.railway.app) as visual inspiration. This is one bounded organizer-workflow phase; juror submission redesign and post-activation rule/roster overrides are not implemented. No commit, push, deployment or hosted data change is authorized.
 
 ## Working in an event

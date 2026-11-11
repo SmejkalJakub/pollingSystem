@@ -7,6 +7,7 @@ import {
   teamRecordSchema,
   teamInputSchema,
   teamTableSnapshotSchema,
+  teamTableReadSchema,
   type TeamTableInput,
   type TeamTableIssue,
   type TeamInput,
@@ -56,7 +57,24 @@ export function createTeamService(
     async table(eventId: string) {
       return withLock(
         eventId,
-        (client) => tableSnapshot(client, eventId),
+        async (client) => {
+          const snapshot = await tableSnapshot(client, eventId);
+          const { rows } = await client.query<{
+            teamId: string;
+            count: number;
+          }>(
+            `SELECT team_id AS "teamId", count(DISTINCT voting_id)::int AS count
+             FROM voting_items WHERE event_id=$1 AND team_id IS NOT NULL
+             GROUP BY team_id`,
+            [eventId],
+          );
+          return teamTableReadSchema.parse({
+            ...snapshot,
+            categoryCounts: Object.fromEntries(
+              rows.map(({ teamId, count }) => [teamId, count]),
+            ),
+          });
+        },
         true,
       );
     },
@@ -68,15 +86,20 @@ export function createTeamService(
             name: row.name,
             description: row.description,
           });
-          if (parsed.success) return { id: row.id, ...parsed.data };
-          for (const issue of parsed.error.issues)
+          if (parsed.success) {
+            return { id: row.id, ...parsed.data };
+          }
+          for (const issue of parsed.error.issues) {
             issues.push({
               rowId: row.id,
               field: issue.path[0] === 'name' ? 'name' : 'description',
             });
+          }
           return row;
         });
-        if (issues.length) return { status: 'invalid' as const, issues };
+        if (issues.length) {
+          return { status: 'invalid' as const, issues };
+        }
         const current = await tableSnapshot(client, eventId);
         const byId = new Map(current.teams.map((team) => [team.id, team]));
         // Exact desired-state replay is read-only, even if the first response was lost.
@@ -88,27 +111,37 @@ export function createTeamService(
               team?.name === row.name && team.description === row.description
             );
           })
-        )
+        ) {
           return { status: 'saved' as const, snapshot: current };
-        if (current.version !== input.baseVersion) throw tableConflict();
+        }
+        if (current.version !== input.baseVersion) {
+          throw tableConflict();
+        }
         const desiredIds = new Set(rows.map((row) => row.id));
         // Omission never deletes an existing team.
-        if (current.teams.some((team) => !desiredIds.has(team.id)))
+        if (current.teams.some((team) => !desiredIds.has(team.id))) {
           throw tableConflict();
+        }
         for (const row of rows) {
           const team = byId.get(row.id);
           if (team) {
-            if (team.name !== row.name || team.description !== row.description)
+            if (
+              team.name !== row.name ||
+              team.description !== row.description
+            ) {
               await client.query(
                 'UPDATE teams SET name=$3,description=$4,updated_at=statement_timestamp() WHERE event_id=$1 AND id=$2',
                 [eventId, row.id, row.name, row.description],
               );
+            }
           } else {
             const added = await client.query(
               'INSERT INTO teams(id,event_id,name,description) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING RETURNING id',
               [row.id, eventId, row.name, row.description],
             );
-            if (!added.rowCount) throw tableConflict();
+            if (!added.rowCount) {
+              throw tableConflict();
+            }
           }
         }
         return {
@@ -145,7 +178,9 @@ export function createTeamService(
           `UPDATE teams SET name=coalesce($3,name),description=coalesce($4,description),updated_at=now() WHERE event_id=$1 AND id=$2 RETURNING ${columns}`,
           [eventId, teamId, input.name, input.description],
         );
-        if (!result.rows[0]) throw notFound();
+        if (!result.rows[0]) {
+          throw notFound();
+        }
         // Item reads join the shared team; historical item snapshots and ballot rows stay intact.
         return serialize(result.rows[0]);
       });

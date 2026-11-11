@@ -1,5 +1,15 @@
 # Voting configuration — Phase 4 complete
 
+## Admin redesign R6 — 2026-11-11
+
+Open **Příprava → Kategorie** to see concepts, ready categories, open voting and closed categories. A concept's readiness links open its editor and focus the relevant field. Open categories show current submitted and eligible ballot counts and link to category progress. Close from the overview with confirmation, or reopen a closed category directly. **Připravenost eventu** shows the saved roster, link coverage, teams and unfinished categories. **Rozeslat odkazy** downloads the existing private juror-link XLSX.
+
+The editor groups the name, type and instructions, voting rules, jury groups and teams. Check teams to stage their inclusion, and use the arrows to change the ballot order. Saved entries stay in the category. **Upravit přiřazení a přesné pořadí** provides the existing reassignment and exact ordering controls, including repair of legacy unlinked entries. **Před otevřením** links to fields that need attention and **Co uvidí porotce** previews the current form's vote limits.
+
+Use **Uložit kategorii** to save the whole draft, or **Zahodit** to discard local edits with Undo available. **Otevřít hlasování** enables after a ready draft is saved and uses the existing activation confirmation. The comparison and read-only configuration views remain available under the existing conditions. [Validation and resumption](../implementation/next-session.md).
+
+The 2026-11-11 roster update permits adding jurors and correcting names after first activation. The organizer sees that additions increase expected participation in the relevant categories. Existing group assignments, removals and voting configuration retain their activation restrictions.
+
 Phase 4 is DONE as of 2026-10-17. Real-backend administration supports voting drafts, selection/final configuration, explicit D21 limits, allowed T/V groups, shared teams/entries, first activation, closure and unconditional admin reopening. See [progress](../implementation/progress.md) for actual validation and limitations.
 
 ## Configuration and teams

@@ -19,6 +19,17 @@ export function jurorRowIssues(rows: JurorTableRow[]): JurorTableIssue[] {
         }));
   });
 }
+function pastedGroupCode(value: string) {
+  const group = value.trim();
+  if (group === 'Technická') {
+    return 'T';
+  }
+  if (group === 'Veřejná') {
+    return 'V';
+  }
+  return group;
+}
+
 export function parseJurorPaste(text: string) {
   const result = parseTeamPaste(text);
   return {
@@ -27,12 +38,7 @@ export function parseJurorPaste(text: string) {
       : undefined,
     rows: result.rows.map((row) => ({
       displayName: row.name,
-      groupCode:
-        row.description.trim() === 'Technická'
-          ? 'T'
-          : row.description.trim() === 'Veřejná'
-            ? 'V'
-            : row.description.trim(),
+      groupCode: pastedGroupCode(row.description),
     })),
   };
 }
@@ -68,12 +74,14 @@ export function canRebase(
   const old = new Map(tableRows(base).map((row) => [row.id, row]));
   return rows.every((row) => {
     const saved = current.get(row.id);
-    if (old.has(row.id) && !saved && rowChanged(row, old.get(row.id)))
+    if (old.has(row.id) && !saved && rowChanged(row, old.get(row.id))) {
       return false;
+    }
     return (
       !rowChanged(row, old.get(row.id)) ||
       !latest.locked ||
-      (!!saved && row.groupCode === saved.groupCode)
+      !saved ||
+      row.groupCode === saved.groupCode
     );
   });
 }

@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   eventSchema,
   eventListSchema,
+  adminEventListSchema,
   rosterSchema,
   jurorSchema,
   juryGroupSchema,
@@ -125,7 +126,9 @@ describe('event and jury management against PostgreSQL', () => {
     await app?.close();
     await pool.end();
     try {
-      if (created) await dropTestDatabase(admin, databaseName);
+      if (created) {
+        await dropTestDatabase(admin, databaseName);
+      }
     } finally {
       await admin.end();
     }
@@ -156,11 +159,12 @@ describe('event and jury management against PostgreSQL', () => {
         join(folder, 'meta/_journal.json'),
         JSON.stringify(journal),
       );
-      for (const entry of journal.entries)
+      for (const entry of journal.entries) {
         await writeFile(
           join(folder, `${entry.tag}.sql`),
           await readFile(join(original, `${entry.tag}.sql`)),
         );
+      }
       await migrate(drizzle(upgrade), { migrationsFolder: folder });
       const ids = Array.from({ length: 7 }, () => randomUUID());
       const [draft, active, hasBallot, group, juror, voting, user] = ids;
@@ -331,9 +335,120 @@ describe('event and jury management against PostgreSQL', () => {
       ).toEqual([{ voting_item_id: oldItems.rows[0].id, vote_value: 1 }]);
     } finally {
       await upgrade.end();
-      if (databaseCreated) await dropTestDatabase(admin, name);
+      if (databaseCreated) {
+        await dropTestDatabase(admin, name);
+      }
       await rm(folder, { recursive: true, force: true });
     }
+  });
+
+  it('reports admin-only event card readiness and eligible current ballot totals', async () => {
+    const { e, base, juror, groupT, groupV } = await fixture();
+    const closed = await event('Closed event');
+    await addVoting(closed.id, 'closed');
+    const empty = await event('Empty event');
+    const category = await addVoting(e.id);
+    await pool.query(
+      `UPDATE votings SET selected_places=1, max_plus_votes=2, max_minus_votes=0,
+        allow_negative_votes=false WHERE id=$1`,
+      [category],
+    );
+    await pool.query(
+      'INSERT INTO voting_allowed_groups (event_id,voting_id,jury_group_id) VALUES ($1,$2,$3)',
+      [e.id, category, groupT.id],
+    );
+    await pool.query(
+      `WITH added AS (
+        INSERT INTO teams (event_id,name)
+        SELECT $1, 'Team ' || n FROM generate_series(1,3) AS n RETURNING id,name
+      )
+      INSERT INTO voting_items (event_id,voting_id,team_id,name)
+      SELECT $1,$2,id,name FROM added`,
+      [e.id, category],
+    );
+    const excluded = jurorSchema.parse(
+      (
+        await request('POST', `${base}/jurors`, {
+          displayName: 'Outside the allowed group',
+          juryGroupId: groupV.id,
+        })
+      ).json(),
+    );
+    const pending = jurorSchema.parse(
+      (
+        await request('POST', `${base}/jurors`, {
+          displayName: 'Eligible draft',
+          juryGroupId: groupT.id,
+        })
+      ).json(),
+    );
+    async function summaries() {
+      const response = await request('GET', '/events');
+      expect(response.statusCode).toBe(200);
+      return new Map(
+        adminEventListSchema
+          .parse(response.json())
+          .map((card) => [card.id, card]),
+      );
+    }
+    const prepared = await summaries();
+    expect(prepared.get(e.id)).toMatchObject({
+      status: 'preparation',
+      jurors: 3,
+      teams: 3,
+      categories: 1,
+      readyCategories: 1,
+      openCategories: 0,
+      expected: 0,
+      submitted: 0,
+    });
+    expect(prepared.get(empty.id)).toMatchObject({
+      status: 'preparation',
+      jurors: 0,
+      teams: 0,
+      categories: 0,
+      readyCategories: 0,
+    });
+    expect(prepared.get(closed.id)).toMatchObject({
+      status: 'closed',
+      readyCategories: 1,
+      openCategories: 0,
+    });
+
+    await addVoting(e.id);
+    await pool.query("UPDATE votings SET status='active' WHERE id=$1", [
+      category,
+    ]);
+    await pool.query(
+      `INSERT INTO ballots (event_id,voting_id,juror_id,status,submitted_at)
+       VALUES ($1,$2,$3,'submitted',now()), ($1,$2,$4,'submitted',now()),
+              ($1,$2,$5,'draft',null)`,
+      [e.id, category, juror.id, excluded.id, pending.id],
+    );
+    const voting = await summaries();
+    expect(voting.get(e.id)).toMatchObject({
+      status: 'voting',
+      categories: 2,
+      readyCategories: 1,
+      openCategories: 1,
+      expected: 2,
+      submitted: 1,
+    });
+    expect(voting.get(closed.id)).toMatchObject({ expected: 0, submitted: 0 });
+    await pool.query("UPDATE votings SET status='closed' WHERE id=$1", [
+      category,
+    ]);
+    expect((await summaries()).get(e.id)).toMatchObject({
+      status: 'preparation',
+      categories: 2,
+      openCategories: 0,
+      expected: 2,
+      submitted: 1,
+    });
+    expect((await request('GET', '/events', undefined, '')).statusCode).toBe(
+      401,
+    );
+    expect((await request('GET', base)).json()).toEqual(e);
   });
 
   it('creates, lists, reads and edits real events with trimmed validated fields', async () => {
@@ -447,11 +562,12 @@ describe('event and jury management against PostgreSQL', () => {
         '',
         `d21-session=${expired}`,
         `d21-session=${revoked}`,
-      ])
+      ]) {
         expect(
           (await request(method, path, undefined, session)).statusCode,
           `${method} ${path}`,
         ).toBe(401);
+      }
       expect(
         (await request(method, path, undefined, `d21-session=${token}`))
           .statusCode,
@@ -470,15 +586,17 @@ describe('event and jury management against PostgreSQL', () => {
       ['PATCH', `${f.base}/jurors/${f.juror.id}`],
       ['DELETE', `${f.base}/jurors/${f.juror.id}`],
     ] as const;
-    for (const [method, path] of mutations)
+    for (const [method, path] of mutations) {
       for (const invalid of [
         {},
         { ...headers, origin: 'https://attacker.test' },
         { ...headers, 'sec-fetch-site': 'cross-site' },
-      ])
+      ]) {
         expect(
           (await request(method, path, {}, cookie, invalid)).statusCode,
         ).toBe(403);
+      }
+    }
   });
 
   it('rejects invalid input, unknown fields, empty patches and malformed/missing identifiers', async () => {
@@ -488,14 +606,16 @@ describe('event and jury management against PostgreSQL', () => {
       { name: 'x'.repeat(201), description: '' },
       { name: 'A', description: 'x'.repeat(5001) },
       { name: 'A', description: '', status: 'active' },
-    ])
+    ]) {
       expect((await request('POST', '/events', payload)).statusCode).toBe(400);
+    }
     for (const path of [
       f.base,
       `${f.base}/jurors/${f.juror.id}`,
       `${f.base}/jury-groups/${f.groupT.id}`,
-    ])
+    ]) {
       expect((await request('PATCH', path, {})).statusCode).toBe(400);
+    }
     expect(
       (
         await request('POST', `${f.base}/jury-groups`, {
@@ -508,24 +628,26 @@ describe('event and jury management against PostgreSQL', () => {
       { displayName: ' ', juryGroupId: f.groupT.id },
       { displayName: 'A', juryGroupId: 'bad' },
       { displayName: 'A', juryGroupId: f.groupT.id, eventId: randomUUID() },
-    ])
+    ]) {
       expect(
         (await request('POST', `${f.base}/jurors`, payload)).statusCode,
       ).toBe(400);
+    }
     expect((await request('GET', '/events/not-a-uuid')).statusCode).toBe(400);
     expect((await request('GET', `/events/${randomUUID()}`)).statusCode).toBe(
       404,
     );
-    for (const suffix of ['/roster', '/jurors', '/jury-groups'])
+    for (const suffix of ['/roster', '/jurors', '/jury-groups']) {
       expect(
         (await request('GET', `/events/${randomUUID()}${suffix}`)).statusCode,
       ).toBe(404);
+    }
   });
 
   it('rejects cross-event groups, child edits and membership removals without changing either event', async () => {
     const a = await fixture(),
       b = await fixture();
-    for (const path of [`${a.base}/jurors`, `${a.base}/jurors/${a.juror.id}`])
+    for (const path of [`${a.base}/jurors`, `${a.base}/jurors/${a.juror.id}`]) {
       expect(
         (
           await request(path.endsWith('/jurors') ? 'POST' : 'PATCH', path, {
@@ -534,6 +656,7 @@ describe('event and jury management against PostgreSQL', () => {
           })
         ).statusCode,
       ).toBe(400);
+    }
     expect(
       (
         await request('PATCH', `${a.base}/jurors/${b.juror.id}`, {
@@ -616,7 +739,7 @@ describe('event and jury management against PostgreSQL', () => {
   });
 
   it.each(['active', 'closed', 'archived'])(
-    'freezes membership for %s voting, but allows descriptive corrections',
+    'preserves existing assignments for %s voting and allows juror additions and descriptive corrections',
     async (status) => {
       const f = await fixture();
       const votingId = await addVoting(f.e.id, status);
@@ -624,11 +747,6 @@ describe('event and jury management against PostgreSQL', () => {
         true,
       );
       for (const [method, path, body] of [
-        [
-          'POST',
-          `${f.base}/jurors`,
-          { displayName: 'New', juryGroupId: f.groupT.id },
-        ],
         [
           'PATCH',
           `${f.base}/jurors/${f.juror.id}`,
@@ -641,6 +759,11 @@ describe('event and jury management against PostgreSQL', () => {
         expect(response.statusCode).toBe(409);
         expect(response.json().error.code).toBe('ROSTER_LOCKED');
       }
+      const added = await request('POST', `${f.base}/jurors`, {
+        displayName: 'New',
+        juryGroupId: f.groupT.id,
+      });
+      expect(added.statusCode).toBe(201);
       expect(
         (
           await request('PATCH', `${f.base}/jurors/${f.juror.id}`, {

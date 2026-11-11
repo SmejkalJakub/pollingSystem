@@ -1,17 +1,13 @@
+import './category.css';
 import { EventHeading } from './EventNavigation';
 import { BallotUnlock } from './BallotUnlock';
 import { VotingLifecycleActions } from './VotingLifecycleActions';
-import { lazy, Suspense, useState } from 'react';
-import {
-  eventSchema,
-  votingRecordSchema,
-  votingActionSchema,
-} from '@d21/contracts';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { eventSchema, votingRecordSchema } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
 import { useResource } from './useResource';
 import { ResourceState } from './ResourceState';
-import { MutationForm } from './MutationForm';
-import { adminRequest } from './api';
+import { VotingActivation } from './VotingActivation';
 import { votingStatusLabels } from './votingFields';
 import { VotingGroups } from './VotingGroups';
 import { VotingItems } from './VotingItems';
@@ -23,9 +19,11 @@ const VotingSetup = lazy(() =>
 
 export function VotingDetail({
   votingId,
+  search,
   onExpired,
 }: {
   votingId: string;
+  search?: string;
   onExpired: () => void;
 }) {
   const resource = useResource(
@@ -33,9 +31,14 @@ export function VotingDetail({
     votingRecordSchema,
     onExpired,
   );
-  const [setupBlocked, setSetupBlocked] = useState(false);
   const [activating, setActivating] = useState(false);
   const [notice, setNotice] = useState('');
+  const activationNotice = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (notice) {
+      activationNotice.current?.focus();
+    }
+  }, [notice]);
   const [showSetup, setShowSetup] = useState(false);
   return (
     <>
@@ -53,17 +56,22 @@ export function VotingDetail({
             href={`/admin/events/${resource.data.eventId}?setup=categories`}
             className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
           >
-            ← Všechny kategorie
+            ← Kategorie
           </a>
-          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="eyebrow">
-                {resource.data.kind === 'selection'
-                  ? 'Výběrové kolo'
-                  : 'Finálová kategorie'}{' '}
-                · {votingStatusLabels[resource.data.status]}
-              </p>
-              <h2 className="section-title">{resource.data.name}</h2>
+          <div className="mt-1 flex flex-col gap-5 sm:flex-row sm:justify-between">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+              <h1 className="category-editor-title">{resource.data.name}</h1>
+              <span
+                className={
+                  resource.data.status === 'draft'
+                    ? 'category-status bg-warning-soft text-warning-text'
+                    : 'category-status bg-secondary'
+                }
+              >
+                {resource.data.status === 'active'
+                  ? 'Otevřeno'
+                  : votingStatusLabels[resource.data.status]}
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {resource.data.status !== 'draft' && (
@@ -73,56 +81,40 @@ export function VotingDetail({
                   </a>
                 </Button>
               )}
-              {resource.data.status === 'draft' && (
-                <Button
-                  className="min-h-11"
-                  disabled={activating || setupBlocked}
-                  onClick={() => {
-                    setActivating(true);
-                    setNotice('');
-                  }}
-                >
-                  Aktivovat hlasování
-                </Button>
-              )}
               <VotingLifecycleActions
                 voting={resource.data}
                 onExpired={onExpired}
                 onChanged={resource.reload}
                 disabled={resource.loading}
               />
-              <Button
-                className="min-h-11"
-                variant="ghost"
-                disabled={setupBlocked}
-                onClick={resource.reload}
-              >
-                Obnovit přehled
-              </Button>
+              {resource.data.status !== 'draft' && (
+                <Button
+                  className="min-h-11"
+                  variant="ghost"
+                  onClick={resource.reload}
+                >
+                  Obnovit přehled
+                </Button>
+              )}
             </div>
           </div>
           {notice && (
-            <p role="status" className="mt-5 text-sm">
+            <p
+              ref={activationNotice}
+              role="status"
+              tabIndex={-1}
+              className="mt-5 text-sm"
+            >
               {notice}
             </p>
           )}
           {activating && resource.data.status === 'draft' && (
             <div className="mt-6">
-              <MutationForm
-                title="Aktivovat hlasování"
-                description="Server ověří pravidla, týmy a oprávnění. Počty členů Technické a Veřejné poroty mohou být libovolné a rozdílné. Úspěšná aktivace uzamkne konfiguraci i složení poroty eventu."
-                initial={{}}
-                fields={[]}
-                schema={votingActionSchema}
-                submitLabel="Aktivovat"
+              <VotingActivation
+                votingId={votingId}
                 onExpired={onExpired}
-                cancel={() => setActivating(false)}
-                save={async () => {
-                  await adminRequest(
-                    `/votings/${votingId}/activate`,
-                    votingRecordSchema,
-                    { method: 'POST', body: {} },
-                  );
+                onCancel={() => setActivating(false)}
+                onActivated={() => {
                   setActivating(false);
                   setNotice('Hlasování bylo aktivováno.');
                   resource.reload();
@@ -151,8 +143,12 @@ export function VotingDetail({
                 votingId={votingId}
                 onExpired={onExpired}
                 onSaved={resource.reload}
-                onBlocked={setSetupBlocked}
-                paused={activating}
+                requestedField={new URLSearchParams(search).get('field')}
+                onActivate={() => {
+                  setActivating(true);
+                  setNotice('');
+                }}
+                paused={activating || resource.loading}
               />
             </Suspense>
           ) : (
@@ -160,7 +156,9 @@ export function VotingDetail({
               <details
                 className="mt-6 rounded-xl border border-border bg-card p-5"
                 onToggle={(event) => {
-                  if (event.currentTarget.open) setShowSetup(true);
+                  if (event.currentTarget.open) {
+                    setShowSetup(true);
+                  }
                 }}
               >
                 <summary className="min-h-11 cursor-pointer py-3 font-semibold">
@@ -207,7 +205,11 @@ function VotingEventHeading({
         errorTitle="Event se nepodařilo načíst"
       />
       {resource.data && (
-        <EventHeading event={resource.data} section="preparation" />
+        <EventHeading
+          event={resource.data}
+          section="preparation"
+          showTitle={false}
+        />
       )}
     </>
   );

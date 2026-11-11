@@ -14,6 +14,7 @@ export function CopyJurorLink({
   onExpired: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [notice, setNotice] = useState('');
   const [fallback, setFallback] = useState('');
   const controller = useRef<AbortController | null>(null);
@@ -21,6 +22,12 @@ export function CopyJurorLink({
   const button = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef(false);
   const id = `copy-link-${juror.id}`;
+  let label = 'Kopírovat odkaz';
+  if (busy) {
+    label = 'Kopírování…';
+  } else if (copied) {
+    label = '✓ Zkopírováno';
+  }
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
     if (fallback) {
@@ -31,13 +38,18 @@ export function CopyJurorLink({
   useEffect(() => {
     if (!busy && restoreFocus.current) {
       restoreFocus.current = false;
-      if (!fallback) button.current?.focus();
+      if (!fallback) {
+        button.current?.focus();
+      }
     }
   }, [busy, fallback]);
   async function copy() {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setNotice('');
+    setCopied(false);
     setFallback('');
     const request = new AbortController();
     controller.current = request;
@@ -47,11 +59,15 @@ export function CopyJurorLink({
         jurorLinkSchema,
         { method: 'POST', body: {}, signal: request.signal },
       );
-      if (request.signal.aborted) return;
+      if (request.signal.aborted) {
+        return;
+      }
       try {
         await navigator.clipboard.writeText(url);
-        if (!request.signal.aborted)
+        if (!request.signal.aborted) {
+          setCopied(true);
           setNotice(`Odkaz pro ${juror.displayName} byl zkopírován.`);
+        }
       } catch {
         if (!request.signal.aborted) {
           setFallback(url);
@@ -61,10 +77,14 @@ export function CopyJurorLink({
         }
       }
     } catch (error) {
-      if (request.signal.aborted) return;
-      if (error instanceof ApiError && [401, 403].includes(error.status))
+      if (request.signal.aborted) {
+        return;
+      }
+      if (error instanceof ApiError && [401, 403].includes(error.status)) {
         onExpired();
-      else setNotice(managementError(error));
+      } else {
+        setNotice(managementError(error));
+      }
     } finally {
       if (!request.signal.aborted) {
         restoreFocus.current = true;
@@ -79,10 +99,10 @@ export function CopyJurorLink({
         variant="outline"
         className="min-h-11"
         disabled={busy || access !== 'stored'}
-        aria-label={`Kopírovat odkaz ${juror.displayName}, ID ${juror.id.slice(0, 8)}`}
+        aria-label={`Kopírovat odkaz ${juror.displayName}, ID ${juror.id.slice(0, 8)}${label === 'Kopírovat odkaz' ? '' : ` · ${label}`}`}
         onClick={() => void copy()}
       >
-        {busy ? 'Kopírování…' : 'Kopírovat odkaz'}
+        {label}
       </Button>
       {access === 'none' && (
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
@@ -91,7 +111,7 @@ export function CopyJurorLink({
       )}
       {access === 'revoked' && (
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-          Přístup byl zrušen. Uložení tabulky jej neobnoví.
+          Přístup zrušen
         </p>
       )}
       {access === 'legacy' && (

@@ -40,3 +40,9 @@ export function timestamp(value: string) {
     timeStyle: 'short',
   }).format(new Date(value));
 }
+
+export function clockTime(value: string) {
+  return new Intl.DateTimeFormat('cs-CZ', { timeStyle: 'short' }).format(
+    new Date(value),
+  );
+}

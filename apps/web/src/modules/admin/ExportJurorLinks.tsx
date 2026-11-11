@@ -7,10 +7,12 @@ export function ExportJurorLinks({
   eventId,
   onExpired,
   disabled,
+  label = 'Stáhnout odkazy (XLSX)',
 }: {
   eventId: string;
   onExpired: () => void;
   disabled: boolean;
+  label?: string;
 }) {
   const [state, setState] = useState<'idle' | 'pending' | 'success' | 'error'>(
     'idle',
@@ -21,11 +23,17 @@ export function ExportJurorLinks({
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
-    if (state === 'error') feedback.current?.focus();
-    if (state === 'success') button.current?.focus();
+    if (state === 'error') {
+      feedback.current?.focus();
+    }
+    if (state === 'success') {
+      button.current?.focus();
+    }
   }, [state]);
   async function download() {
-    if (controller.current) return;
+    if (controller.current) {
+      return;
+    }
     const request = new AbortController();
     controller.current = request;
     setState('pending');
@@ -41,10 +49,13 @@ export function ExportJurorLinks({
           ?.startsWith(
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           )
-      )
+      ) {
         throw new ApiError(response.status, 'UNEXPECTED_RESPONSE');
+      }
       const blob = await response.blob();
-      if (request.signal.aborted) return;
+      if (request.signal.aborted) {
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -55,9 +66,12 @@ export function ExportJurorLinks({
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setState('success');
     } catch (error) {
-      if (request.signal.aborted) return;
-      if (error instanceof ApiError && error.status === 401) onExpired();
-      else {
+      if (request.signal.aborted) {
+        return;
+      }
+      if (error instanceof ApiError && error.status === 401) {
+        onExpired();
+      } else {
         setErrorMessage(managementError(error));
         setState('error');
       }
@@ -65,32 +79,24 @@ export function ExportJurorLinks({
       controller.current = null;
     }
   }
+  let buttonLabel = label;
+  if (state === 'pending') {
+    buttonLabel = 'Připravuji XLSX…';
+  } else if (state === 'error') {
+    buttonLabel = 'Zkusit export znovu';
+  }
   return (
-    <div className="mt-6 border border-border bg-card p-5 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="font-semibold">Export odkazů porotců</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Excel obsahuje všechny uložené porotce, jejich porotu a klikací
-            osobní odkazy. Zrušené, starší neobnovitelné nebo chybějící odkazy
-            mají vysvětlení ve sloupci Stav přístupu. Export používá uložené
-            údaje. Každému porotci předejte pouze jeho vlastní odkaz.
-          </p>
-        </div>
-        <Button
-          ref={button}
-          variant="outline"
-          className="min-h-11 shrink-0"
-          disabled={disabled || state === 'pending'}
-          onClick={() => void download()}
-        >
-          {state === 'pending'
-            ? 'Připravuji XLSX…'
-            : state === 'error'
-              ? 'Zkusit export znovu'
-              : 'Stáhnout odkazy porotců (XLSX)'}
-        </Button>
-      </div>
+    <div className="roster-export">
+      <Button
+        ref={button}
+        title="Export obsahuje uložené porotce a jejich osobní odkazy. Každému předejte pouze jeho vlastní odkaz."
+        variant="outline"
+        className="min-h-11 shrink-0"
+        disabled={disabled || state === 'pending'}
+        onClick={() => void download()}
+      >
+        {buttonLabel}
+      </Button>
       {state === 'pending' && (
         <p role="status" className="mt-3 text-sm">
           Připravuji odkazy uložených porotců ke stažení…

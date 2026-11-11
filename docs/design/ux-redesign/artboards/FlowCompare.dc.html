@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Tok porotce dnes a v návrhu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+</style>
+</helmet>
+<div style="width: 2690px; height: 560px; box-sizing: border-box; padding: 40px 48px; background: #fff; color: #182640; font-family: Inter, system-ui, sans-serif; display: flex; gap: 48px">
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 36px; min-width: 0">
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: baseline; gap: 16px">
+        <h2 style="margin: 0; font-size: 26px">Dnes</h2>
+        <p style="margin: 0; color: #52627a; font-size: 16px">3 kategorie přes rekapitulaci · <strong style="color: #b32f3e">10 kliků navíc · 5 načtení stránky</strong></p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap">
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 150px"><strong style="display: block">Otevřít odkaz</strong><span style="color: #52627a; font-size: 13px">„Pokračovat k přehledu“</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 150px"><strong style="display: block">Přehled</strong><span style="color: #52627a; font-size: 13px">tabulka · klik na kategorii</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 190px"><strong style="display: block">Kategorie 1</strong><span style="color: #52627a; font-size: 13px">hlasy · „Uložit a pokračovat“</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 190px"><strong style="display: block">Kategorie 2</strong><span style="color: #52627a; font-size: 13px">hlasy · „Uložit a pokračovat“</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 210px"><strong style="display: block">Kategorie 3</strong><span style="color: #52627a; font-size: 13px">hlasy · „Uložit a zobrazit rekapitulaci“</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 210px"><strong style="display: block">Rekapitulace</strong><span style="color: #52627a; font-size: 13px">3× zaškrtnout · „Odevzdat vybrané“</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f2f5fb; border: 1px solid #cbd5e5; font-size: 15px; width: 170px"><strong style="display: block">Potvrzení</strong><span style="color: #52627a; font-size: 13px">„Potvrdit a odevzdat“</span></div>
+      </div>
+      <p style="margin: 0; color: #52627a; font-size: 14px">Druhá cesta (odevzdání přímo v kategorii) má ještě rozhodnutí „Uložit návrh“ vs. „Odevzdat kategorii“ ve sticky liště a potvrzovací panel nad tabulkou týmů. Porotce tak vidí dvě různé cesty k témuž cíli.</p>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: baseline; gap: 16px">
+        <h2 style="margin: 0; font-size: 26px">Návrh</h2>
+        <p style="margin: 0; color: #52627a; font-size: 16px">3 kategorie · <strong style="color: #1f7a4d">6 kliků navíc · 0 načtení stránky</strong> (nebo 5 přes Souhrn)</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div style="padding: 14px 16px; border-radius: 12px; background: #e3f3ea; border: 1px solid #9ccdb2; font-size: 15px; width: 210px"><strong style="display: block">Otevřít odkaz</strong><span style="color: #155a37; font-size: 13px">rovnou první nedokončená kategorie *</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f3f7ff; border: 1.5px solid #2356c7; font-size: 15px; width: 300px"><strong style="display: block">Kategorie 1</strong><span style="color: #52627a; font-size: 13px">hlasy · „Uložit návrh“ kdykoli · „Odevzdat“ → potvrdit ve spodním panelu</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→ automaticky</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f3f7ff; border: 1.5px solid #2356c7; font-size: 15px; width: 220px"><strong style="display: block">Kategorie 2</strong><span style="color: #52627a; font-size: 13px">totéž, 2 kliky</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→ automaticky</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #f3f7ff; border: 1.5px solid #2356c7; font-size: 15px; width: 220px"><strong style="display: block">Kategorie 3</strong><span style="color: #52627a; font-size: 13px">totéž, 2 kliky</span></div>
+        <span style="color: #7b8ca8; font-size: 20px" aria-hidden="true">→</span>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #e3f3ea; border: 1px solid #9ccdb2; font-size: 15px; width: 200px"><strong style="display: block">Souhrn</strong><span style="color: #155a37; font-size: 13px">vše odevzdáno ✓</span></div>
+      </div>
+      <p style="margin: 0; color: #52627a; font-size: 14px">Kategorie jsou záložky na jedné obrazovce — přepínání bez opuštění stránky. Odevzdání posílá aktuální výběr, uložit předem není nutné. * = vyžaduje vaše rozhodnutí (oranžové poznámky).</p>
+    </section>
+  </div>
+
+  <aside style="flex: 0 0 640px; background: #f2f5fb; border-radius: 20px; padding: 28px 32px; box-sizing: border-box">
+    <h2 style="margin: 0 0 14px; font-size: 22px">Co se pro porotce mění</h2>
+    <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 16px; line-height: 1.45">
+      <li>Jedna obrazovka: kategorie jako záložky nahoře, žádný samostatný přehled ani rekapitulace jako další stránka.</li>
+      <li>Rozpočet hlasů jako proužky přímo nad týmy — vidět, kolik kladných zbývá a kolik záporných je odemčeno.</li>
+      <li>Jedno primární tlačítko „Odevzdat kategorii“ dole na dosah palce. „Uložit návrh“ zůstává, hned vedle stavu uložení; přepnutí kategorie s neuloženými změnami nabídne „Uložit a přejít“.</li>
+      <li>Potvrzení jako spodní panel se seznamem týmů a hlasů, místo panelu, ke kterému se musí scrollovat.</li>
+      <li>Chyby pravidel jako jedna krátká hláška u akce, ne trvalý blok textu nad tabulkou.</li>
+      <li>Tlačítka hlasů 48 × 48 px, vybraný tým zvýrazní celý řádek.</li>
+    </ul>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2690,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

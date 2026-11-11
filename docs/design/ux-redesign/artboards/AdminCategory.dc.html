@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Úprava kategorie</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button,input,select,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column">
+  <header style="background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+      <span style="background: #fff; color: #182640; font-weight: 700; font-size: 13px; padding: 4px 7px; border-radius: 6px">D21</span>
+      <a href="#" style="color: #c9d4ea; text-decoration: none; font-size: 14px">Eventy</a>
+      <span style="color: #6c7da0" aria-hidden="true">/</span>
+      <button style="min-height: 40px; padding: 0 12px; border: 1px solid #4a5b7c; border-radius: 10px; background: transparent; color: #fff; font-weight: 600; font-size: 14px">Ukázkový hackathon 2026 <span aria-hidden="true">▾</span></button>
+      <button style="margin-left: auto; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: #fff; font-size: 14px">Odhlásit se</button>
+    </div>
+    <nav aria-label="Event" style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; gap: 4px; overflow-x: auto">
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Porotci 14</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Týmy 8</a>
+      <a href="#" aria-current="page" style="padding: 12px 14px; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; border-bottom: 3px solid #9bbbff; white-space: nowrap">Kategorie 2/3</a>
+      <span style="width: 1px; background: #33456b; margin: 10px 8px" aria-hidden="true"></span>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Průběh hlasování</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Výsledky</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Nastavení eventu</a>
+    </nav>
+  </header>
+
+  <main style="flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 24px; box-sizing: border-box">
+    <a href="#" style="font-size: 14px; text-decoration: none">← Kategorie</a>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 6px 0 20px">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700">Cena publika</h1>
+      <span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #fdf1dc; color: #7a4d06">Koncept</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+      <div style="flex: 999 1 620px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+        <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 20px">
+          <h2 style="margin: 0 0 14px; font-size: 17px"><span style="color: #52627a">1</span> Základ</h2>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+            <label style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Název<input value="Cena publika" style="min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; padding: 0 12px; font-size: 15px"></label>
+            <label style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Instrukce pro porotce <span style="font-weight: 400; color: #52627a">(nepovinné)</span><textarea rows="2" style="border: 1px solid #7b8ca8; border-radius: 10px; padding: 10px 12px; font-size: 15px; resize: vertical">Hlasujte pro projekt, který vás nejvíc zaujal.</textarea></label>
+            <fieldset style="border: 0; margin: 0; padding: 0">
+              <legend style="font-size: 13px; font-weight: 600; margin-bottom: 6px">Typ</legend>
+              <div style="display: flex; gap: 6px">
+                <label style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; font-size: 14px; font-weight: 600"><input type="radio" name="kind" style="position: absolute; opacity: 0">Výběrové kolo</label>
+                <label style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; border: 2px solid #2356c7; background: #f3f7ff; color: #2356c7; border-radius: 10px; font-size: 14px; font-weight: 600"><input type="radio" name="kind" checked style="position: absolute; opacity: 0">Finále</label>
+              </div>
+            </fieldset>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Počet vítězů<input value="1" style="min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; padding: 0 12px; font-size: 15px"></label>
+          </div>
+        </section>
+
+        <section id="limits" style="background: #fff; border: 2px solid #e0a43a; border-radius: 16px; padding: 20px">
+          <h2 style="margin: 0 0 14px; font-size: 17px"><span style="color: #52627a">2</span> Pravidla hlasů <span style="font-size: 13px; font-weight: 600; color: #7a4d06">· chybí</span></h2>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: end">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Kladných hlasů na porotce<input placeholder="např. 2" aria-invalid="true" style="min-height: 44px; border: 2px solid #e0a43a; border-radius: 10px; padding: 0 12px; font-size: 15px"></label>
+            <fieldset style="border: 0; margin: 0; padding: 0">
+              <legend style="font-size: 13px; font-weight: 600; margin-bottom: 6px">Záporné hlasy</legend>
+              <div style="display: flex; gap: 6px">
+                <label style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; font-size: 14px; font-weight: 600"><input type="radio" name="neg" style="position: absolute; opacity: 0">Povolit</label>
+                <label style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 44px; border: 2px solid #2356c7; background: #f3f7ff; color: #2356c7; border-radius: 10px; font-size: 14px; font-weight: 600"><input type="radio" name="neg" checked style="position: absolute; opacity: 0">Zakázat</label>
+              </div>
+            </fieldset>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #7b8ca8">Záporných hlasů<input disabled placeholder="—" style="min-height: 44px; border: 1px solid #cbd5e5; border-radius: 10px; padding: 0 12px; font-size: 15px; background: #f2f5fb"></label>
+          </div>
+          <p style="margin: 10px 0 0; font-size: 13px; color: #52627a">Při povolení platí: každý záporný hlas vyžaduje dva rozdané kladné.</p>
+        </section>
+
+        <section style="background: #fff; border: 2px solid #e0a43a; border-radius: 16px; padding: 20px">
+          <h2 style="margin: 0 0 14px; font-size: 17px"><span style="color: #52627a">3</span> Kdo hlasuje <span style="font-size: 13px; font-weight: 600; color: #7a4d06">· chybí</span></h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px">
+            <label style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border: 1px solid #7b8ca8; border-radius: 12px; font-size: 15px"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #2356c7">Technická porota <span style="color: #52627a; font-size: 13px">8 porotců</span></label>
+            <label style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border: 1px solid #7b8ca8; border-radius: 12px; font-size: 15px"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #2356c7">Veřejná porota <span style="color: #52627a; font-size: 13px">6 porotců</span></label>
+          </div>
+        </section>
+
+        <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 20px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px">
+            <h2 style="margin: 0; font-size: 17px"><span style="color: #52627a">4</span> Týmy v kategorii <span style="font-size: 13px; color: #52627a; font-weight: 500">· 6 z 8</span></h2>
+            <button style="margin-left: auto; min-height: 40px; padding: 0 12px; border: 1px dashed #2356c7; border-radius: 10px; background: #fff; color: #2356c7; font-weight: 600; font-size: 14px">Přidat všechny týmy eventu</button>
+          </div>
+          <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #f3f7ff; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #2356c7"><strong>Atlas</strong></label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #f3f7ff; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #2356c7"><strong>Borealis</strong></label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #f3f7ff; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #2356c7"><strong>Cirrus</strong></label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #f3f7ff; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #2356c7"><strong>Delta Labs</strong></label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #f3f7ff; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #2356c7"><strong>Echo</strong></label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; background: #f3f7ff; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #2356c7"><strong>Fjord</strong></label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e5; font-size: 14px; color: #52627a"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #2356c7">Gamma</label></li>
+            <li><label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #cbd5e5; font-size: 14px; color: #52627a"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #2356c7">Helix</label></li>
+          </ul>
+          <p style="margin: 10px 0 0; font-size: 13px; color: #52627a">Zaškrtnutím tým přidáte na konec pořadí. Pořadí v kategorii (a u porotců) změníte šipkami v seznamu níže. Uložené týmy z kategorie nelze odebrat — jejich zaškrtnutí je pevné.</p>
+          <ol aria-label="Pořadí týmů v kategorii" style="margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+            <li style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px 0 12px; border: 1px solid #cbd5e5; border-radius: 10px; font-size: 14px"><span style="width: 22px; color: #52627a">1</span><strong style="flex: 1">Atlas</strong><button aria-label="Posunout Atlas výš" disabled style="width: 36px; height: 36px; border: 1px solid #cbd5e5; border-radius: 8px; background: #fff; color: #7b8ca8">↑</button><button aria-label="Posunout Atlas níž" style="width: 36px; height: 36px; border: 1px solid #7b8ca8; border-radius: 8px; background: #fff; color: #182640">↓</button></li>
+            <li style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px 0 12px; border: 1px solid #cbd5e5; border-radius: 10px; font-size: 14px"><span style="width: 22px; color: #52627a">2</span><strong style="flex: 1">Borealis</strong><button aria-label="Posunout Borealis výš" style="width: 36px; height: 36px; border: 1px solid #7b8ca8; border-radius: 8px; background: #fff; color: #182640">↑</button><button aria-label="Posunout Borealis níž" style="width: 36px; height: 36px; border: 1px solid #7b8ca8; border-radius: 8px; background: #fff; color: #182640">↓</button></li>
+            <li style="padding: 4px 12px; font-size: 13px; color: #52627a">… dalších 4 týmů</li>
+          </ol>
+        </section>
+      </div>
+
+      <aside style="flex: 1 1 280px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+        <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 18px 20px">
+          <h2 style="margin: 0 0 12px; font-size: 16px">Před otevřením</h2>
+          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+            <li style="display: flex; gap: 10px"><span style="color: #1f7a4d; font-weight: 700">✓</span>Název a typ</li>
+            <li style="display: flex; gap: 10px"><span style="color: #7a4d06; font-weight: 700">!</span><a href="#limits">Doplnit počet kladných hlasů</a></li>
+            <li style="display: flex; gap: 10px"><span style="color: #7a4d06; font-weight: 700">!</span><a href="#">Vybrat porotu</a></li>
+            <li style="display: flex; gap: 10px"><span style="color: #1f7a4d; font-weight: 700">✓</span>6 týmů</li>
+          </ol>
+        </section>
+        <section style="background: #182640; color: #fff; border-radius: 16px; padding: 18px 20px">
+          <h2 style="margin: 0 0 8px; font-size: 15px">Co uvidí porotce</h2>
+          <p style="margin: 0 0 10px; font-size: 13px; color: #c9d4ea">Finále · 1 vítěz · 6 týmů</p>
+          <p style="margin: 0 0 6px; font-size: 13px">Kladné <strong>0/?</strong></p>
+          <div style="display: flex; gap: 4px; margin-bottom: 10px"><span style="flex: 1; height: 8px; border-radius: 4px; border: 1px dashed #8a9bbd"></span><span style="flex: 1; height: 8px; border-radius: 4px; border: 1px dashed #8a9bbd"></span></div>
+          <p style="margin: 0; font-size: 13px; color: #c9d4ea">Záporné hlasy nejsou povoleny.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div style="position: sticky; bottom: 0; background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <p style="margin: 0; flex: 1 1 300px; font-size: 14px"><strong>Neuložené změny</strong> · koncept lze uložit i neúplný</p>
+      <button style="min-height: 44px; padding: 0 14px; border: 1px solid #6c7da0; border-radius: 10px; background: transparent; color: #fff; font-weight: 600">Zahodit</button>
+      <button style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #fff; color: #182640; font-weight: 600">Uložit kategorii</button>
+      <button disabled title="Nejdřív doplňte pravidla a porotu" style="min-height: 44px; padding: 0 18px; border: 1px solid #4a5b7c; border-radius: 10px; background: transparent; color: #8a9bbd; font-weight: 600">Otevřít hlasování</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

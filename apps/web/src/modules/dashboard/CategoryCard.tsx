@@ -1,6 +1,6 @@
-import { juryGroupLabel } from '@d21/contracts';
+import { Button } from '@/components/ui/button';
 import type { DashboardCategory } from '@d21/contracts';
-import { lifecycleLabels, stateLabels } from './presentation';
+import { lifecycleLabels } from './presentation';
 import { VotingLifecycleActions } from '../admin/VotingLifecycleActions';
 export function Progress({
   submitted,
@@ -13,12 +13,12 @@ export function Progress({
 }) {
   return (
     <div>
-      <div className="mb-2 flex flex-wrap justify-between gap-2 text-sm">
-        <span>{label}</span>
-        <span className="font-mono">
+      <p className="mb-1.5 text-[13px] text-muted-foreground">
+        {label}{' '}
+        <strong className="text-foreground tabular-nums">
           {submitted} / {expected}
-        </span>
-      </div>
+        </strong>
+      </p>
       {expected > 0 ? (
         <progress
           aria-label={label}
@@ -44,68 +44,34 @@ export function CategoryCard({
   disabled: boolean;
 }) {
   return (
-    <article
-      aria-label={c.name}
-      className="min-w-0 border border-border bg-card p-6"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <span className="eyebrow">
-          {c.kind === 'selection' ? 'Selekce' : 'Finále'}
-        </span>
-        <span
-          className={
-            c.state === 'problem'
-              ? 'text-destructive'
-              : c.state === 'done'
-                ? 'text-ring'
-                : ''
-          }
-        >
-          {stateLabels[c.state]}
-        </span>
-      </div>
-      <h3 className="mt-4 break-words text-xl font-semibold">
-        <a className="wizard-link" href={`/admin/dashboard/votings/${c.id}`}>
-          {c.name}
-        </a>
-      </h3>
-      <p className="mt-2 break-words text-sm text-muted-foreground">
-        {lifecycleLabels[c.status]} ·{' '}
-        {c.groups
-          .map((g) => `${juryGroupLabel(g.code)} — ${g.name}`)
-          .join(', ') || 'Bez oprávněných částí poroty'}
-      </p>
-      <div className="mt-5 flex flex-wrap items-start gap-3">
-        <VotingLifecycleActions
-          voting={c}
-          onExpired={onExpired}
-          onChanged={onChanged}
-          disabled={disabled}
-        />
-        <a
-          className="wizard-link text-sm"
-          href={`/admin/results/votings/${c.id}`}
-        >
-          Výsledky
-        </a>
-        {c.status === 'draft' && (
-          <a className="wizard-link text-sm" href={`/admin/votings/${c.id}`}>
-            Připravit kategorii
+    <article aria-label={c.name} className="operations-open-card">
+      <div>
+        <h2>
+          <a
+            className="operations-head-link"
+            href={`/admin/dashboard/votings/${c.id}`}
+          >
+            {c.name}
           </a>
-        )}
+        </h2>
+        <p>
+          {lifecycleLabels[c.status]} · {c.counts.submitted} z{' '}
+          {c.counts.expected} odevzdáno
+        </p>
       </div>
-      <div className="mt-6">
-        <Progress
-          submitted={c.counts.submitted}
-          expected={c.counts.expected}
-          label="Odevzdané lístky"
-        />
-      </div>
-      <p className="mt-4 text-sm text-muted-foreground">
-        {c.status === 'draft'
-          ? 'Koncept se nezapočítává do celkového průběhu.'
-          : `Čeká ${c.counts.pending} · Neplatné návrhy ${c.counts.invalid} · Uzamčené ${c.counts.locked}`}
-      </p>
+      <Button asChild variant="outline" className="min-h-11">
+        <a href={`/admin/results/votings/${c.id}`}>
+          {c.status === 'active' ? 'Průběžné výsledky' : 'Výsledky'}
+        </a>
+      </Button>
+      <VotingLifecycleActions
+        voting={c}
+        onExpired={onExpired}
+        onChanged={onChanged}
+        disabled={disabled}
+        closeConfirmation
+        closeLabel="Uzavřít hlasování…"
+      />
     </article>
   );
 }

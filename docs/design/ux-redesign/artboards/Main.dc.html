@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Hlasování porotce</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.4">
+
+  <header style="background: #182640; color: #fff; padding: 12px 16px 10px; display: flex; align-items: center; gap: 12px">
+    <span style="background: #fff; color: #182640; font-weight: 700; font-size: 12px; padding: 4px 6px; border-radius: 6px">D21</span>
+    <div style="flex: 1; min-width: 0">
+      <p style="margin: 0; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Jana Nováková · Technická porota</p>
+      <p style="margin: 0; font-size: 12px; color: #c9d4ea">Ukázkový hackathon 2026</p>
+    </div>
+    <button aria-label="Menu porotce" style="width: 44px; height: 44px; border: 0; background: transparent; color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+    </button>
+  </header>
+
+  <nav aria-label="Kategorie" style="background: #fff; border-bottom: 1px solid #cbd5e5; padding: 10px 12px; display: flex; gap: 8px; overflow-x: auto">
+    <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+      <button onClick="{{ tab.pick }}" aria-current="{{ tab.current }}" style="{{ tab.style }}">
+        <span style="{{ tab.dotStyle }}" aria-hidden="true">{{ tab.mark }}</span>
+        <span>{{ tab.name }}</span>
+      </button>
+    </sc-for>
+  </nav>
+
+  <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ true }}">
+    <div style="padding: 14px 16px 10px; background: #fff">
+      <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #52627a">{{ cat.kind }} · {{ cat.places }} · {{ stepLabel }}</p>
+      <h1 style="margin: 2px 0 0; font-size: 22px; line-height: 1.2; font-weight: 700">{{ cat.name }}</h1>
+    </div>
+
+    <section aria-label="Zbývající hlasy" style="background: #fff; border-bottom: 1px solid #cbd5e5; padding: 4px 16px 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div>
+        <p style="margin: 0 0 6px; font-size: 13px; color: #52627a">Kladné <strong style="color: #182640; font-variant-numeric: tabular-nums">{{ plusUsed }}/{{ cat.plus }}</strong></p>
+        <div style="display: flex; gap: 4px" aria-hidden="true">
+          <sc-for list="{{ plusPips }}" as="pip" hint-placeholder-count="3"><span style="{{ pip }}"></span></sc-for>
+        </div>
+      </div>
+      <div>
+        <p style="margin: 0 0 6px; font-size: 13px; color: #52627a">Záporné <strong style="color: #182640; font-variant-numeric: tabular-nums">{{ minusText }}</strong></p>
+        <div style="display: flex; gap: 4px" aria-hidden="true">
+          <sc-for list="{{ minusPips }}" as="pip" hint-placeholder-count="1"><span style="{{ pip }}"></span></sc-for>
+        </div>
+      </div>
+      <p style="grid-column: 1 / -1; margin: 0; font-size: 12px; color: #52627a">{{ ruleHint }}</p>
+    </section>
+
+    <sc-if value="{{ hasMsg }}" hint-placeholder-val="{{ false }}">
+      <p role="status" style="margin: 10px 16px 0; padding: 10px 12px; border-radius: 10px; background: #fbe9eb; color: #8c1f2c; font-size: 13px">{{ msg }}</p>
+    </sc-if>
+    <sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+      <p role="status" style="margin: 10px 16px 0; padding: 10px 12px; border-radius: 10px; background: #e3f3ea; color: #155a37; font-size: 13px; display: flex; gap: 8px; align-items: center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+        Odevzdáno a uzamčeno. Úpravy může povolit jen organizátor.
+      </p>
+    </sc-if>
+
+    <ol aria-label="Týmy" style="list-style: none; margin: 0; padding: 10px 12px 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px">
+      <sc-for list="{{ teams }}" as="t" hint-placeholder-count="6">
+        <li style="{{ t.rowStyle }}">
+          <span style="width: 22px; flex: none; font-size: 13px; color: #52627a; font-variant-numeric: tabular-nums; padding-top: 2px">{{ t.num }}</span>
+          <div style="flex: 1; min-width: 0">
+            <p style="margin: 0; font-weight: 600">{{ t.name }}</p>
+            <p style="margin: 2px 0 0; font-size: 13px; color: #52627a">{{ t.desc }}</p>
+          </div>
+          <div style="display: flex; gap: 6px; flex: none">
+            <button onClick="{{ t.onPlus }}" aria-pressed="{{ t.isPlus }}" aria-label="{{ t.plusLabel }}" disabled="{{ locked }}" style="{{ t.plusStyle }}">+</button>
+            <sc-if value="{{ cat.neg }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ t.onMinus }}" aria-pressed="{{ t.isMinus }}" aria-label="{{ t.minusLabel }}" disabled="{{ locked }}" style="{{ t.minusStyle }}">−</button>
+            </sc-if>
+          </div>
+        </li>
+      </sc-for>
+    </ol>
+
+    <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}">
+      <div role="alertdialog" aria-label="Neuložené změny" style="margin: 0 12px 8px; padding: 12px; border-radius: 12px; background: #182640; color: #fff; display: flex; flex-direction: column; gap: 10px">
+        <p style="margin: 0; font-size: 14px">Máte neuložené změny v této kategorii.</p>
+        <div style="display: flex; gap: 8px">
+          <button onClick="{{ discardAndGo }}" style="flex: 1; min-height: 44px; border: 1px solid #6c7da0; background: transparent; color: #fff; border-radius: 10px; font-size: 14px; font-weight: 600">Zahodit</button>
+          <button onClick="{{ saveAndGo }}" style="flex: 1.4; min-height: 44px; border: 0; background: #fff; color: #182640; border-radius: 10px; font-size: 14px; font-weight: 600">Uložit a přejít</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <footer style="background: #fff; border-top: 1px solid #cbd5e5; padding: 8px 16px 16px">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; min-height: 40px">
+        <p style="{{ saveTextStyle }}">
+          <span style="{{ saveDot }}" aria-hidden="true"></span>
+          {{ saveText }}
+        </p>
+        <sc-if value="{{ canSave }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ saveDraft }}" disabled="{{ saveDisabled }}" style="{{ saveBtnStyle }}">Uložit návrh</button>
+        </sc-if>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <button onClick="{{ goNext }}" style="flex: 1; min-height: 48px; border: 1px solid #7b8ca8; background: #fff; color: #182640; border-radius: 12px; font-size: 15px; font-weight: 600">{{ nextLabel }}</button>
+        <sc-if value="{{ canSubmitBtn }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ openSheet }}" disabled="{{ submitDisabled }}" style="{{ submitStyle }}">Odevzdat kategorii</button>
+        </sc-if>
+      </div>
+    </footer>
+  </sc-if>
+
+  <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 16px 16px 8px; background: #fff; border-bottom: 1px solid #cbd5e5">
+      <h1 style="margin: 0; font-size: 22px; font-weight: 700">Souhrn hlasování</h1>
+      <p style="margin: 4px 0 0; font-size: 13px; color: #52627a">Odevzdáno {{ submittedCount }} z {{ catCount }} kategorií. Zbytek můžete dokončit později.</p>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px">
+      <sc-for list="{{ summary }}" as="s" hint-placeholder-count="3">
+        <li style="background: #fff; border: 1px solid #cbd5e5; border-radius: 14px; padding: 12px 14px">
+          <div style="display: flex; align-items: flex-start; gap: 10px">
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-weight: 600">{{ s.name }}</p>
+              <p style="{{ s.statusStyle }}">{{ s.status }}</p>
+            </div>
+            <sc-if value="{{ s.selectable }}" hint-placeholder-val="{{ true }}">
+              <label style="display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 13px; color: #182640">
+                <input type="checkbox" checked="{{ s.checked }}" onChange="{{ s.toggle }}" style="width: 20px; height: 20px; accent-color: #2356c7">
+                Odevzdat
+              </label>
+            </sc-if>
+          </div>
+          <p style="margin: 8px 0 0; font-size: 13px; color: #182640">{{ s.votes }}</p>
+          <button onClick="{{ s.open }}" style="margin-top: 6px; min-height: 36px; padding: 0; border: 0; background: transparent; color: #2356c7; font-weight: 600; font-size: 13px">{{ s.openLabel }}</button>
+        </li>
+      </sc-for>
+    </ul>
+    <footer style="background: #fff; border-top: 1px solid #cbd5e5; padding: 12px 16px 16px">
+      <button onClick="{{ openManySheet }}" disabled="{{ manyDisabled }}" style="{{ manyStyle }}">{{ manyLabel }}</button>
+    </footer>
+  </sc-if>
+
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(24, 38, 64, .45); display: flex; align-items: flex-end">
+      <section role="dialog" aria-modal="true" aria-labelledby="sheet-title" style="width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding: 20px 16px 20px; box-sizing: border-box">
+        <h2 id="sheet-title" style="margin: 0; font-size: 19px; font-weight: 700">{{ sheetTitle }}</h2>
+        <p style="margin: 4px 0 12px; font-size: 13px; color: #52627a">Po odevzdání se hlasy uzamknou. Upravit je půjde jen po odemčení organizátorem.</p>
+        <ul style="list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto">
+          <sc-for list="{{ sheetLines }}" as="l" hint-placeholder-count="3">
+            <li style="display: flex; gap: 10px; align-items: center; padding: 8px 10px; background: #f2f5fb; border-radius: 10px">
+              <span style="{{ l.badge }}">{{ l.sign }}</span>
+              <span style="font-size: 14px">{{ l.text }}</span>
+            </li>
+          </sc-for>
+        </ul>
+        <div style="display: flex; gap: 8px">
+          <button onClick="{{ closeSheet }}" style="flex: 1; min-height: 48px; border: 1px solid #7b8ca8; background: #fff; color: #182640; border-radius: 12px; font-size: 15px; font-weight: 600">Zpět k úpravám</button>
+          <button onClick="{{ confirmSheet }}" style="flex: 1.4; min-height: 48px; border: 0; background: #2356c7; color: #fff; border-radius: 12px; font-size: 15px; font-weight: 600">Potvrdit odevzdání</button>
+        </div>
+      </section>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+var TEAMS = [
+  { id: 'a', name: 'Atlas', desc: 'Plánování směn pro nemocnice' },
+  { id: 'b', name: 'Borealis', desc: 'Mapa dostupnosti nabíječek' },
+  { id: 'c', name: 'Cirrus', desc: 'Hlasový asistent pro seniory' },
+  { id: 'd', name: 'Delta Labs', desc: 'Detekce úniků vody senzory' },
+  { id: 'e', name: 'Echo', desc: 'Přepis přednášek v reálném čase' },
+  { id: 'f', name: 'Fjord', desc: 'Sdílení nářadí v sousedství' },
+  { id: 'g', name: 'Gamma', desc: 'Kontrola faktur pomocí AI' },
+  { id: 'h', name: 'Helix', desc: 'Sledování zásob v laboratoři' }
+];
+var CATS = [
+  { id: 'tech', name: 'Nejlepší technické řešení', short: 'Technické řešení', kind: 'Finále', places: '1 vítěz', plus: 3, minus: 1, neg: true, teams: TEAMS.slice(0, 7) },
+  { id: 'sel', name: 'Výběr do finále', short: 'Výběr do finále', kind: 'Výběrové kolo', places: '4 postupující', plus: 4, minus: 2, neg: true, teams: TEAMS },
+  { id: 'pub', name: 'Cena publika', short: 'Cena publika', kind: 'Finále', places: '1 vítěz', plus: 2, minus: 0, neg: false, teams: TEAMS.slice(0, 6) }
+];
+function count(v, sign) {
+  var n = 0;
+  Object.keys(v).forEach(function (k) { if (v[k] === sign) { n += 1; } });
+  return n;
+}
+function btn(active, color) {
+  var base = 'width: 48px; height: 48px; border-radius: 12px; font-size: 22px; font-weight: 600; line-height: 1; ';
+  if (active) {
+    return base + 'border: 2px solid ' + color + '; background: ' + color + '; color: #fff';
+  }
+  return base + 'border: 1px solid #7b8ca8; background: #fff; color: #182640';
+}
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      ci: 0,
+      votes: { tech: { a: 1, c: 1 }, sel: {}, pub: { b: 1, e: 1 } },
+      savedVotes: { tech: { a: 1, c: 1 }, sel: {}, pub: { b: 1, e: 1 } },
+      submitted: { pub: true },
+      pick: { tech: true },
+      sheet: null,
+      msg: '',
+      dirty: false,
+      pendingCi: null,
+      saved: 'Návrh uložen · 14:32'
+    };
+  }
+  go(ci) {
+    if (this.state.dirty && ci !== this.state.ci) {
+      this.setState({ pendingCi: ci });
+      return;
+    }
+    this.setState({ ci: ci, msg: '', pendingCi: null });
+  }
+  toggle(cat, teamId, sign) {
+    var v = Object.assign({}, this.state.votes[cat.id]);
+    if (v[teamId] === sign) {
+      delete v[teamId];
+    } else {
+      v[teamId] = sign;
+    }
+    var p = count(v, 1);
+    var m = count(v, -1);
+    var msg = '';
+    if (p > cat.plus) {
+      msg = 'Všechny kladné hlasy jsou rozdané. Nejprve některý odeberte.';
+    } else if (m > cat.minus) {
+      msg = 'Všechny záporné hlasy jsou rozdané. Nejprve některý odeberte.';
+    } else if (m * 2 > p) {
+      msg = 'Každý záporný hlas potřebuje dva rozdané kladné hlasy.';
+    }
+    if (msg) {
+      this.setState({ msg: msg });
+      return;
+    }
+    var votes = Object.assign({}, this.state.votes);
+    votes[cat.id] = v;
+    this.setState({ votes: votes, msg: '', dirty: true });
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var isSummary = s.ci >= CATS.length;
+    var cat = isSummary ? CATS[0] : CATS[s.ci];
+    var v = s.votes[cat.id] || {};
+    var plusUsed = count(v, 1);
+    var minusUsed = count(v, -1);
+    var minusOpen = Math.min(cat.minus, Math.floor(plusUsed / 2));
+    var locked = Boolean(s.submitted[cat.id]);
+
+    var tabs = CATS.map(function (c, i) {
+      var cur = i === s.ci;
+      var cv = s.votes[c.id] || {};
+      var has = Object.keys(cv).length > 0;
+      var sub = Boolean(s.submitted[c.id]);
+      var mark = sub ? '✓' : (has ? '•' : '');
+      var dot = 'width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; ';
+      if (sub) {
+        dot += 'background: #1f7a4d; color: #fff';
+      } else if (has) {
+        dot += 'background: #e6edf8; color: #2356c7; border: 1.5px solid #2356c7';
+      } else {
+        dot += 'border: 1.5px solid #7b8ca8';
+      }
+      return {
+        name: c.short,
+        mark: mark,
+        dotStyle: dot,
+        current: cur ? 'page' : undefined,
+        style: 'flex: none; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; ' + (cur ? 'background: #182640; color: #fff; border: 1px solid #182640' : 'background: #fff; color: #182640; border: 1px solid #cbd5e5'),
+        pick: function () { self.go(i); }
+      };
+    });
+    var subCount = CATS.filter(function (c) { return s.submitted[c.id]; }).length;
+    tabs.push({
+      name: 'Souhrn',
+      mark: String(subCount) + '/' + CATS.length,
+      dotStyle: 'font-size: 11px; font-weight: 700; color: inherit; opacity: .8',
+      current: isSummary ? 'page' : undefined,
+      style: 'flex: none; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; ' + (isSummary ? 'background: #182640; color: #fff; border: 1px solid #182640' : 'background: #fff; color: #182640; border: 1px solid #cbd5e5'),
+      pick: function () { self.go(CATS.length); }
+    });
+
+    var plusPips = [];
+    for (var i = 0; i < cat.plus; i += 1) {
+      plusPips.push('flex: 1; height: 8px; border-radius: 4px; ' + (i < plusUsed ? 'background: #2356c7' : 'background: #e6edf8; border: 1px solid #cbd5e5'));
+    }
+    var minusPips = [];
+    for (var j = 0; j < cat.minus; j += 1) {
+      var st = 'flex: 1; height: 8px; border-radius: 4px; box-sizing: border-box; ';
+      if (j < minusUsed) {
+        st += 'background: #b32f3e';
+      } else if (j < minusOpen) {
+        st += 'background: #fbe9eb; border: 1px solid #b32f3e';
+      } else {
+        st += 'border: 1px dashed #7b8ca8';
+      }
+      minusPips.push(st);
+    }
+    if (!cat.neg) {
+      minusPips.push('flex: 1; height: 8px; border-radius: 4px; background: repeating-linear-gradient(45deg, #e6edf8 0 4px, #fff 4px 8px); border: 1px solid #cbd5e5');
+    }
+    var ruleHint = 'Záporné hlasy nejsou v této kategorii povoleny. Hlasy nemusíte využít všechny.';
+    if (cat.neg) {
+      var canMore = Math.max(0, minusOpen - minusUsed);
+      ruleHint = 'Každý záporný hlas odemknou 2 kladné. Teď můžete dát ještě ' + canMore + ' záporný.';
+      if (minusUsed >= cat.minus) {
+        ruleHint = 'Záporné hlasy jsou vyčerpané. Hlasy nemusíte využít všechny.';
+      }
+    }
+
+    var teams = cat.teams.map(function (t, idx) {
+      var val = v[t.id];
+      var row = 'display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 14px; background: #fff; ';
+      if (val === 1) {
+        row += 'border: 1.5px solid #2356c7; background: #f3f7ff';
+      } else if (val === -1) {
+        row += 'border: 1.5px solid #b32f3e; background: #fdf3f4';
+      } else {
+        row += 'border: 1px solid #cbd5e5';
+      }
+      return {
+        num: idx + 1,
+        name: t.name,
+        desc: t.desc,
+        rowStyle: row,
+        isPlus: val === 1,
+        isMinus: val === -1,
+        plusStyle: btn(val === 1, '#2356c7'),
+        minusStyle: btn(val === -1, '#b32f3e'),
+        plusLabel: 'Kladný hlas: ' + t.name,
+        minusLabel: 'Záporný hlas: ' + t.name,
+        onPlus: function () { self.toggle(cat, t.id, 1); },
+        onMinus: function () { self.toggle(cat, t.id, -1); }
+      };
+    });
+
+    var last = s.ci === CATS.length - 1;
+    var nextLabel = last ? 'Souhrn →' : 'Další →';
+    if (s.dirty) {
+      nextLabel = last ? 'Uložit a souhrn' : 'Uložit a další';
+    }
+    var saveText = s.saved;
+    var saveTextStyle = 'flex: 1; margin: 0; font-size: 13px; color: #52627a; display: flex; align-items: center; gap: 6px';
+    var saveDot = 'width: 8px; height: 8px; border-radius: 50%; background: #1f7a4d; flex: none';
+    if (s.dirty) {
+      saveText = 'Neuložené změny';
+      saveTextStyle = 'flex: 1; margin: 0; font-size: 13px; color: #7a4d06; font-weight: 600; display: flex; align-items: center; gap: 6px';
+      saveDot = 'width: 8px; height: 8px; border-radius: 50%; background: #e0a43a; flex: none';
+    }
+    if (locked) {
+      saveText = 'Odevzdáno · uzamčeno';
+    }
+    var saveBtnStyle = 'min-height: 40px; padding: 0 14px; border-radius: 10px; font-size: 14px; font-weight: 600; ' + (s.dirty ? 'border: 1px solid #2356c7; background: #fff; color: #2356c7' : 'border: 1px solid #cbd5e5; background: #fff; color: #7b8ca8');
+    var submitDisabled = locked;
+    var submitStyle = 'flex: 1.6; min-height: 48px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 600; background: #2356c7; color: #fff';
+
+    var summary = CATS.map(function (c, i) {
+      var cv = s.votes[c.id] || {};
+      var keys = Object.keys(cv);
+      var sub = Boolean(s.submitted[c.id]);
+      var names = c.teams.filter(function (t) { return cv[t.id]; }).map(function (t) { return (cv[t.id] === 1 ? '+ ' : '− ') + t.name; });
+      var status = 'Zatím bez hlasů';
+      var stStyle = 'margin: 2px 0 0; font-size: 13px; color: #52627a';
+      if (sub) {
+        status = 'Odevzdáno · uzamčeno';
+        stStyle = 'margin: 2px 0 0; font-size: 13px; color: #1f7a4d; font-weight: 600';
+      } else if (keys.length) {
+        status = 'Rozpracováno · návrh uložen';
+        stStyle = 'margin: 2px 0 0; font-size: 13px; color: #2356c7; font-weight: 600';
+      }
+      return {
+        name: c.name,
+        status: status,
+        statusStyle: stStyle,
+        votes: names.length ? names.join(' · ') : 'Prázdný lístek',
+        selectable: !sub,
+        checked: Boolean(s.pick[c.id]),
+        toggle: function () {
+          var pick = Object.assign({}, s.pick);
+          pick[c.id] = !pick[c.id];
+          self.setState({ pick: pick });
+        },
+        open: function () { self.setState({ ci: i }); },
+        openLabel: sub ? 'Zobrazit hlasy' : 'Upravit hlasy'
+      };
+    });
+    var chosen = CATS.filter(function (c) { return s.pick[c.id] && !s.submitted[c.id]; });
+    var manyDisabled = chosen.length === 0;
+    var manyLabel = manyDisabled ? 'Vyberte kategorie k odevzdání' : 'Odevzdat vybrané (' + chosen.length + ')';
+    var manyStyle = 'width: 100%; min-height: 48px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 600; ' + (manyDisabled ? 'background: #e6edf8; color: #52627a' : 'background: #2356c7; color: #fff');
+
+    var sheetLines = [];
+    var sheetTitle = '';
+    var badgePlus = 'width: 26px; height: 26px; border-radius: 8px; background: #2356c7; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: none';
+    var badgeMinus = badgePlus.replace('#2356c7', '#b32f3e');
+    var badgeCat = 'width: 26px; height: 26px; border-radius: 8px; background: #e6edf8; color: #182640; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex: none';
+    if (s.sheet === 'one') {
+      sheetTitle = 'Odevzdat „' + cat.name + '“?';
+      cat.teams.forEach(function (t) {
+        if (v[t.id]) {
+          sheetLines.push({ sign: v[t.id] === 1 ? '+' : '−', badge: v[t.id] === 1 ? badgePlus : badgeMinus, text: t.name });
+        }
+      });
+      if (!sheetLines.length) {
+        sheetLines.push({ sign: '0', badge: badgeCat, text: 'Prázdný lístek — žádný hlas' });
+      }
+    } else if (s.sheet === 'many') {
+      sheetTitle = 'Odevzdat ' + chosen.length + ' kategorie?';
+      chosen.forEach(function (c) {
+        var cv = s.votes[c.id] || {};
+        sheetLines.push({ sign: String(count(cv, 1)) + '+', badge: badgeCat, text: c.name + ' · ' + count(cv, 1) + ' kladné, ' + count(cv, -1) + ' záporné' });
+      });
+    }
+
+    return {
+      tabs: tabs,
+      isCategory: !isSummary,
+      isSummary: isSummary,
+      cat: cat,
+      stepLabel: 'kategorie ' + (Math.min(s.ci, CATS.length - 1) + 1) + ' z ' + CATS.length,
+      plusUsed: plusUsed,
+      minusText: cat.neg ? (minusUsed + '/' + cat.minus) : 'nepovoleny',
+      plusPips: plusPips,
+      minusPips: minusPips,
+      ruleHint: ruleHint,
+      hasMsg: Boolean(s.msg),
+      msg: s.msg,
+      locked: locked,
+      teams: teams,
+      saveText: saveText,
+      saveTextStyle: saveTextStyle,
+      saveDot: saveDot,
+      canSave: !locked,
+      saveDisabled: !s.dirty,
+      saveBtnStyle: saveBtnStyle,
+      saveDraft: function () { self.setState({ dirty: false, savedVotes: Object.assign({}, s.savedVotes, { [cat.id]: s.votes[cat.id] }), saved: 'Návrh uložen · právě teď' }); },
+      hasPending: s.pendingCi !== null,
+      saveAndGo: function () { self.setState({ dirty: false, savedVotes: Object.assign({}, s.savedVotes, { [cat.id]: s.votes[cat.id] }), saved: 'Návrh uložen · právě teď', ci: s.pendingCi, pendingCi: null, msg: '' }); },
+      discardAndGo: function () {
+        var votes = Object.assign({}, s.votes);
+        votes[cat.id] = Object.assign({}, s.savedVotes[cat.id] || {});
+        self.setState({ votes: votes, dirty: false, ci: s.pendingCi, pendingCi: null, msg: '' });
+      },
+      nextLabel: nextLabel,
+      canSubmitBtn: !locked,
+      submitDisabled: submitDisabled,
+      submitStyle: submitStyle,
+      goNext: function () { self.setState({ ci: s.ci + 1, msg: '', dirty: false, savedVotes: Object.assign({}, s.savedVotes, { [cat.id]: s.votes[cat.id] }), saved: s.dirty ? 'Návrh uložen · právě teď' : s.saved }); },
+      openSheet: function () { self.setState({ sheet: 'one' }); },
+      summary: summary,
+      submittedCount: subCount,
+      catCount: CATS.length,
+      manyDisabled: manyDisabled,
+      manyLabel: manyLabel,
+      manyStyle: manyStyle,
+      openManySheet: function () { self.setState({ sheet: 'many' }); },
+      sheetOpen: Boolean(s.sheet),
+      sheetTitle: sheetTitle,
+      sheetLines: sheetLines,
+      closeSheet: function () { self.setState({ sheet: null }); },
+      confirmSheet: function () {
+        var sub = Object.assign({}, s.submitted);
+        var nextCi = s.ci;
+        if (s.sheet === 'one') {
+          sub[cat.id] = true;
+          nextCi = CATS.length;
+          for (var k = 0; k < CATS.length; k += 1) {
+            if (!sub[CATS[k].id]) {
+              nextCi = k;
+              break;
+            }
+          }
+        } else {
+          chosen.forEach(function (c) { sub[c.id] = true; });
+        }
+        self.setState({ submitted: sub, sheet: null, ci: nextCi, msg: '', dirty: false });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -61,7 +61,7 @@ test('protected direct routes recover from network failure and session loss', as
     .getByRole('button', { name: 'Zkusit znovu', exact: true })
     .press('Enter');
   await expect(
-    page.getByRole('heading', { name: 'Začněte prvním eventem' }),
+    page.getByRole('region', { name: 'Seznam eventů' }),
   ).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
   // Only the generated fixture database is touched; development credentials remain intact.

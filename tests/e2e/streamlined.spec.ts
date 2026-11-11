@@ -13,29 +13,41 @@ test('organizer navigation preserves the document, protects drafts and opens sav
   const documentStart = await page.evaluate(() => performance.timeOrigin);
   const reads: string[] = [];
   page.on('request', (request) => {
-    if (request.method() === 'GET') reads.push(new URL(request.url()).pathname);
+    if (request.method() === 'GET') {
+      reads.push(new URL(request.url()).pathname);
+    }
   });
-  await page.getByRole('button', { name: 'Nový event', exact: true }).click();
+  await page.getByRole('button', { name: '+ Nový event', exact: true }).click();
   await page
     .getByLabel('Název eventu', { exact: true })
     .fill('Plynulá příprava');
   await page
     .getByRole('form', { name: 'Nový event', exact: true })
-    .getByRole('button', { name: 'Uložit', exact: true })
+    .getByRole('button', { name: 'Vytvořit a přidat týmy →', exact: true })
     .click();
   await expect(page).toHaveURL(/\?setup=teams$/);
   const eventId = new URL(page.url()).pathname.split('/').at(-1)!;
   const nav = page.getByRole('navigation', { name: 'Event', exact: true });
-  await page.getByRole('button', { name: 'Nový tým', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Přidat tým', exact: true })
+    .fill('Nový tým');
+  await page
+    .getByRole('textbox', { name: 'Přidat tým', exact: true })
+    .press('Enter');
   const team = page.getByLabel('Název týmu, řádek 1', { exact: true });
   await team.fill('Neuložený tým');
   page.once('dialog', (dialog) => dialog.dismiss());
-  await nav.getByRole('link', { name: 'Porotci', exact: true }).click();
+  await nav.getByRole('link', { name: /\bPorotci(?: |$)/u }).click();
   await expect(team).toHaveValue('Neuložený tým');
   await expect(page).toHaveURL(/\?setup=teams$/);
   page.once('dialog', (dialog) => dialog.accept());
-  await nav.getByRole('link', { name: 'Porotci', exact: true }).click();
-  await page.getByRole('button', { name: 'Nový porotce', exact: true }).click();
+  await nav.getByRole('link', { name: /\bPorotci(?: |$)/u }).click();
+  await page
+    .getByRole('textbox', { name: 'Přidat porotce', exact: true })
+    .fill('Nový porotce');
+  await page
+    .getByRole('textbox', { name: 'Přidat porotce', exact: true })
+    .press('Enter');
   const juror = page.getByLabel('Jméno porotce, řádek 1', { exact: true });
   await juror.fill('Neuložený porotce');
   page.once('dialog', (dialog) => dialog.dismiss());
@@ -58,22 +70,20 @@ test('organizer navigation preserves the document, protects drafts and opens sav
     page.getByRole('heading', { name: 'Průběh hlasování', exact: true }),
   ).toBeVisible();
   await nav.getByRole('link', { name: 'Výsledky', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Výsledky hlasování' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Výsledky' })).toBeVisible();
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentStart);
   expect(reads.filter((path) => path === '/api/auth/session')).toHaveLength(0);
   expect(
     reads.filter((path) => path === `/api/events/${eventId}`),
   ).toHaveLength(1);
-  await nav.getByRole('link', { name: 'Kategorie', exact: true }).click();
+  await nav.getByRole('link', { name: /\bKategorie(?: |$)/u }).click();
   await page
-    .getByRole('button', { name: 'Nové hlasování', exact: true })
+    .getByRole('button', { name: 'Nová kategorie', exact: true })
     .click();
   await page
-    .getByLabel('Název hlasování', { exact: true })
+    .getByLabel('Název', { exact: true })
     .fill('Nová finálová kategorie');
-  await page.getByLabel('Typ hlasování', { exact: true }).selectOption('final');
+  await page.getByRole('radio', { name: 'Finále', exact: true }).check();
   await page
     .getByRole('button', { name: 'Uložit kategorii', exact: true })
     .click();
@@ -82,14 +92,22 @@ test('organizer navigation preserves the document, protects drafts and opens sav
     page.getByRole('heading', { name: 'Nová finálová kategorie', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText('Před aktivací zbývá', { exact: true }),
+    page.getByRole('region', { name: 'Před otevřením', exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole('link', { name: '← Všechny kategorie', exact: true })
-    .click();
+  await page.getByRole('link', { name: '← Kategorie', exact: true }).click();
   await expect(
     page.getByRole('link', { name: /Nová finálová kategorie/ }),
   ).toBeVisible();
+  const draft = page.getByRole('article', { name: 'Nová finálová kategorie' });
+  await expect(draft).toContainText('Koncept');
+  await draft
+    .getByRole('link', { name: 'Doplnit pravidla hlasování →' })
+    .press('Enter');
+  await expect(page.getByLabel('Počet vítězů', { exact: true })).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Otevřít hlasování', exact: true }),
+  ).toBeDisabled();
+  await page.getByRole('link', { name: '← Kategorie', exact: true }).click();
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentStart);
   await page.screenshot({
     path: testInfo.outputPath('streamlined-categories.png'),

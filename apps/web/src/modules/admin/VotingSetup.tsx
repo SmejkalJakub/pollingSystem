@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import {
+  jurorTableSnapshotSchema,
   votingSetupSnapshotSchema,
   votingSetupSaveSchema,
   type VotingSetupSnapshot,
@@ -18,13 +19,23 @@ import {
 import { VotingSetupComparison } from './VotingSetupComparison';
 import { VotingSetupFields } from './VotingSetupFields';
 import { VotingReadiness } from './VotingReadiness';
+import { VotingSetupPreview } from './VotingSetupPreview';
+import {
+  categoryReadiness,
+  focusCategoryField,
+  juryCounts,
+} from './category-readiness';
+import { useResource } from './useResource';
+import './category.css';
+import './roster.css';
 
 export function VotingSetup({
   eventId,
   votingId,
   onExpired,
   onSaved,
-  onBlocked,
+  onActivate,
+  requestedField,
   onCancel,
   paused = false,
 }: {
@@ -32,13 +43,15 @@ export function VotingSetup({
   votingId: string;
   onExpired: () => void;
   onSaved: () => void;
-  onBlocked?: (blocked: boolean) => void;
+  onActivate?: () => void;
+  requestedField?: string | null;
   onCancel?: () => void;
   paused?: boolean;
 }) {
   const [returnFocus] = useState(() => document.activeElement);
   const [isCreation] = useState(Boolean(onCancel));
   const initiallyFocused = useRef(false);
+  const focusedField = useRef<string | null>(null);
   const id = useId(),
     path = `/events/${eventId}/votings/${votingId}/setup`;
   const [base, setBase] = useState<VotingSetupSnapshot>();
@@ -62,11 +75,17 @@ export function VotingSetup({
   const dirty = Boolean(
     base && values && !sameSetup(setupValues(base), values),
   );
-  const blocked = dirty || busy || conflict || Boolean(current);
+  const roster = useResource(
+    `/events/${eventId}/jurors/table`,
+    jurorTableSnapshotSchema,
+    onExpired,
+  );
   useEffect(() => {
-    onBlocked?.(blocked);
-    return () => onBlocked?.(false);
-  }, [blocked, onBlocked]);
+    if (base && requestedField && focusedField.current !== requestedField) {
+      focusCategoryField(`${id}-${requestedField}`);
+    }
+    focusedField.current = base ? (requestedField ?? null) : null;
+  }, [base, requestedField, id]);
   useEffect(() => {
     const abort = new AbortController();
     controller.current = abort;
@@ -79,9 +98,11 @@ export function VotingSetup({
       })
       .catch((cause: unknown) => {
         if (!abort.signal.aborted) {
-          if (cause instanceof ApiError && [401, 403].includes(cause.status))
+          if (cause instanceof ApiError && [401, 403].includes(cause.status)) {
             onExpired();
-          else setError(managementError(cause));
+          } else {
+            setError(managementError(cause));
+          }
         }
       });
     return () => abort.abort();
@@ -94,16 +115,20 @@ export function VotingSetup({
   }, [base, isCreation]);
   useEffect(
     () => () => {
-      if (isCreation)
+      if (isCreation) {
         queueMicrotask(() => {
-          if (returnFocus instanceof HTMLElement && returnFocus.isConnected)
+          if (returnFocus instanceof HTMLElement && returnFocus.isConnected) {
             returnFocus.focus();
+          }
         });
+      }
     },
     [isCreation, returnFocus],
   );
   useEffect(() => {
-    if (error || issues.length || current || notice) feedback.current?.focus();
+    if (error || issues.length || current || notice) {
+      feedback.current?.focus();
+    }
   }, [error, issues, current, notice]);
   useAdminLeaveWarning(dirty || busy);
   function accept(snapshot: VotingSetupSnapshot) {
@@ -116,7 +141,9 @@ export function VotingSetup({
     setError('');
   }
   async function refresh() {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     setError('');
     setNotice('');
@@ -124,8 +151,9 @@ export function VotingSetup({
       const snapshot = await adminRequest(path, votingSetupSnapshotSchema, {
         signal: controller.current?.signal,
       });
-      if (dirty || conflict) setCurrent(snapshot);
-      else {
+      if (dirty || conflict) {
+        setCurrent(snapshot);
+      } else {
         accept(snapshot);
         setNotice('Aktuální příprava byla načtena.');
       }
@@ -148,15 +176,19 @@ export function VotingSetup({
       setError(
         'Kategorie se změnila nebo byla uzamčena. Načtěte aktuální přípravu a porovnejte ji.',
       );
-    } else if (cause instanceof ApiError && cause.status === 413)
+    } else if (cause instanceof ApiError && cause.status === 413) {
       setError(
         'Příprava je příliš velká. Zkraťte texty nebo přidejte méně nových položek a uložte znovu. Nic se neuložilo.',
       );
-    else setError(managementError(cause));
+    } else {
+      setError(managementError(cause));
+    }
   }
   async function save(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!base || !values || busy || paused || conflict || current) return;
+    if (!base?.editable || !values || busy || paused || conflict || current) {
+      return;
+    }
     setBusy(true);
     setError('');
     setNotice('');
@@ -167,9 +199,9 @@ export function VotingSetup({
         body: { baseVersion: base.version, values },
         signal: controller.current?.signal,
       });
-      if (result.status === 'invalid')
+      if (result.status === 'invalid') {
         setIssues(result.issues.map((issue) => issue.field));
-      else {
+      } else {
         accept(result.snapshot);
         setNotice('Kategorie byla uložena.');
         onSaved();
@@ -181,7 +213,9 @@ export function VotingSetup({
     }
   }
   function change(next: VotingSetupValues) {
-    if (values && next.items.length !== values.items.length) setIssues([]);
+    if (values && next.items.length !== values.items.length) {
+      setIssues([]);
+    }
     setValues(next);
     setNotice('');
     setUndo(undefined);
@@ -190,7 +224,7 @@ export function VotingSetup({
   const fieldLabel = (field: string) =>
     setupFieldLabels[field] ??
     `${field.endsWith('teamId') ? 'Tým' : 'Pořadí'}, položka ${Number(field.split('.')[1]) + 1}`;
-  if (!base || !values)
+  if (!base || !values) {
     return (
       <div
         ref={feedback}
@@ -204,105 +238,43 @@ export function VotingSetup({
             Zkusit znovu
           </Button>
         )}
-      </div>
-    );
-  const rebased = current ? rebaseSetup(base, values, current) : null;
-  const editingDisabled =
-    busy || paused || !base.editable || conflict || Boolean(current);
-  return (
-    <form
-      onSubmit={save}
-      aria-label="Příprava kategorie"
-      noValidate
-      aria-busy={busy}
-      className="mt-6 space-y-6 border border-border bg-card p-5 sm:p-6"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3
-          ref={heading}
-          tabIndex={-1}
-          className="text-xl font-semibold outline-none"
-        >
-          Příprava kategorie
-        </h3>
-        <Button
-          className="min-h-11"
-          type="button"
-          variant="ghost"
-          disabled={busy || paused}
-          onClick={() => void refresh()}
-        >
-          Načíst aktuální přípravu
-        </Button>
-      </div>
-      {isCreation && (
-        <p className="text-sm text-muted-foreground">
-          Kategorii můžete uložit jako koncept a dokončit ji později.
-        </p>
-      )}
-      {base.editable && (
-        <VotingReadiness
-          values={values}
-          snapshot={base}
-          eventId={eventId}
-          fieldId={fieldId}
-          needsSave={dirty || isCreation}
-          disabled={editingDisabled}
-          onChange={change}
-        />
-      )}
-      <div className="editor-actions">
-        <Button type="submit" className="min-h-11" disabled={editingDisabled}>
-          {busy ? 'Ukládání…' : 'Uložit kategorii'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11"
-          disabled={busy || !dirty}
-          onClick={() => {
-            const previous = { values, current, issues, error, conflict };
-            accept(base);
-            setUndo(previous);
-            setNotice('Místní změny byly zahozeny.');
-          }}
-        >
-          Zahodit místní změny
-        </Button>
-        {undo && (
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            disabled={busy || paused}
-            onClick={() => {
-              setValues(undo.values);
-              setCurrent(undo.current);
-              setIssues(undo.issues);
-              setError(undo.error);
-              setConflict(undo.conflict);
-              setUndo(undefined);
-              setNotice('Místní změny byly obnoveny.');
-            }}
-          >
-            Vrátit změny
-          </Button>
-        )}
-        <span className="text-sm text-muted-foreground">
-          {dirty ? 'Neuložené změny' : 'Žádné neuložené úpravy'}
-        </span>
         {onCancel && (
           <Button
-            type="button"
-            className="min-h-11"
-            variant="ghost"
-            disabled={busy || dirty}
+            className="ml-3 min-h-11"
+            variant="outline"
             onClick={onCancel}
           >
             Zrušit
           </Button>
         )}
       </div>
+    );
+  }
+  const rebased = current ? rebaseSetup(base, values, current) : null;
+  const editingDisabled =
+    busy || paused || !base.editable || conflict || Boolean(current);
+  const readiness = categoryReadiness(values);
+  const canActivate = Boolean(
+    onActivate &&
+    base.voting &&
+    !editingDisabled &&
+    !dirty &&
+    !readiness.issues.length,
+  );
+  const saveStatus = dirty ? 'Neuložené změny' : 'Žádné neuložené úpravy';
+  return (
+    <form
+      onSubmit={save}
+      aria-label="Příprava kategorie"
+      noValidate
+      aria-busy={busy}
+      className="mt-4 space-y-5"
+    >
+      {isCreation && (
+        <h1 ref={heading} tabIndex={-1} className="category-editor-title">
+          Nová kategorie
+        </h1>
+      )}
       {(error || issues.length > 0 || notice || current) && (
         <div
           ref={feedback}
@@ -311,6 +283,17 @@ export function VotingSetup({
           className="space-y-3 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
         >
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {(conflict || current) && (
+            <Button
+              className="min-h-11"
+              type="button"
+              variant="outline"
+              disabled={busy || paused}
+              onClick={() => void refresh()}
+            >
+              Obnovit nastavení
+            </Button>
+          )}
           {notice && <p>{notice}</p>}
           {issues.length > 0 && (
             <>
@@ -322,9 +305,10 @@ export function VotingSetup({
                   className="block text-sm underline"
                   key={field}
                   href={`#${fieldId(field)}`}
-                  onClick={() =>
-                    document.getElementById(fieldId(field))?.focus()
-                  }
+                  onClick={(event) => {
+                    event.preventDefault();
+                    focusCategoryField(fieldId(field));
+                  }}
                 >
                   {fieldLabel(field)}
                 </a>
@@ -408,15 +392,100 @@ export function VotingSetup({
           hlasovacího lístku.
         </p>
       )}
-      <fieldset disabled={editingDisabled} className="min-w-0 space-y-6">
-        <VotingSetupFields
-          values={values}
-          snapshot={base}
-          onChange={change}
-          issues={issues}
-          fieldId={fieldId}
-        />
-      </fieldset>
+      <div className="category-layout">
+        <fieldset disabled={editingDisabled} className="min-w-0 space-y-4">
+          <VotingSetupFields
+            values={values}
+            snapshot={base}
+            onChange={change}
+            issues={issues}
+            fieldId={fieldId}
+            groupCounts={juryCounts(roster.data)}
+          />
+        </fieldset>
+        <aside className="min-w-0 space-y-4">
+          {base.editable && (
+            <VotingReadiness
+              values={values}
+              snapshot={base}
+              eventId={eventId}
+              fieldId={fieldId}
+              needsSave={dirty || isCreation}
+            />
+          )}
+          <VotingSetupPreview
+            values={values}
+            teamCount={readiness.teamIds.size}
+          />
+        </aside>
+      </div>
+      <div className="roster-save-bar category-save-bar flex flex-wrap items-center gap-2">
+        <p className="roster-save-status">
+          <strong>{saveStatus}</strong>
+          {dirty && ' · koncept lze uložit i neúplný'}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11"
+          disabled={busy || paused || !dirty}
+          onClick={() => {
+            const previous = { values, current, issues, error, conflict };
+            accept(base);
+            setUndo(previous);
+            setNotice('Místní změny byly zahozeny.');
+          }}
+        >
+          Zahodit
+        </Button>
+        {undo && (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            disabled={busy || paused}
+            onClick={() => {
+              setValues(undo.values);
+              setCurrent(undo.current);
+              setIssues(undo.issues);
+              setError(undo.error);
+              setConflict(undo.conflict);
+              setUndo(undefined);
+              setNotice('Místní změny byly obnoveny.');
+            }}
+          >
+            Vrátit změny
+          </Button>
+        )}
+        <Button type="submit" className="min-h-11" disabled={editingDisabled}>
+          {busy ? 'Ukládání…' : 'Uložit kategorii'}
+        </Button>
+        {(onActivate || isCreation) && (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            disabled={!canActivate}
+            title={
+              !canActivate ? 'Nejdřív doplňte pravidla a porotu' : undefined
+            }
+            onClick={onActivate}
+          >
+            Otevřít hlasování
+          </Button>
+        )}
+        {onCancel && (
+          <Button
+            type="button"
+            className="min-h-11"
+            variant="ghost"
+            disabled={busy || dirty}
+            onClick={onCancel}
+          >
+            Zrušit
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

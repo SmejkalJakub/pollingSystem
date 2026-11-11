@@ -1,0 +1,39 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-11T10:00:00Z"},
+  "title": "Voting UX Redesign",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 390, "h": 844, "title": "Porotce · hlasování (interaktivní)", "is_interactive": true},
+    "JurorSubmit.dc.html": {"x": 470, "y": 0, "w": 390, "h": 844, "title": "Porotce · potvrzení odevzdání"},
+    "JurorSummary.dc.html": {"x": 940, "y": 0, "w": 390, "h": 844, "title": "Porotce · souhrn místo rekapitulace"},
+    "JurorDesktop.dc.html": {"x": 1410, "y": 0, "w": 1280, "h": 844, "title": "Porotce · notebook", "expand": "fill"},
+    "JurorEntry.dc.html": {"x": 0, "y": 1190, "w": 390, "h": 844, "title": "Porotce · vstup z odkazu"},
+    "JurorConflict.dc.html": {"x": 470, "y": 1190, "w": 390, "h": 844, "title": "Porotce · změna z jiného zařízení"},
+    "JurorClosed.dc.html": {"x": 940, "y": 1190, "w": 390, "h": 844, "title": "Porotce · kategorie uzavřena"},
+    "FlowCompare.dc.html": {"x": 0, "y": 2380, "w": 2690, "h": 560, "title": "Tok porotce · dnes vs. návrh"},
+    "AdminEvents.dc.html": {"x": 0, "y": 3290, "w": 1440, "h": 1000, "title": "Admin · eventy", "expand": "fill"},
+    "AdminSetup.dc.html": {"x": 1520, "y": 3290, "w": 1440, "h": 1000, "title": "Admin · příprava · kategorie", "expand": "fill"},
+    "AdminProgress.dc.html": {"x": 3040, "y": 3290, "w": 1440, "h": 1000, "title": "Admin · průběh hlasování", "expand": "fill"},
+    "AdminJurors.dc.html": {"x": 0, "y": 4410, "w": 1440, "h": 1000, "title": "Admin · porotci", "expand": "fill"},
+    "AdminTeams.dc.html": {"x": 1520, "y": 4410, "w": 1440, "h": 1000, "title": "Admin · týmy", "expand": "fill"},
+    "AdminCategory.dc.html": {"x": 3040, "y": 4410, "w": 1440, "h": 1000, "title": "Admin · úprava kategorie", "expand": "fill"},
+    "AdminResults.dc.html": {"x": 0, "y": 5530, "w": 1440, "h": 2150, "title": "Admin · výsledky", "expand": "fill"},
+    "AdminLogin.dc.html": {"x": 1520, "y": 5530, "w": 1440, "h": 800, "title": "Admin · přihlášení", "expand": "fill"}
+  },
+  "order": ["Main.dc.html", "JurorSubmit.dc.html", "JurorSummary.dc.html", "JurorDesktop.dc.html", "JurorEntry.dc.html", "JurorConflict.dc.html", "JurorClosed.dc.html", "FlowCompare.dc.html", "AdminEvents.dc.html", "AdminSetup.dc.html", "AdminProgress.dc.html", "AdminJurors.dc.html", "AdminTeams.dc.html", "AdminCategory.dc.html", "AdminResults.dc.html", "AdminLogin.dc.html"],
+  "notes": {
+    "t_juror": {"x": 0, "y": -300, "text": "Porotce — hlasování (priorita)", "kind": "title1", "maxW": 2690},
+    "t_juror2": {"x": 0, "y": 950, "text": "Porotce — vstup a výjimečné stavy", "kind": "title1", "maxW": 1330},
+    "t_flow": {"x": 0, "y": 2140, "text": "Kolik kroků to stojí", "kind": "title1", "maxW": 2690},
+    "t_admin": {"x": 0, "y": 3050, "text": "Administrace", "kind": "title1", "maxW": 4480},
+    "q_autosave": {"x": 2760, "y": 0, "w": 340, "fill": "green", "text": "ROZHODNUTO: ukládání zůstává explicitní tlačítkem „Uložit návrh“.\nNávrh ho jen přesouvá vedle stavu uložení a přidává „Uložit a přejít“ při přepnutí kategorie s neuloženými změnami."},
+    "q_autologin": {"x": 2760, "y": 300, "w": 340, "fill": "orange", "text": "K ROZHODNUTÍ: vstup z odkazu bez kliknutí.\nDnes porotce po otevření odkazu musí stisknout „Pokračovat k přehledu“. Návrh vstupu (níže) tlačítko zachovává; může zmizet, pokud mezikrok není záměrný (např. kvůli náhledům odkazů v chatu)."},
+    "q_preselect": {"x": 2760, "y": 600, "w": 340, "fill": "orange", "text": "K ROZHODNUTÍ: předvybrané kategorie v Souhrnu.\nDnes platí „Žádná kategorie se nevybírá automaticky“. Návrh předvybírá platné rozpracované kategorie, odevzdání stále vyžaduje potvrzení. Ponechat, nebo vrátit na nevybrané?"},
+    "n_sample": {"x": 3180, "y": 0, "w": 300, "fill": "gray", "text": "Názvy týmů, kategorií, porotců a limity hlasů jsou pouze ukázková data. Pravidla D21 (limity, 2 kladné na 1 záporný, odevzdání po kategoriích) jsou převzata z aplikace beze změny."},
+    "q_admin": {"x": 4560, "y": 3290, "w": 340, "fill": "orange", "text": "K ROZHODNUTÍ: odemčení lístku přímo z matice průběhu.\nAkce už existuje v detailu kategorie; návrh ji jen zpřístupňuje z řádku porotce (stále s potvrzením). OK?"},
+    "n_results": {"x": 1520, "y": 6450, "w": 360, "fill": "gray", "text": "Výsledky: pořadí, sdílené pořadí při shodě (1, 2, 2, 4), nerozhodnutá hranice výběru a průběžný/finální štítek jsou převzaty z aplikace. Návrh mění jen uspořádání: stav a pořadí nahoře, pod nimi matice Hlasy porotců (řádky porotci, sloupce týmy v pořadí výsledků; ✓ kladný, ✕ záporný; přerušovaně = uložený návrh, nezapočteno)."}
+  },
+  "designSystems": []
+}

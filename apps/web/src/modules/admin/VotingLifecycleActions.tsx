@@ -9,11 +9,17 @@ export function VotingLifecycleActions({
   onExpired,
   onChanged,
   disabled = false,
+  compact = false,
+  closeConfirmation = false,
+  closeLabel,
 }: {
   voting: Pick<VotingRecord, 'id' | 'name' | 'status'>;
   onExpired: () => void;
   onChanged: () => void;
   disabled?: boolean;
+  compact?: boolean;
+  closeConfirmation?: boolean;
+  closeLabel?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -23,17 +29,40 @@ export function VotingLifecycleActions({
   const feedback = useRef<HTMLParagraphElement>(null);
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
-    if (error) feedback.current?.focus();
+    if (error) {
+      feedback.current?.focus();
+    }
   }, [error]);
   useEffect(() => {
-    if (notice && !busy && !disabled) button.current?.focus();
+    if (notice && !busy && !disabled) {
+      button.current?.focus();
+    }
   }, [notice, busy, disabled]);
-  if (voting.status === 'draft') return null;
+  if (voting.status === 'draft') {
+    return null;
+  }
   const action = voting.status === 'active' ? 'close' : 'reopen';
   const label =
     action === 'close' ? 'Uzavřít hlasování' : 'Znovu otevřít hlasování';
+  let buttonLabel = label;
+  if (busy) {
+    buttonLabel = 'Probíhá změna…';
+  } else if (closeLabel && action === 'close') {
+    buttonLabel = closeLabel;
+  } else if (compact) {
+    buttonLabel = action === 'close' ? 'Uzavřít' : 'Znovu otevřít';
+  }
   async function change() {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
+    if (
+      (compact || closeConfirmation) &&
+      action === 'close' &&
+      !window.confirm(`Uzavřít hlasování „${voting.name}“?`)
+    ) {
+      return;
+    }
     const request = new AbortController();
     controller.current = request;
     setBusy(true);
@@ -49,7 +78,9 @@ export function VotingLifecycleActions({
           signal: request.signal,
         },
       );
-      if (request.signal.aborted) return;
+      if (request.signal.aborted) {
+        return;
+      }
       setNotice(
         action === 'close'
           ? 'Hlasování bylo uzavřeno. Lze je znovu otevřít.'
@@ -57,9 +88,12 @@ export function VotingLifecycleActions({
       );
       onChanged();
     } catch (cause) {
-      if (request.signal.aborted) return;
-      if (cause instanceof ApiError && cause.status === 401) onExpired();
-      else {
+      if (request.signal.aborted) {
+        return;
+      }
+      if (cause instanceof ApiError && cause.status === 401) {
+        onExpired();
+      } else {
         const operation = action === 'close' ? 'Uzavření' : 'Otevření';
         setError(
           `${operation} hlasování se nepodařilo potvrdit. ${managementError(cause)}`,
@@ -82,7 +116,7 @@ export function VotingLifecycleActions({
         aria-label={`${label}: ${voting.name}`}
         onClick={() => void change()}
       >
-        {busy ? 'Probíhá změna…' : label}
+        {buttonLabel}
       </Button>
       {notice && (
         <p role="status" className="mt-2 text-sm">

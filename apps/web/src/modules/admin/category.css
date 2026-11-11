@@ -1,0 +1,118 @@
+.category-layout {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .category-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 21rem);
+  }
+}
+
+.category-panel {
+  min-width: 0;
+  border: 2px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+  padding: clamp(0.875rem, 2vw, 1.25rem);
+  overflow-wrap: anywhere;
+}
+
+.category-panel[data-incomplete='true'] {
+  border-color: var(--warning);
+}
+
+.category-panel[data-status='ready'] {
+  border-color: var(--primary);
+}
+
+.category-preview {
+  background: var(--header);
+  border-color: var(--header);
+  color: var(--header-foreground);
+}
+
+.category-pips {
+  display: flex;
+  gap: 0.25rem;
+  margin-block: 0.375rem 0.75rem;
+}
+
+.category-pips span {
+  flex: 1;
+  height: 0.5rem;
+  border: 1px dashed var(--header-muted);
+  border-radius: 0.25rem;
+}
+
+.category-choice {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.625rem;
+  border: 1px solid var(--control-border);
+  border-radius: 0.625rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.category-choice:has(input:checked) {
+  background: var(--selected-plus-bg);
+  border-color: var(--primary);
+}
+
+.category-choice:has(input:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.category-segment {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+.category-save-bar {
+  z-index: 25;
+}
+
+.category-panel :is(input, textarea, select, button, summary, [tabindex]) {
+  scroll-margin-block: 6rem 10rem;
+}
+
+.category-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.category-check {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-check a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+}
+
+.category-progress {
+  display: block;
+  width: 100%;
+  height: 0.5rem;
+  accent-color: var(--primary);
+}
+
+.category-editor-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}

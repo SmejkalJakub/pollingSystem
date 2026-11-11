@@ -1,5 +1,11 @@
 # Individual juror votes
 
+## Admin redesign R7 — 2026-11-11
+
+**Hlasy porotců** is a horizontally scrollable juror × team table on the protected results detail. The first column stays visible during horizontal scrolling. The ranking determines team-column order. Counted rows come first, newest submission first. The remaining rows show saved drafts, invalid drafts, locked ballots and jurors without a draft. Explicit empty submissions are labelled and count toward participation.
+
+**Všichni**, **Jen započtení**, **Technická** and **Veřejná** change visible rows. The footer recomputes positive votes, negative votes and scores from the full counted set using category item IDs. It matches the ranking even when a filter hides counted rows. Individual choices still come from `resultsDetailSchema.jurorVotes`. The overview remains aggregate-only and workbook content is unchanged. See [R7 validation](../implementation/progress.md#uxui-redesign-r7--implemented-2026-11-11).
+
 User decision, 2026-10-21: administrators may see each juror's individual choices and export them. This supersedes the Phase 11/12 rule that results and the XLSX contain no individual choices. The user chose to include saved, unsubmitted drafts as well as submissions, to show them on the category results detail, and to export them as a new sheet in the existing results workbook.
 
 ## Where

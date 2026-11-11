@@ -1,5 +1,96 @@
 # Decision log
 
+## UX/UI redesign acceptance review and design parity — 2026-11-11
+
+- The user asked for every screen to look and behave like the approved artboards. Controls that the artboards do not show were removed: roster search, “Obnovit porotu”/“Obnovit týmy”, the top “Nový porotce”/“Nový tým” buttons, the “Pokračovat k …” links, the Categories revision refresh, the Progress category list and explainer, and the Results back link. A page reload refreshes data. Conflict comparison, explicit discard (**Zahodit**) and undo are unchanged. **Obnovit nastavení** appears only while a category save conflict or comparison is open.
+- New jurors and teams use the artboard's inline add row (type and press Enter). Jury-group renaming moved from Jurors to **Nastavení eventu**, because the Jurors artboard shows fixed T/V pills.
+- Spec §1.6 (touch targets of at least 44 px) takes precedence over the artboards' 40 px roster inputs, add row, row menu and filter pills.
+- The category checklist uses the compact artboard list. It keeps the required-team explanation for the current vote limits and the links to fix it. Its former “Zařadit zbývající týmy” button duplicated the form's existing **Přidat všechny týmy eventu**, which remains.
+- After a juror submits a category, the wizard opens the next unsubmitted open category. If none follows, it wraps around to an earlier unsubmitted category, and opens **Souhrn** only when none remain. Voting rules are unchanged.
+- Counts use Czech plural forms (`Intl.PluralRules('cs')`). The juror row menu closes when an item is chosen, and its confirmations return focus to the ⋯ trigger. Horizontal scroll containers are positioned so that screen-reader-only text cannot widen the page.
+- The late-juror integration test now expects 201, matching the user's 2026-11-11 decision to allow new jurors after activation. D4–D6 remain pending, with the brief's defaults implemented.
+
+## UX/UI redesign R7 — 2026-11-11
+
+- Progress uses the existing event dashboard overview for counts, category eligibility and saved progress. The protected roster supplies members, jury groups and access status. Matrix columns show open categories. The default pending filter covers open assignments while event KPI counts retain their original non-draft scope.
+- D6 stays pending with the brief’s navigation default implemented. A row-menu link supplies the juror ID to existing category progress detail. The detail opens the existing unlock form for the current submitted ballot and captures its revision for explicit confirmation. Progress overview has no unlock mutation.
+- Results overview previews the first server-ordered category and stays aggregate-only. Category links open the protected detail; that screen uses an aggregate overview read for sibling navigation and `jurorVotes` for its own matrix. Footer totals use all counted ballots for the category by voting item ID. Row filters affect visibility only.
+- Progress and Results use a confirmation before closing. Existing lifecycle, access, audit, ranking, cutoff, finality and XLSX operations retain their server semantics. R7 adds no API, contract, schema or dependency changes.
+
+## UX/UI redesign R6 — 2026-11-11
+
+- The category overview uses the existing admin category list, per-category setup reads, juror table and R4 event summary. It reads dashboard participation only when a category is open. The overview counts active stored and legacy juror links as created, and none/revoked as missing. A legacy link remains subject to the existing export/replacement behavior.
+- The editor and cards share readiness checks based on the existing configuration schema, distinct linked teams and jury permissions. A saved, editable draft that passes these checks can open the existing activation form. The server revalidates on confirmation. Readiness chips use the existing admin navigation with a `?field=` query and focus the field after setup loads.
+- The checklist stages team assignments. Arrow moves write explicit sequential display orders in the local draft while preserving entry IDs. The exact-order and reassignment controls remain available in a disclosure. Disabling negatives sets their required zero limit. The entirely unset rule tuple remains available to drafts whose persisted rule tuple is unset.
+- The Categories overview adds a native close confirmation. Existing detail and progress controls keep their direct close/reopen actions. Reopen remains direct in the new overview. The layout reuses the established light and dark tokens and adds no API or contract fields.
+
+## UX/UI redesign R5 — 2026-11-11
+
+- The guarded `GET /events/:eventId/teams/table` adds a sparse `categoryCounts` map, validated by `teamTableReadSchema`. It counts distinct categories with a persisted team assignment in that event, including drafts and archived categories. Missing IDs display zero. The map refreshes on entry and **Obnovit týmy**. It is excluded from the team-table version and the PUT response.
+- Juror paste undo removes the latest batch of unsaved rows and keeps other edits. Both spreadsheet previews stage rows in the existing editable table. The quick-add inputs stage rows on Enter and focus the editable name. The event name remains the workspace heading, with roster headings beneath it.
+- Row actions use a native disclosure with Escape and focus return. Restoring revoked access remains an explicit confirmation and is available directly next to the revoked status. The save bars reuse the R1 and R4 light and dark tokens.
+
+## UX/UI redesign R4 — 2026-11-11
+
+- D7 uses additive `GET /events` fields validated by `adminEventListSchema`. The existing event record, session boundary and write operations are preserved.
+- An active category makes the event **Hlasuje se**. A nonempty event whose categories are all closed or archived shows **Uzavřeno**. Other events show **Příprava**. Closed cards open Results, voting cards open Progress, and preparation cards open Jurors. Closure alone carries no final-results claim.
+- Preparation indicators use saved roster counts and the existing first-activation prerequisites for draft categories. Active, closed and archived categories count as ready. Participation follows the operational dashboard convention across non-draft categories and counts current eligible assignments and current submitted ballots. The card snapshot refreshes after a successful admin mutation or when returning to the event list.
+- The switcher keeps the current event section. When switching from a category detail it opens the matching section overview in the target event. Settings uses `?setup=settings` and the existing metadata form and leave guard. The new screens reuse the R1 light and dark tokens.
+
+## UX/UI redesign R3 — 2026-11-11
+
+D4 remains pending with the explicit **Pokračovat k hlasování** action. The entry screen uses the artboard's continuation sentence and omits its validity claim because only the redemption request verifies the link. Entry errors have no action button. A transient failure directs the juror to reopen the personal link.
+
+The comparison sheet can be dismissed with Escape and reopened. Revisions still block saving and submitting until the juror resolves the conflict. If the latest ballot is submitted or locked, only loading that version resolves the comparison. Closing a category hides the editor and preserves its in-memory choices until the juror reopens it or explicitly discards them when navigating away.
+
+## UX/UI redesign R2 — 2026-11-11
+
+D5 remains pending and the current default is unchecked. Both legacy summary URLs show Souhrn. The existing submit hook keeps its confirmation URL replacement. Outcomes stay in the current summary until navigation or reload. The outcome report is transient, while the saved ballot states come from the server on later entry. R2 uses the R1 palette, including its dark values.
+
+## UX/UI redesign R1 — 2026-11-11
+
+| ID  | Status  | Decision                                                                                                      |
+| --- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| D1  | Decided | Save drafts explicitly with **Uložit návrh** or an explicit save-and-navigate action.                         |
+| D2  | Decided | Jurors use category tabs and **Souhrn** in one shell. R2 replaces the legacy summary content.                 |
+| D3  | Decided | The R7 **Hlasy porotců** matrix is juror × team with positive and negative marks and dashed uncounted drafts. |
+| D4  | Pending | Keep explicit entry. R3 uses **Pokračovat k hlasování**.                                                      |
+| D5  | Pending | Summary checkboxes default to unchecked.                                                                      |
+| D6  | Pending | The R7 progress menu unlock item opens the existing category unlock flow.                                     |
+| D7  | Decided | Additive admin read data may supply R4 event cards within the existing authorization boundary.                |
+| D8  | Decided | Desktop arrow and plus/minus shortcuts work while focus is in the team list.                                  |
+
+The rail reads saved counts from the existing authenticated review response. Submit advances to the next active unsubmitted category after the current one, or to **Souhrn**. R1 retains the existing review refresh and return links and preserves its confirmation URL.
+
+| Token                      | Dark value |
+| -------------------------- | ---------- |
+| `--primary-hover`          | `#b3caff`  |
+| `--border-subtle`          | `#38475e`  |
+| `--table-head`             | `#242f42`  |
+| `--selected-plus-bg`       | `#263b60`  |
+| `--destructive-foreground` | `#32141b`  |
+| `--destructive-soft`       | `#492832`  |
+| `--destructive-row-bg`     | `#3e2731`  |
+| `--destructive-text`       | `#ffb8c1`  |
+| `--success`                | `#8cdbaf`  |
+| `--success-foreground`     | `#113122`  |
+| `--success-soft`           | `#213d33`  |
+| `--success-text`           | `#a3ebc2`  |
+| `--warning`                | `#efba62`  |
+| `--warning-soft`           | `#3e301c`  |
+| `--warning-row-bg`         | `#33291d`  |
+| `--warning-text`           | `#ffd58d`  |
+| `--header`                 | `#182640`  |
+| `--header-foreground`      | `#fff`     |
+| `--header-muted`           | `#c9d4ea`  |
+| `--header-accent`          | `#9bbbff`  |
+| `--header-line`            | `#4a5b7c`  |
+| `--header-divider`         | `#33456b`  |
+
+## Organizer tables and juror voting — 2026-11-11
+
+The user clarified that existing jurors cannot move categories after voting starts. Allow new memberships and name corrections after activation, preserving the lock on existing group changes and removal. Adding a member expands participation for their group; existing ballot and access records are preserved. Save and continue saves a draft, and submission remains explicit and per category. Client vote edits cannot introduce or worsen a negative-vote eligibility violation. Existing saved data and server D21 validation remain supported.
+
 ## Actionable category readiness — 2026-11-11
 
 Show the required team count from the existing validated voting limits, and count distinct selected teams. Show empty or repeated selections separately. Offer to assign the remaining event teams with the existing bulk-add behavior, open the event team list, or edit the limits. Team assignment remains an explicit unsaved edit. Activation continues to use the existing server checks and confirmation.

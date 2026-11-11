@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Průběh hlasování</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+  <header style="background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+      <span style="background: #fff; color: #182640; font-weight: 700; font-size: 13px; padding: 4px 7px; border-radius: 6px">D21</span>
+      <a href="#" style="color: #c9d4ea; text-decoration: none; font-size: 14px">Eventy</a>
+      <span style="color: #6c7da0" aria-hidden="true">/</span>
+      <button style="min-height: 40px; padding: 0 12px; border: 1px solid #4a5b7c; border-radius: 10px; background: transparent; color: #fff; font-weight: 600; font-size: 14px">Ukázkový hackathon 2026 <span aria-hidden="true">▾</span></button>
+      <button style="margin-left: auto; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: #fff; font-size: 14px">Odhlásit se</button>
+    </div>
+    <nav aria-label="Event" style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; gap: 4px; overflow-x: auto">
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Porotci 14</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Týmy 8</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Kategorie 3</a>
+      <span style="width: 1px; background: #33456b; margin: 10px 8px" aria-hidden="true"></span>
+      <a href="#" aria-current="page" style="padding: 12px 14px; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; border-bottom: 3px solid #9bbbff; white-space: nowrap">Průběh hlasování</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Výsledky</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Nastavení eventu</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 28px 24px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700">Průběh hlasování</h1>
+      <p style="margin: 0; color: #52627a; font-size: 14px">Načteno 15:02 · ukázka po otevření obou kategorií</p>
+      <button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Obnovit</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px">
+      <div style="background: #fff; border: 1px solid #cbd5e5; border-radius: 14px; padding: 14px 16px"><p style="margin: 0; font-size: 13px; color: #52627a">Odevzdané lístky</p><p style="margin: 2px 0 0; font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums">12 <span style="font-size: 15px; color: #52627a; font-weight: 500">/ 22</span></p></div>
+      <div style="background: #fff; border: 1px solid #cbd5e5; border-radius: 14px; padding: 14px 16px"><p style="margin: 0; font-size: 13px; color: #52627a">Čekající porotci</p><p style="margin: 2px 0 0; font-size: 26px; font-weight: 700">6</p></div>
+      <div style="background: #fff; border: 1px solid #cbd5e5; border-radius: 14px; padding: 14px 16px"><p style="margin: 0; font-size: 13px; color: #52627a">Dokončené kategorie</p><p style="margin: 2px 0 0; font-size: 26px; font-weight: 700">0 <span style="font-size: 15px; color: #52627a; font-weight: 500">/ 2</span></p></div>
+      <div style="background: #fdf1dc; border: 1px solid #e0a43a; border-radius: 14px; padding: 14px 16px"><p style="margin: 0; font-size: 13px; color: #7a4d06">Ke kontrole</p><p style="margin: 2px 0 0; font-size: 26px; font-weight: 700; color: #7a4d06">1 <span style="font-size: 14px; font-weight: 500">neplatný návrh</span></p></div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px" role="group" aria-label="Filtr">
+      <button aria-pressed="true" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #182640; background: #182640; color: #fff; font-weight: 600; font-size: 14px">Čekající (6)</button>
+      <button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Všichni (14)</button>
+      <button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Technická</button>
+      <button aria-pressed="false" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Veřejná</button>
+    </div>
+
+    <div style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; overflow-x: auto">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px">
+        <caption style="text-align: left; padding: 14px 18px 0; color: #52627a; font-size: 13px">Porotci × otevřené kategorie. Řádek obsahuje vše potřebné k urgování porotce.</caption>
+        <thead>
+          <tr style="text-align: left; color: #52627a; font-size: 13px">
+            <th scope="col" style="padding: 12px 18px; font-weight: 600">Porotce</th>
+            <th scope="col" style="padding: 12px 12px; font-weight: 600">Výběr do finále <span style="font-weight: 500">· 9/14</span></th>
+            <th scope="col" style="padding: 12px 12px; font-weight: 600">Technické řešení <span style="font-weight: 500">· 3/8</span></th>
+            <th scope="col" style="padding: 12px 18px; font-weight: 600; text-align: right">Akce</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top: 1px solid #e3e9f3">
+            <th scope="row" style="padding: 12px 18px; text-align: left; font-weight: 600">Petr Svoboda <span style="display: block; font-weight: 500; font-size: 12px; color: #52627a">Technická</span></th>
+            <td style="padding: 12px"><span style="display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: 999px; background: #e3f3ea; color: #155a37; font-weight: 600; font-size: 13px">✓ Odevzdáno</span></td>
+            <td style="padding: 12px"><span style="display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: 999px; background: #e6edf8; color: #2356c7; font-weight: 600; font-size: 13px">Rozpracováno</span></td>
+            <td style="padding: 12px 18px; text-align: right"><button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Kopírovat odkaz</button> <button aria-label="Další akce: Petr Svoboda" style="min-height: 40px; width: 40px; border: 1px solid #cbd5e5; border-radius: 10px; background: #fff; color: #182640">⋯</button></td>
+          </tr>
+          <tr style="border-top: 1px solid #e3e9f3">
+            <th scope="row" style="padding: 12px 18px; text-align: left; font-weight: 600">Eva Dvořáková <span style="display: block; font-weight: 500; font-size: 12px; color: #52627a">Technická</span></th>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #fbe9eb; color: #8c1f2c; font-weight: 600; font-size: 13px">! Neplatný návrh</span></td>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; border: 1px dashed #7b8ca8; color: #52627a; font-size: 13px">Bez návrhu</span></td>
+            <td style="padding: 12px 18px; text-align: right"><button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Kopírovat odkaz</button> <button aria-label="Další akce: Eva Dvořáková" style="min-height: 40px; width: 40px; border: 1px solid #cbd5e5; border-radius: 10px; background: #fff; color: #182640">⋯</button></td>
+          </tr>
+          <tr style="border-top: 1px solid #e3e9f3">
+            <th scope="row" style="padding: 12px 18px; text-align: left; font-weight: 600">Tomáš Černý <span style="display: block; font-weight: 500; font-size: 12px; color: #52627a">Technická</span></th>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; border: 1px dashed #7b8ca8; color: #52627a; font-size: 13px">Bez návrhu</span></td>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; border: 1px dashed #7b8ca8; color: #52627a; font-size: 13px">Bez návrhu</span></td>
+            <td style="padding: 12px 18px; text-align: right"><button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Kopírovat odkaz</button> <button aria-label="Další akce: Tomáš Černý" style="min-height: 40px; width: 40px; border: 1px solid #cbd5e5; border-radius: 10px; background: #fff; color: #182640">⋯</button></td>
+          </tr>
+          <tr style="border-top: 1px solid #e3e9f3; background: #f7f9fd">
+            <th scope="row" style="padding: 12px 18px; text-align: left; font-weight: 600">Lucie Veselá <span style="display: block; font-weight: 500; font-size: 12px; color: #52627a">Veřejná</span></th>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #e6edf8; color: #2356c7; font-weight: 600; font-size: 13px">Rozpracováno</span></td>
+            <td style="padding: 12px; color: #52627a; font-size: 13px">— nehlasuje</td>
+            <td style="padding: 12px 18px; text-align: right; position: relative">
+              <button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Kopírovat odkaz</button> <button aria-expanded="true" aria-label="Další akce: Lucie Veselá" style="min-height: 40px; width: 40px; border: 1px solid #2356c7; border-radius: 10px; background: #e6edf8; color: #182640">⋯</button>
+              <div role="menu" style="position: absolute; right: 18px; top: 54px; z-index: 2; width: 240px; text-align: left; background: #fff; border: 1px solid #cbd5e5; border-radius: 12px; box-shadow: 0 10px 30px rgba(24, 38, 64, .15); padding: 6px">
+                <button role="menuitem" style="display: block; width: 100%; text-align: left; min-height: 40px; padding: 0 10px; border: 0; background: transparent; color: #182640; font-size: 14px">Zobrazit hlasy</button>
+                <button role="menuitem" style="display: block; width: 100%; text-align: left; min-height: 40px; padding: 0 10px; border: 0; background: transparent; color: #182640; font-size: 14px">Odemknout odevzdaný lístek…</button>
+                <button role="menuitem" style="display: block; width: 100%; text-align: left; min-height: 40px; padding: 0 10px; border: 0; background: transparent; color: #182640; font-size: 14px">Nahradit odkaz…</button>
+                <button role="menuitem" style="display: block; width: 100%; text-align: left; min-height: 40px; padding: 0 10px; border: 0; background: transparent; color: #b32f3e; font-size: 14px">Zrušit přístup…</button>
+              </div>
+            </td>
+          </tr>
+          <tr style="border-top: 1px solid #e3e9f3">
+            <th scope="row" style="padding: 12px 18px; text-align: left; font-weight: 600">Martin Král <span style="display: block; font-weight: 500; font-size: 12px; color: #52627a">Veřejná</span></th>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; border: 1px dashed #7b8ca8; color: #52627a; font-size: 13px">Bez návrhu</span></td>
+            <td style="padding: 12px; color: #52627a; font-size: 13px">— nehlasuje</td>
+            <td style="padding: 12px 18px; text-align: right"><button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Kopírovat odkaz</button> <button aria-label="Další akce: Martin Král" style="min-height: 40px; width: 40px; border: 1px solid #cbd5e5; border-radius: 10px; background: #fff; color: #182640">⋯</button></td>
+          </tr>
+          <tr style="border-top: 1px solid #e3e9f3">
+            <th scope="row" style="padding: 12px 18px; text-align: left; font-weight: 600">Ondřej Marek <span style="display: block; font-weight: 500; font-size: 12px; color: #52627a">Veřejná</span></th>
+            <td style="padding: 12px"><span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; border: 1px dashed #7b8ca8; color: #52627a; font-size: 13px">Bez návrhu</span></td>
+            <td style="padding: 12px; color: #52627a; font-size: 13px">— nehlasuje</td>
+            <td style="padding: 12px 18px; text-align: right"><button style="min-height: 40px; padding: 0 12px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Kopírovat odkaz</button> <button aria-label="Další akce: Ondřej Marek" style="min-height: 40px; width: 40px; border: 1px solid #cbd5e5; border-radius: 10px; background: #fff; color: #182640">⋯</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 20px">
+      <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+        <div style="flex: 1 1 200px"><h2 style="margin: 0; font-size: 16px">Výběr do finále</h2><p style="margin: 2px 0 0; font-size: 13px; color: #52627a">Otevřeno · 9 ze 14 odevzdáno</p></div>
+        <a href="#" style="min-height: 40px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 10px; border: 1px solid #7b8ca8; color: #182640; text-decoration: none; font-weight: 600; font-size: 14px">Průběžné výsledky</a>
+        <button style="min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #7b8ca8; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Uzavřít hlasování…</button>
+      </section>
+      <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+        <div style="flex: 1 1 200px"><h2 style="margin: 0; font-size: 16px">Nejlepší technické řešení</h2><p style="margin: 2px 0 0; font-size: 13px; color: #52627a">Otevřeno · 3 z 8 odevzdáno</p></div>
+        <a href="#" style="min-height: 40px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 10px; border: 1px solid #7b8ca8; color: #182640; text-decoration: none; font-weight: 600; font-size: 14px">Průběžné výsledky</a>
+        <button style="min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #7b8ca8; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Uzavřít hlasování…</button>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

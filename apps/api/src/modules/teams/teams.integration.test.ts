@@ -4,7 +4,7 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { teamTableSnapshotSchema } from '@d21/contracts';
+import { teamTableReadSchema } from '@d21/contracts';
 import { readEnvironment } from '../../config';
 import { dropTestDatabase } from '../../db/test-database';
 import { buildApp } from '../../app';
@@ -14,8 +14,9 @@ import { createVotingService } from '../votings/service';
 
 const name = `d21_test_${randomUUID().replaceAll('-', '')}`;
 const baseUrl = process.env.TEST_DATABASE_URL ?? readEnvironment().DATABASE_URL;
-if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseUrl).hostname))
+if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseUrl).hostname)) {
   throw new Error('Team tests require local PostgreSQL.');
+}
 const admin = new pg.Pool({
   connectionString: baseUrl,
   max: 2,
@@ -56,7 +57,7 @@ async function event() {
 async function table(eventId: string) {
   const response = await request('GET', `/events/${eventId}/teams/table`);
   expect(response.statusCode).toBe(200);
-  return teamTableSnapshotSchema.parse(response.json());
+  return teamTableReadSchema.parse(response.json());
 }
 const row = (name = 'Same team') => ({
   id: randomUUID(),
@@ -116,7 +117,9 @@ describe('atomic team table against local PostgreSQL', () => {
     await app?.close();
     await pool.end();
     try {
-      if (created) await dropTestDatabase(admin, name);
+      if (created) {
+        await dropTestDatabase(admin, name);
+      }
     } finally {
       await admin.end();
     }
@@ -147,6 +150,38 @@ describe('atomic team table against local PostgreSQL', () => {
     expect(
       (await rowsIn(id)).every((team) => team.description === 'Updated'),
     ).toBe(true);
+  });
+  it('returns per-team category counts for the requested event without changing its version', async () => {
+    const id = await event();
+    const other = await event();
+    const assigned = row('Assigned');
+    const unassigned = row('Unassigned');
+    const foreign = row('Foreign');
+    await save(id, (await table(id)).version, [assigned, unassigned]);
+    await save(other, (await table(other)).version, [foreign]);
+    const before = await table(id);
+    expect(before.categoryCounts).toEqual({});
+    for (const [eventId, teamId, name] of [
+      [id, assigned.id, 'Draft'],
+      [id, assigned.id, 'Another draft'],
+      [other, foreign.id, 'Other event draft'],
+    ]) {
+      const { rows } = await pool.query<{ id: string }>(
+        "INSERT INTO votings(event_id,name,kind,status) VALUES ($1,$2,'final','draft') RETURNING id",
+        [eventId, name],
+      );
+      await pool.query(
+        'INSERT INTO voting_items(event_id,voting_id,team_id,name) VALUES ($1,$2,$3,$4)',
+        [eventId, rows[0]!.id, teamId, name],
+      );
+    }
+    const after = await table(id);
+    expect(after.version).toBe(before.version);
+    expect(after.categoryCounts).toEqual({ [assigned.id]: 2 });
+    expect((await table(other)).categoryCounts).toEqual({ [foreign.id]: 1 });
+    const saved = await save(id, before.version, [assigned, unassigned]);
+    expect(saved.json().status).toBe('saved');
+    expect(saved.json().snapshot).not.toHaveProperty('categoryCounts');
   });
   it('reports every invalid field and writes nothing, including an earlier valid row', async () => {
     const id = await event(),
@@ -353,8 +388,9 @@ describe('atomic team table against local PostgreSQL', () => {
       { baseVersion: snapshot.version, rows: [{ ...a, eventId: id }] },
       { baseVersion: snapshot.version, rows: [a], delete: true },
       { baseVersion: 'bad', rows: [a] },
-    ])
+    ]) {
       expect((await request('PUT', path, body)).statusCode).toBe(400);
+    }
     expect(await table(id)).toEqual(snapshot);
     const response = await request('GET', path);
     expect(response.headers['cache-control']).toContain('no-store');
@@ -438,26 +474,30 @@ describe('atomic team table against local PostgreSQL', () => {
           const blocked = await pool.query(
             "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND pid<>pg_backend_pid()",
           );
-          if (blocked.rowCount) break;
-          if (Date.now() > until)
+          if (blocked.rowCount) {
+            break;
+          }
+          if (Date.now() > until) {
             throw new Error('Expected actual event lock wait.');
+          }
           await new Promise((resolve) => setTimeout(resolve, 20));
         }
-        if (mode === 'change')
+        if (mode === 'change') {
           await lock.query(
             "INSERT INTO teams(event_id,name) VALUES ($1,'Other writer')",
             [id],
           );
-        else if (mode === 'revoke')
+        } else if (mode === 'revoke') {
           await lock.query(
             'UPDATE sessions SET revoked_at=statement_timestamp() WHERE token_hash=$1',
             [secretHash(token)],
           );
-        else
+        } else {
           await lock.query(
             "UPDATE sessions SET created_at=now()-interval '2 hours',expires_at=statement_timestamp()-interval '1 second' WHERE token_hash=$1",
             [secretHash(token)],
           );
+        }
         await lock.query('COMMIT');
         expect((await pending).statusCode).toBe(mode === 'change' ? 409 : 401);
         expect((await rowsIn(id)).some((team) => team.id === a.id)).toBe(false);

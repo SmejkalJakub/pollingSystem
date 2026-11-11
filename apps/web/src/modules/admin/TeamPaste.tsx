@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TeamTableRow } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
-import { controlClass } from './MutationForm';
 import { useAdminLeaveWarning } from './navigation';
 import {
   parseTeamPaste,
@@ -21,7 +20,9 @@ export function TeamPaste({
   const [error, setError] = useState('');
   const feedback = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (error) feedback.current?.focus();
+    if (error) {
+      feedback.current?.focus();
+    }
   }, [error]);
   function add() {
     const parsed = parseTeamPaste(text);
@@ -35,31 +36,25 @@ export function TeamPaste({
       (!rows.length ? 'Vložte alespoň jeden řádek.' : '') ||
       issues.map((issue) => teamFieldError(issue.field)).join(' ');
     setError(problem);
-    if (problem) return;
+    if (problem) {
+      return;
+    }
     append(rows);
     setText('');
   }
   return (
-    <details className="mt-5 border-y border-border py-2">
-      <summary className="min-h-11 cursor-pointer py-3 font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
-        Vložit ze spreadsheetu
-      </summary>
-      <p
-        id="team-paste-help"
-        className="my-3 max-w-2xl text-sm text-muted-foreground"
-      >
-        První sloupec název, druhý nepovinný popis. Bez záhlaví, sloupce
-        oddělené tabulátorem. Nové řádky zkontrolujete přímo v tabulce. Uloží se
-        až tlačítkem Uložit tabulku; stejná jména zůstanou samostatná.
+    <aside className="roster-paste-aside" aria-labelledby="team-paste-heading">
+      <h2 id="team-paste-heading">Vložit více týmů najednou</h2>
+      <p id="team-paste-help">
+        Zkopírujte dva sloupce z Excelu (název, popis) a vložte je sem. Před
+        uložením uvidíte náhled.
       </p>
-      <label htmlFor="team-paste" className="mb-2 block text-sm font-medium">
-        Řádky z tabulky
-      </label>
+      <label htmlFor="team-paste">Data z tabulky</label>
       <textarea
         id="team-paste"
         aria-describedby="team-paste-help"
-        className={controlClass}
-        rows={5}
+        rows={6}
+        placeholder={'Atlas\tPlánování směn…'}
         value={text}
         disabled={disabled}
         onChange={(event) => {
@@ -70,11 +65,11 @@ export function TeamPaste({
       <Button
         type="button"
         variant="outline"
-        className="min-h-11 mt-3"
+        className="min-h-11"
         disabled={disabled || !text}
         onClick={add}
       >
-        Přidat řádky do tabulky
+        Zobrazit náhled
       </Button>
       {error && (
         <div
@@ -86,6 +81,6 @@ export function TeamPaste({
           {error}
         </div>
       )}
-    </details>
+    </aside>
   );
 }

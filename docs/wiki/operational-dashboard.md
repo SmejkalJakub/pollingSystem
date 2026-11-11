@@ -1,5 +1,13 @@
 # Operational dashboard
 
+## Admin redesign R7 — 2026-11-11
+
+**Průběh hlasování** shows the four event KPIs and the time of the dashboard snapshot. **Obnovit** reloads that snapshot and the protected roster. The matrix shows one column per open category. **Čekající** defaults to jurors with pending open assignments. **Všichni**, **Technická** and **Veřejná** show the matching roster members, and search accepts a name or full ID. **Bez návrhu** means the juror is eligible and has not saved a ballot. **Nehlasuje** means the juror is ineligible for that column. The event-wide KPIs include non-draft categories, so the pending filter count can differ when a closed category has outstanding ballots.
+
+The category headings open progress detail. In each row, existing copy, replacement and revocation actions use the roster’s current access state and established confirmations. **Zobrazit hlasy** opens the category results detail. **Odemknout odevzdaný lístek…** opens the matching juror’s existing confirmation in category progress. Confirming there uses the existing ballot revision and unlock endpoint. If the ballot is no longer submitted, the detail reports that there is no current submission to unlock.
+
+Open categories appear first below the matrix with participation, provisional results and a close confirmation. The category cards and progress detail retain access to the existing lifecycle operations. Factual problem messages use the dashboard’s server codes. See [R7 validation](../implementation/progress.md#uxui-redesign-r7--implemented-2026-11-11).
+
 The 2026-11-10 [organizer usability update](organizer-usability.md) adds existing close/reopen actions to category cards/detail and revision-checked ballot unlock beside submitted jurors. The dashboard counting API below stays read-only and unchanged; controls use the existing protected mutation endpoints and a separate ballot metadata read.
 
 Phase 10 implements a read-only dashboard for the existing shared administration/guarantor identity. Validation evidence and current completion status are in [progress](../implementation/progress.md).

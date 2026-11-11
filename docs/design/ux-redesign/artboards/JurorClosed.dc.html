@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Kategorie uzavřena</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.4">
+  <header style="background: #182640; color: #fff; padding: 12px 16px 10px; display: flex; align-items: center; gap: 12px">
+    <span style="background: #fff; color: #182640; font-weight: 700; font-size: 12px; padding: 4px 6px; border-radius: 6px">D21</span>
+    <div style="flex: 1"><p style="margin: 0; font-weight: 600; font-size: 14px">Jana Nováková · Technická porota</p><p style="margin: 0; font-size: 12px; color: #c9d4ea">Ukázkový hackathon 2026</p></div>
+  </header>
+  <nav aria-label="Kategorie" style="background: #fff; border-bottom: 1px solid #cbd5e5; padding: 10px 12px; display: flex; gap: 8px; overflow: hidden">
+    <a href="#" aria-current="page" style="flex: none; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #fff; background: #182640; text-decoration: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Technické řešení</a>
+    <a href="#" style="flex: none; display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #182640; border: 1px solid #cbd5e5; text-decoration: none"><span style="width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #7b8ca8; box-sizing: border-box"></span>Výběr do finále</a>
+  </nav>
+  <div style="background: #fff; padding: 14px 16px; border-bottom: 1px solid #cbd5e5">
+    <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #52627a">Finále · 1 vítěz</p>
+    <h1 style="margin: 2px 0 0; font-size: 22px; font-weight: 700">Nejlepší technické řešení</h1>
+  </div>
+
+  <main style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <section role="status" style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 18px">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: #e6edf8; color: #52627a; display: flex; align-items: center; justify-content: center; margin-bottom: 12px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+      </div>
+      <h2 style="margin: 0; font-size: 18px">Hlasování v této kategorii je uzavřené</h2>
+      <p style="margin: 6px 0 0; color: #52627a; font-size: 14px">Hlasy teď nelze měnit ani odevzdat. Váš uložený návrh zůstává zachovaný, pokud organizátor kategorii znovu otevře.</p>
+      <p style="margin: 12px 0 0; font-size: 14px"><strong>Uložený návrh:</strong> + Atlas · + Cirrus</p>
+      <button style="margin-top: 14px; width: 100%; min-height: 44px; border: 1px solid #7b8ca8; border-radius: 12px; background: #fff; color: #182640; font-weight: 600; font-size: 15px">Zkontrolovat znovu</button>
+    </section>
+
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-radius: 16px; background: #2356c7; color: #fff; text-decoration: none; font-weight: 600">
+      <span><span style="display: block; font-size: 12px; font-weight: 500; color: #dbe6ff">Můžete pokračovat</span>Výběr do finále</span>
+      <span aria-hidden="true" style="font-size: 20px">→</span>
+    </a>
+
+    <section style="margin-top: auto; border: 1px dashed #7b8ca8; border-radius: 16px; padding: 16px; font-size: 14px; color: #52627a">
+      <p style="margin: 0 0 4px; font-weight: 600; color: #182640">Prázdný stav (žádná kategorie)</p>
+      Organizátor zatím neotevřel žádnou kategorii pro vaši porotu. Stránku můžete nechat otevřenou a později zkontrolovat znovu.
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

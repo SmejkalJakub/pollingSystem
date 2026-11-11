@@ -1,9 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
+function refreshStatus(loading: boolean, failed: boolean) {
+  if (loading) {
+    return 'Načítání aktuálního přehledu.';
+  }
+  if (failed) {
+    return '';
+  }
+  return 'Přehled byl aktualizován.';
+}
+
 export function DashboardRefresh({
   resource,
+  label = 'Obnovit data',
 }: {
+  label?: string;
   resource: {
     loading: boolean;
     error?: unknown;
@@ -15,7 +27,9 @@ export function DashboardRefresh({
   useEffect(() => {
     if (requested.current && !resource.loading) {
       requested.current = false;
-      if (!resource.error) button.current?.focus();
+      if (!resource.error) {
+        button.current?.focus();
+      }
     }
   }, [resource.loading, resource.error]);
   return (
@@ -30,14 +44,10 @@ export function DashboardRefresh({
           resource.reload();
         }}
       >
-        Obnovit data
+        {label}
       </Button>
       <span role="status" className="sr-only">
-        {resource.loading
-          ? 'Načítání aktuálního přehledu.'
-          : resource.error
-            ? ''
-            : 'Přehled byl aktualizován.'}
+        {refreshStatus(resource.loading, Boolean(resource.error))}
       </span>
     </>
   );

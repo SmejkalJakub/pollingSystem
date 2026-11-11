@@ -1,6 +1,8 @@
+import '../admin/operations.css';
 import { juryGroupLabel } from '@d21/contracts';
 import type { ResultsCategory, ResultsReason, ResultRow } from '@d21/contracts';
-import { lifecycleLabels, problemLabels } from '../dashboard/presentation';
+import { czechCount } from '@/lib/plural';
+import { problemLabels } from '../dashboard/presentation';
 
 const reasonLabels: Record<ResultsReason, string> = {
   NOT_CLOSED: 'Hlasování ještě není uzavřené.',
@@ -8,15 +10,64 @@ const reasonLabels: Record<ResultsReason, string> = {
   DATA_PROBLEMS: 'Uložená data vyžadují kontrolu.',
   CUTOFF_TIE: 'Shoda skóre zasahuje přes hranici dostupných míst.',
 };
+function placesText(c: ResultsCategory) {
+  if (c.selectedPlaces === null) {
+    return 'počet míst neurčen';
+  }
+  if (c.kind === 'selection') {
+    return czechCount(c.selectedPlaces, {
+      one: 'postupové místo',
+      few: 'postupová místa',
+      other: 'postupových míst',
+    });
+  }
+  return czechCount(c.selectedPlaces, {
+    one: 'vítězné místo',
+    few: 'vítězná místa',
+    other: 'vítězných míst',
+  });
+}
+
 function selectionLabel(row: ResultRow, c: ResultsCategory) {
-  if (c.counts.submitted === 0) return 'Zatím bez hlasů';
-  if (row.selection === 'unresolved') return 'Nerozhodnutá shoda';
-  if (c.problems.includes('CONFIGURATION_NOT_READY'))
+  if (c.counts.submitted === 0) {
+    return 'Zatím bez hlasů';
+  }
+  if (row.selection === 'unresolved') {
+    return 'Nerozhodnutá shoda';
+  }
+  if (c.problems.includes('CONFIGURATION_NOT_READY')) {
     return 'Výběr není vyhodnocen';
-  if (row.selection === 'outside') return 'Mimo výběr';
-  if (c.stage === 'provisional')
+  }
+  if (row.selection === 'outside') {
+    return 'Mimo výběr';
+  }
+  if (c.stage === 'provisional') {
     return c.kind === 'selection' ? 'Průběžně postupuje' : 'Průběžně ve výběru';
+  }
   return c.kind === 'selection' ? 'Postupuje' : 'Vítěz';
+}
+
+function rowTone(row: ResultRow, c: ResultsCategory) {
+  if (c.counts.submitted === 0) {
+    return '';
+  }
+  if (row.selection === 'unresolved') {
+    return 'results-cutoff bg-warning-soft';
+  }
+  if (row.selection === 'selected') {
+    return 'bg-selected-plus-bg';
+  }
+  return '';
+}
+
+function selectionTone(row: ResultRow, c: ResultsCategory) {
+  if (row.selection === 'unresolved' && c.counts.submitted > 0) {
+    return 'text-destructive';
+  }
+  if (row.selection === 'selected' && c.stage === 'final') {
+    return 'text-success-text';
+  }
+  return 'text-muted-foreground';
 }
 
 export function ResultCategory({
@@ -33,47 +84,49 @@ export function ResultCategory({
   const names = new Set<string>();
   const duplicates = new Set<string>();
   for (const row of c.rows) {
-    if (names.has(row.name)) duplicates.add(row.name);
+    if (names.has(row.name)) {
+      duplicates.add(row.name);
+    }
     names.add(row.name);
   }
   return (
     <section
-      className="min-w-0 border border-border bg-card p-5 sm:p-6"
+      className="min-w-0 rounded-2xl border border-border bg-card p-5 sm:p-6"
       aria-labelledby={`result-${c.id}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h2
           id={`result-${c.id}`}
-          className="min-w-0 break-words text-xl font-semibold"
+          className="min-w-0 break-words text-[22px] font-bold"
         >
           {c.name}
         </h2>
         <span
-          className={`border px-3 py-1 text-sm font-medium ${c.stage === 'final' ? 'border-ring text-ring' : 'border-border'}`}
+          className={`operations-pill uppercase ${c.stage === 'final' ? 'bg-success-soft text-success-text' : 'bg-warning-soft text-warning-text'}`}
         >
           {c.stage === 'final' ? 'Finální výsledek' : 'Průběžný výsledek'}
         </span>
       </div>
       <p className="mt-2 break-words text-sm text-muted-foreground">
-        {c.kind === 'selection' ? 'Výběrové kolo' : 'Finálová kategorie'} ·{' '}
+        {c.kind === 'selection' ? 'Výběrové kolo' : 'Finále'} ·{' '}
         {c.groups.map((g) => juryGroupLabel(g.code)).join(' + ') ||
-          'Bez poroty'}
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {lifecycleLabels[c.status]} · Odevzdáno {c.counts.submitted}/
-        {c.counts.expected} ·{' '}
-        {c.kind === 'selection' ? 'Postupových míst' : 'Vítězných míst'}:{' '}
-        {c.selectedPlaces ?? 'nenastaveno'}
+          'Bez poroty'}{' '}
+        · {placesText(c)} · odevzdáno {c.counts.submitted} / {c.counts.expected}
       </p>
       {winners.length === 1 && (
         <p className="mt-4 break-words text-sm">
           Vítěz: <strong>{winners[0]!.name}</strong>
         </p>
       )}
-      {c.stage === 'provisional' && c.counts.submitted > 0 && (
-        <ul className="mt-4 list-inside list-disc space-y-1 text-sm">
+      {c.reasons.length > 0 && (
+        <ul className="result-reasons mt-4 flex flex-wrap gap-2 text-sm">
           {c.reasons.map((r) => (
-            <li key={r}>{reasonLabels[r]}</li>
+            <li
+              key={r}
+              className={`operations-pill ${r === 'CUTOFF_TIE' ? 'bg-warning-soft text-warning-text' : 'bg-secondary text-secondary-foreground'}`}
+            >
+              {reasonLabels[r]}
+            </li>
           ))}
         </ul>
       )}
@@ -98,13 +151,6 @@ export function ResultCategory({
           )}
         </div>
       )}
-      {c.boundaryTie && c.counts.submitted > 0 && (
-        <p className="mt-5 border border-destructive p-4 text-sm">
-          <strong>Hranice výběru je nerozhodnutá.</strong> Celá shodná skupina
-          zůstává nerozhodnutá. Rozhodnutí je na organizátorovi mimo aplikaci;
-          zobrazené pořadí týmů se stejným skóre shodu nerozhoduje.
-        </p>
-      )}
       {c.counts.submitted === 0 && (
         <p className="mt-5 text-sm text-muted-foreground">
           Zatím nejsou započtené žádné odevzdané lístky. Nulové skóre neznamená
@@ -112,15 +158,15 @@ export function ResultCategory({
         </p>
       )}
       {c.rows.length ? (
-        <table role="table" className="results-table mt-6 w-full text-sm">
-          <caption className="mb-3 text-left text-xs text-muted-foreground">
-            Skóre = pozitivní − negativní hlasy. Shodné skóre sdílí pořadí (1,
-            2, 2, 4).
-          </caption>
+        <table
+          role="table"
+          aria-label="Pořadí týmů"
+          className="results-table mt-6 w-full text-sm"
+        >
           <thead role="rowgroup">
             <tr
               role="row"
-              className="border-b border-border text-left text-xs text-muted-foreground"
+              className="border-b border-border-subtle bg-table-head text-left text-[13px] text-muted-foreground"
             >
               <th role="columnheader" scope="col" className="pb-3 pr-3">
                 Pořadí
@@ -133,14 +179,16 @@ export function ResultCategory({
                 scope="col"
                 className="pb-3 px-2 text-right"
               >
-                Pozitivní
+                <span aria-hidden="true">+</span>
+                <span className="sr-only">Pozitivní</span>
               </th>
               <th
                 role="columnheader"
                 scope="col"
                 className="pb-3 px-2 text-right"
               >
-                Negativní
+                <span aria-hidden="true">−</span>
+                <span className="sr-only">Negativní</span>
               </th>
               <th
                 role="columnheader"
@@ -157,16 +205,16 @@ export function ResultCategory({
               <tr
                 role="row"
                 key={row.id}
-                className="border-b border-border last:border-0"
+                className={`border-b border-border-subtle last:border-0 ${rowTone(row, c)}`}
               >
                 <td
                   role="cell"
-                  className="results-rank py-4 pr-3 align-top font-mono tabular-nums"
+                  className="results-rank py-3 pr-3 align-top font-bold tabular-nums"
                 >
                   <span className="sr-only sm:hidden">Pořadí </span>
                   {row.rank}.
                   {row.tied && c.counts.submitted > 0 && (
-                    <span className="mt-1 block font-sans text-xs text-muted-foreground">
+                    <span className="ml-1 text-[11px] font-semibold text-muted-foreground">
                       shoda
                     </span>
                   )}
@@ -174,30 +222,25 @@ export function ResultCategory({
                 <th
                   role="rowheader"
                   scope="row"
-                  className="results-team min-w-0 py-4 pr-3 text-left align-top font-normal"
+                  className="results-team min-w-0 py-3 pr-3 text-left align-top font-normal"
                 >
-                  <p className="break-words font-medium">{row.name}</p>
-                  <p
-                    className={`mt-1 text-xs ${row.selection === 'unresolved' && c.counts.submitted > 0 ? 'text-destructive' : row.selection === 'selected' && c.stage === 'final' ? 'text-ring' : 'text-muted-foreground'}`}
-                  >
-                    {selectionLabel(row, c)}
+                  <p className="break-words">
+                    <span className="font-semibold">{row.name}</span>{' '}
+                    <span
+                      className={`text-xs font-semibold ${selectionTone(row, c)}`}
+                    >
+                      {selectionLabel(row, c)}
+                    </span>
                   </p>
-                  {(detail || duplicates.has(row.name)) && (
-                    <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                      {detail
-                        ? (row.teamId ?? row.id)
-                        : (row.teamId ?? row.id).slice(0, 8)}
-                    </p>
-                  )}
-                  {detail && row.description && (
-                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                      {row.description}
+                  {duplicates.has(row.name) && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      ID {(row.teamId ?? row.id).slice(0, 8)}
                     </p>
                   )}
                 </th>
                 <td
                   role="cell"
-                  className="results-plus py-4 px-2 text-right align-top font-mono tabular-nums"
+                  className="results-plus py-3 px-2 text-right align-top tabular-nums"
                 >
                   <span className="block font-sans text-xs text-muted-foreground sm:sr-only">
                     Pozitivní{' '}
@@ -206,7 +249,7 @@ export function ResultCategory({
                 </td>
                 <td
                   role="cell"
-                  className="results-minus py-4 px-2 text-right align-top font-mono tabular-nums"
+                  className="results-minus py-3 px-2 text-right align-top tabular-nums"
                 >
                   <span className="block font-sans text-xs text-muted-foreground sm:sr-only">
                     Negativní{' '}
@@ -215,7 +258,7 @@ export function ResultCategory({
                 </td>
                 <td
                   role="cell"
-                  className="results-score py-4 pl-2 text-right align-top font-mono font-semibold tabular-nums"
+                  className="results-score py-3 pl-2 text-right align-top font-semibold tabular-nums"
                 >
                   <span className="block font-sans text-xs text-muted-foreground sm:sr-only">
                     Skóre{' '}
@@ -231,18 +274,22 @@ export function ResultCategory({
           Kategorie zatím nemá soutěžní týmy.
         </p>
       )}
+      {c.boundaryTie && c.counts.submitted > 0 && (
+        <p className="mt-5 rounded-lg bg-warning-soft p-4 text-sm text-warning-text">
+          <strong>Hranice výběru je nerozhodnutá.</strong> Celá shodná skupina
+          zůstává nerozhodnutá. Rozhodnutí je na organizátorovi mimo aplikaci;
+          zobrazené pořadí týmů se stejným skóre shodu nerozhoduje.
+        </p>
+      )}
       <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
         {!detail && (
           <a className="wizard-link" href={`/admin/results/votings/${c.id}`}>
-            Detail a hlasy porotců →
+            Hlasy porotců →
           </a>
         )}
-        <a className="wizard-link" href={`/admin/dashboard/votings/${c.id}`}>
-          Průběh kategorie
-        </a>
         {detail && (
-          <a className="wizard-link" href={`/admin/votings/${c.id}`}>
-            Správa kategorie
+          <a className="wizard-link" href={`#juror-votes-${c.id}`}>
+            Hlasy porotců ↓
           </a>
         )}
       </div>

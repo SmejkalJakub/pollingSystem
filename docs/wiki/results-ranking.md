@@ -1,5 +1,11 @@
 # Results and ranking
 
+## Admin redesign R7 — 2026-11-11
+
+**Výsledky** opens an aggregate ranking preview for the first category in server order. The category links show provisional or final status and open their respective protected detail routes. Detail shows the server ranking, shared ranks, cutoff group, finality reasons, data problems and participation. **Kdo ještě neodevzdal** opens Progress scoped to pending jurors in that category. For an already closed category it opens the existing category progress detail with the pending filter. Closing an open category uses the existing operation after confirmation. **Stáhnout XLSX** uses the existing event workbook export on both routes.
+
+Only category detail includes the juror × team matrix. Columns follow server ranking order. Counted submissions and uncounted drafts use distinct marks and labels. The footer uses all counted ballots in the detail snapshot, including contributions outside the displayed jury filter. See [individual votes](juror-votes.md#admin-redesign-r7--2026-11-11) and [R7 validation](../implementation/progress.md#uxui-redesign-r7--implemented-2026-11-11).
+
 The [streamlined workflow](streamlined-workflow.md) puts ranking and finality first, with refresh and XLSX in one toolbar and full identifiers in category detail. The server ranking and export rules are unchanged.
 
 The 2026-11-10 [organizer usability update](organizer-usability.md) presents zero-submission results with a quiet no-votes state instead of repeated cutoff warnings. Factual problems remain visible; API ranks, ties, selection, finality and exports below are unchanged.

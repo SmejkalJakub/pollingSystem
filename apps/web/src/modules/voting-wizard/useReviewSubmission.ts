@@ -37,7 +37,9 @@ export function useReviewSubmission(
       review.categories.some((current) => current.step.id === category.step.id),
   );
   function confirm() {
-    if (changed || !chosen.length || controller.current) return;
+    if (changed || !chosen.length || controller.current) {
+      return;
+    }
     setAttempt({
       categories: chosen.map(({ step, ballot }) => ({
         stepId: step.id,
@@ -48,7 +50,9 @@ export function useReviewSubmission(
     setUncertain('');
   }
   async function submit() {
-    if (!attempt || controller.current) return;
+    if (!attempt || controller.current) {
+      return;
+    }
     const request = new AbortController();
     controller.current = request;
     setBusy(true);
@@ -59,19 +63,31 @@ export function useReviewSubmission(
         wizardFinalSubmitSchema,
         { method: 'POST', body: attempt, signal: request.signal },
       );
-      if (request.signal.aborted) return;
+      if (request.signal.aborted) {
+        return;
+      }
       setResult(value);
       setAttempt(undefined);
       setSelected([]);
       // The URL is refreshable: a reload derives confirmation from current ballots.
-      window.history.replaceState(null, '', '/wizard/confirmation');
+      window.history.replaceState(
+        window.history.state,
+        '',
+        '/wizard/confirmation',
+      );
     } catch (error) {
-      if (request.signal.aborted) return;
-      if (error instanceof ApiError && [401, 403].includes(error.status))
+      if (request.signal.aborted) {
+        return;
+      }
+      if (error instanceof ApiError && [401, 403].includes(error.status)) {
         onAccessError(error);
-      else setUncertain(requestProblem(error));
+      } else {
+        setUncertain(requestProblem(error));
+      }
     } finally {
-      if (!request.signal.aborted) setBusy(false);
+      if (!request.signal.aborted) {
+        setBusy(false);
+      }
       controller.current = null;
     }
   }
@@ -87,10 +103,11 @@ export function useReviewSubmission(
     confirm,
     submit,
     toggle(id: string) {
-      if (!attempt && !busy)
+      if (!attempt && !busy) {
         setSelected((ids) =>
           ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
         );
+      }
     },
     cancel() {
       if (!busy) {

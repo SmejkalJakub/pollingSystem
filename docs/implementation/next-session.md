@@ -1,5 +1,50 @@
 # Session handoff
 
+## UX/UI redesign R1–R7 — reviewed, design parity applied, 2026-11-11
+
+R1–R7 were reviewed and brought into parity with the artboards. See [progress](progress.md#uxui-redesign-r1r7--acceptance-review-and-design-parity-2026-11-11) and [decisions](decisions.md). All work is uncommitted in the working tree; commit, push and deployment need separate authorization.
+
+1. Decide the pending D4–D6 defaults that are currently implemented: the explicit entry button, Souhrn unchecked, and unlock opening the category detail. Also decide whether to restore the entry line “Váš osobní odkaz je platný.”, which R3 omitted because only redemption verifies the link.
+2. If the intermittent desktop `jurors.spec.ts` save-click timeout after session revocation recurs, capture its trace (`--trace on`) before changing the app.
+3. Native devices, screen readers, non-Chromium browsers and the hosted instance remain untested.
+
+## UX/UI redesign R7 — implemented, R1–R7 browser acceptance pending, 2026-11-11
+
+The redesign implementation ends with R7. Both screens and the reconciliation unit test are in the working tree. See [current validation](progress.md#uxui-redesign-r7--implemented-2026-11-11). Preserve tracked and untracked R1–R7 changes and the existing development configuration.
+
+1. In a terminal with local PostgreSQL and Chromium permissions, run `npm run test:e2e` and `npm run test:db -- --maxWorkers=2`. This session reproduced PostgreSQL `EPERM` on `127.0.0.1:54329` and Chromium Mach-port permission denied. Recheck the three R5 activation assertions in `votings.integration.test.ts` recorded below. Full formatting still reports the two pre-existing warnings in progress.
+2. Review Playwright’s `r7-progress-*` and `r7-results-*` captures at 390 and 1440 px in light and dark. For Progress, verify pending, all and T/V filters, ineligibility versus no draft, sticky names and horizontal scrolling, refresh focus, access confirmations, D6 navigation and cancellation, factual problems, close and reopen. For Results, verify category links, the aggregate-only overview, provisional and final ranks, tie boundaries, counted/draft marks, filters, category-wide footer totals, participation links and workbook download. Record actual Playwright, axe and visual results.
+3. Complete the R1–R6 browser, axe and visual checks below. Publication requires separate authorization.
+
+## UX/UI redesign R6 — implemented, R1–R6 browser acceptance pending, 2026-11-11
+
+R6 updates the Categories overview and editor. See [workflow](../wiki/voting-configuration.md#admin-redesign-r6--2026-11-11) and [validation](progress.md#uxui-redesign-r6--implemented-2026-11-11). R7 covers Progress and Results and starts only in a new user-started session.
+
+1. Run `npm run test:e2e` in a terminal that can connect to the local test PostgreSQL instance and launch Chromium. R6 hit `EPERM` at PostgreSQL fixture setup and the separate Chromium launch failed with Mach-port permission denied. The locked Inter dependency is installed. The two prior formatting warnings and three older R5 database assertions are still recorded in progress.
+2. Check the R6 overview at 390 and 1440 px in light and dark. Exercise ready and incomplete drafts, active participation, close confirmation, reopen, progress/results links, link coverage and the existing XLSX export. In the editor check the missing-field links and focus, segmented radios, disabled negative limit, team ordering and saved-entry protection, sticky save and activation, stale comparisons and frozen configuration. Review `r6-overview-*` and `r6-editor-*` in `test-results/` and record axe and visual results.
+3. Carry forward the R1–R5 browser, axe and visual checks below. Preserve the existing working tree and local configuration.
+
+## UX/UI redesign R5 — implemented, R1–R5 browser acceptance pending, 2026-11-11
+
+R5 updates Jurors and Teams. The source is in the working tree. See the [workflow](../wiki/organizer-usability.md#admin-redesign-r5--2026-11-11) and [validation results](progress.md#uxui-redesign-r5--implemented-2026-11-11). The R6 implementation and current validation status are recorded above.
+
+1. Use the existing local PostgreSQL instance if reachable and run `npm run test:e2e` in a terminal that can launch Chromium. The locked Inter package is installed in this checkout. The prior format warnings and three older PostgreSQL assertions are listed in progress.
+2. Review `r5-jurors-*` and `r5-teams-*` captures in `test-results/` at 390 and 1440 px in both schemes. Exercise paste and undo, quick add, keyboard and focus in juror row actions, copy/export during edits, fixed jury groups, inline errors, comparison, and the sticky save bar. Verify Teams assignment counts in the editor and record browser/axe results.
+3. Carry forward the R1–R4 browser and visual checks below. R5 cleared the prior Inter build blocker. Chromium's macOS launch permission remains the current blocker.
+
+## UX/UI redesign R4 — implemented, R1–R4 acceptance validation pending, 2026-11-11
+
+R4 implements the organizer header, switcher, status navigation, dedicated settings, login and event cards. The list uses the existing admin authorization. See [organizer workflow](../wiki/organizer-usability.md#admin-redesign-r4--2026-11-11) and [validation record](progress.md#uxui-redesign-r4--implemented-2026-11-11). R5 implementation and its current validation status are recorded above.
+
+1. Install from the lockfile with `npx --yes npm@11.6.2 ci` in a terminal that can reach npm. Preserve the existing `.env`, private keys, development data and earlier working-tree edits.
+2. Run `npm run check`, `npm run db:up` if PostgreSQL is needed, `npm run test:db -- --maxWorkers=2` and `npm run test:e2e`. The repository-wide formatting exceptions are in [progress](progress.md). The database and browser fixtures use disposable databases.
+3. Review Playwright's desktop `r4-*` captures at 390 and 1440 px in light and dark. Check login and invalid-password feedback, all event card states, the create form, event switcher focus and preserved section, the unsaved-change guard, settings and the scrollable navigation. Record browser and axe results.
+4. Carry forward the R1 `r1-category-*` and `r1-submit-*`, R2 `r2-summary-*` and `r2-sheet-*`, and R3 `r3-entry-*`, `r3-conflict-*`, `r3-closed-*` and `r3-empty-*` captures at 390, 1280 and 1440 px in light and dark. Also inspect the no-link landing and invalid-link feedback. Verify R3's explicit entry and fragment removal, comparison focus and resolution against a submitted or locked version, retained choices through closing and reopening, empty-event refresh and guarded same-document continuation.
+
+## Organizer tables and juror voting — local handoff, 2026-11-11
+
+Use [local administration](http://127.0.0.1:3001/admin/events) to test the roster footers and add a juror to an active event. Open that juror’s personal link to test **Uložit a pokračovat** and the compact review table. See [progress](progress.md) for validation. Publication requires separate authorization.
+
 ## Actionable category readiness — local handoff, 2026-11-11
 
 Refresh [local administration](http://127.0.0.1:3001/admin/events) and open a category draft. Under **Před aktivací zbývá**, try adding the remaining teams or editing the limits and check that the shortage updates before saving. The local build is for review. See [progress](progress.md) for validation.

@@ -50,7 +50,9 @@ export function useBallotDraft(
       : undefined);
   const needsComparison = conflict || Boolean(remote);
   useEffect(() => {
-    if (!dirty && !busy) return;
+    if (!dirty && !busy) {
+      return;
+    }
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
@@ -62,7 +64,9 @@ export function useBallotDraft(
   const path = `/wizard/steps/${detail.step.id}/ballot-draft`;
   async function loadLatest(signal: AbortSignal) {
     const value = await apiRequest(path, ballotDraftResponseSchema, { signal });
-    if (!value) throw new Error('Saved draft is unavailable.');
+    if (!value) {
+      throw new Error('Saved draft is unavailable.');
+    }
     setLatest(value);
     setConflict(true);
     setMessage(
@@ -70,39 +74,49 @@ export function useBallotDraft(
     );
   }
   async function run(operation: 'save' | 'load' | 'submit') {
-    if (controller.current) return;
+    if (controller.current) {
+      return;
+    }
     const request = new AbortController();
     controller.current = request;
     setBusy(true);
     setMessage('');
     try {
-      if (operation !== 'load') {
-        const value = await apiRequest(
-          operation === 'submit'
-            ? `/wizard/steps/${detail.step.id}/submit`
-            : path,
-          ballotDraftSchema,
-          {
-            method: operation === 'submit' ? 'POST' : 'PUT',
-            body: { entries, expectedRevision: saved?.revision ?? null },
-            signal: request.signal,
-          },
-        );
-        setSaved(value);
-        setEntries(value.entries);
-        setLatest(undefined);
-        setConflict(false);
+      if (operation === 'load') {
+        await loadLatest(request.signal);
+        return;
+      }
+      const value = await apiRequest(
+        operation === 'submit'
+          ? `/wizard/steps/${detail.step.id}/submit`
+          : path,
+        ballotDraftSchema,
+        {
+          method: operation === 'submit' ? 'POST' : 'PUT',
+          body: { entries, expectedRevision: saved?.revision ?? null },
+          signal: request.signal,
+        },
+      );
+      setSaved(value);
+      setEntries(value.entries);
+      setLatest(undefined);
+      setConflict(false);
+      if (value.status === 'submitted') {
         setMessage(
-          value.status === 'submitted'
-            ? 'Hlasy v této kategorii byly odevzdány. Další kategorie můžete dokončit později.'
-            : value.validation.valid
-              ? 'Návrh je uložený. Hlasy zatím nejsou odevzdané.'
-              : 'Návrh je uložený jako neplatný. Před odevzdáním opravte uvedené chyby.',
+          'Hlasy v této kategorii byly odevzdány. Další kategorie můžete dokončit později.',
         );
-      } else await loadLatest(request.signal);
-      return true;
+      } else if (value.validation.valid) {
+        setMessage('Návrh je uložený. Hlasy zatím nejsou odevzdané.');
+      } else {
+        setMessage(
+          'Návrh je uložený jako neplatný. Před odevzdáním opravte uvedené chyby.',
+        );
+      }
+      return value;
     } catch (error) {
-      if (request.signal.aborted) return;
+      if (request.signal.aborted) {
+        return;
+      }
       if (error instanceof ApiError && [401, 403, 404].includes(error.status)) {
         onAccessError(error);
         return;
@@ -115,7 +129,9 @@ export function useBallotDraft(
         try {
           await loadLatest(request.signal);
         } catch (cause) {
-          if (request.signal.aborted) return;
+          if (request.signal.aborted) {
+            return;
+          }
           if (
             cause instanceof ApiError &&
             [401, 403, 404].includes(cause.status)
@@ -141,19 +157,28 @@ export function useBallotDraft(
           issue: error.code as 'VOTING_UNAVAILABLE' | 'CONFIGURATION_NOT_READY',
         });
         setMessage('');
-      } else
+      } else {
         setMessage(
           `Změnu hlasovacího lístku se nepodařilo potvrdit. ${requestProblem(error)} Váš výběr zůstává na stránce.`,
         );
+      }
     } finally {
-      if (!request.signal.aborted) setBusy(false);
-      if (controller.current === request) controller.current = null;
+      if (!request.signal.aborted) {
+        setBusy(false);
+      }
+      if (controller.current === request) {
+        controller.current = null;
+      }
     }
   }
   function resolve(useLocal: boolean) {
-    if (!remote) return;
+    if (!remote) {
+      return;
+    }
     setSaved(remote);
-    if (!useLocal) setEntries(remote.entries);
+    if (!useLocal) {
+      setEntries(remote.entries);
+    }
     setLatest(undefined);
     setConflict(false);
     setMessage(

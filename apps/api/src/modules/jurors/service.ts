@@ -27,12 +27,13 @@ async function requireGroup(
     'SELECT id FROM jury_groups WHERE event_id = $1 AND id = $2',
     [eventId, groupId],
   );
-  if (!group.rows[0])
+  if (!group.rows[0]) {
     throw new AppError(
       400,
       'INVALID_GROUP',
       'Choose a group belonging to this event.',
     );
+  }
 }
 export function createJuryService(
   pool: Pool,
@@ -56,7 +57,9 @@ export function createJuryService(
     ...createJurorTable(withLock, vault),
     async createGroup(eventId: string, input: JuryGroupInput) {
       return withLock(eventId, async (client, locked) => {
-        if (locked) throw rosterLocked();
+        if (locked) {
+          throw rosterLocked();
+        }
         const result = await client.query(
           `INSERT INTO jury_groups (event_id, code, name) VALUES ($1, $2, $3) RETURNING ${groupColumns}`,
           [eventId, input.code, input.name],
@@ -70,12 +73,14 @@ export function createJuryService(
           `UPDATE jury_groups SET name = $3 WHERE event_id = $1 AND id = $2 RETURNING ${groupColumns}`,
           [eventId, groupId, name],
         );
-        if (!result.rows[0]) throw notFound();
+        if (!result.rows[0]) {
+          throw notFound();
+        }
         return juryGroupSchema.parse(result.rows[0]);
       });
     },
     async createJuror(eventId: string, input: JurorInput) {
-      return withLock(eventId, async (client, locked, adminId) => {
+      return withLock(eventId, async (client, _locked, adminId) => {
         if (input.id) {
           const existing = await client.query(
             `SELECT ${jurorColumns} FROM event_jurors WHERE id=$1`,
@@ -87,12 +92,13 @@ export function createJuryService(
               row.eventId !== eventId.toLowerCase() ||
               row.juryGroupId !== input.juryGroupId.toLowerCase() ||
               row.displayName !== input.displayName
-            )
+            ) {
               throw new AppError(
                 409,
                 'JUROR_CREATE_CONFLICT',
                 'This membership ID is already in use. Review the current roster.',
               );
+            }
             await ensureInitialJurorLink(
               client,
               vault,
@@ -103,18 +109,18 @@ export function createJuryService(
             return serializeJuror(row);
           }
         }
-        if (locked) throw rosterLocked();
         await requireGroup(client, eventId, input.juryGroupId);
         const result = await client.query(
           `INSERT INTO event_jurors (event_id, jury_group_id, display_name, id) VALUES ($1, $2, $3, coalesce($4::uuid,gen_random_uuid())) ON CONFLICT(id) DO NOTHING RETURNING ${jurorColumns}`,
           [eventId, input.juryGroupId, input.displayName, input.id],
         );
-        if (!result.rowCount)
+        if (!result.rowCount) {
           throw new AppError(
             409,
             'JUROR_CREATE_CONFLICT',
             'This membership ID is already in use. Review the current roster.',
           );
+        }
         await ensureInitialJurorLink(
           client,
           vault,
@@ -131,12 +137,16 @@ export function createJuryService(
           'SELECT jury_group_id FROM event_jurors WHERE event_id = $1 AND id = $2',
           [eventId, jurorId],
         );
-        if (!existing.rows[0]) throw notFound();
+        if (!existing.rows[0]) {
+          throw notFound();
+        }
         if (
           input.juryGroupId !== undefined &&
           input.juryGroupId !== existing.rows[0].jury_group_id
         ) {
-          if (locked) throw rosterLocked();
+          if (locked) {
+            throw rosterLocked();
+          }
           await requireGroup(client, eventId, input.juryGroupId);
         }
         const result = await client.query(
@@ -152,8 +162,12 @@ export function createJuryService(
           'SELECT id FROM event_jurors WHERE event_id = $1 AND id = $2',
           [eventId, jurorId],
         );
-        if (!existing.rows[0]) throw notFound();
-        if (locked) throw rosterLocked();
+        if (!existing.rows[0]) {
+          throw notFound();
+        }
+        if (locked) {
+          throw rosterLocked();
+        }
         await client.query(
           'DELETE FROM event_jurors WHERE event_id = $1 AND id = $2',
           [eventId, jurorId],

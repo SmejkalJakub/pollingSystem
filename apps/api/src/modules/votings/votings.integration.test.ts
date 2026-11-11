@@ -91,7 +91,9 @@ async function roster(eventId: string, t = 5, v: number | null = 5) {
     ['T', t],
     ['V', v],
   ] as const) {
-    if (count === null) continue;
+    if (count === null) {
+      continue;
+    }
     const group = (
       await pool.query(
         'INSERT INTO jury_groups(event_id,code,name) VALUES ($1,$2::jury_group_code,$2::text) RETURNING id',
@@ -116,18 +118,19 @@ const limits = {
 async function prepared(size = 5, groupsChoice = 'both') {
   const record = await voting(await event());
   const groups = await roster(record.eventId, size, size);
-  for (let i = 0; i < 4; i++)
+  for (let i = 0; i < 4; i++) {
     await item(record.id, (await team(record.eventId, `Team ${i + 1}`)).id, i);
+  }
   expect(
     (await request('PUT', `/votings/${record.id}/configuration`, limits))
       .statusCode,
   ).toBe(200);
-  const selected =
-    groupsChoice === 'T'
-      ? [groups[0]]
-      : groupsChoice === 'V'
-        ? [groups[1]]
-        : groups;
+  let selected = groups;
+  if (groupsChoice === 'T') {
+    selected = [groups[0]!];
+  } else if (groupsChoice === 'V') {
+    selected = [groups[1]!];
+  }
   expect(
     (
       await request('PUT', `/votings/${record.id}/allowed-groups`, {
@@ -177,7 +180,9 @@ describe('draft voting preparation against PostgreSQL', () => {
     await app?.close();
     await pool.end();
     try {
-      if (created) await dropTestDatabase(admin, databaseName);
+      if (created) {
+        await dropTestDatabase(admin, databaseName);
+      }
     } finally {
       await admin.end();
     }
@@ -201,8 +206,9 @@ describe('draft voting preparation against PostgreSQL', () => {
     async (t, v) => {
       const record = await voting(await event());
       const groups = await roster(record.eventId, t!, v!);
-      for (let i = 0; i < 4; i++)
+      for (let i = 0; i < 4; i++) {
         await item(record.id, (await team(record.eventId)).id, i);
+      }
       await request('PUT', `/votings/${record.id}/configuration`, limits);
       await request('PUT', `/votings/${record.id}/allowed-groups`, {
         juryGroupIds: groups,
@@ -228,12 +234,13 @@ describe('draft voting preparation against PostgreSQL', () => {
     'configures and activates %s with three advancing teams or winners and an explicit four-plus/two-minus allowance',
     async (kind) => {
       const record = await prepared();
-      for (let i = 4; i < 8; i++)
+      for (let i = 4; i < 8; i++) {
         await item(
           record.id,
           (await team(record.eventId, `Team ${i + 1}`)).id,
           i,
         );
+      }
       expect(
         (await request('PATCH', `/votings/${record.id}`, { kind })).statusCode,
       ).toBe(200);
@@ -313,7 +320,7 @@ describe('draft voting preparation against PostgreSQL', () => {
     'activates valid setup with %i jurors per group and %s permission, freezes configuration and supports retries',
     async (size, choice) => {
       const record = await prepared(size, choice);
-      if (choice === 'T')
+      if (choice === 'T') {
         expect(
           (
             await request('PATCH', `/votings/${record.id}`, {
@@ -321,6 +328,7 @@ describe('draft voting preparation against PostgreSQL', () => {
             })
           ).statusCode,
         ).toBe(200);
+      }
       const activated = await request(
         'POST',
         `/votings/${record.id}/activate`,
@@ -354,6 +362,8 @@ describe('draft voting preparation against PostgreSQL', () => {
           })
         ).statusCode,
       ).toBe(409);
+      // Decision 2026-11-11: new memberships remain allowed after activation;
+      // existing group assignments and setup stay frozen (asserted above).
       expect(
         (
           await request('POST', `/events/${record.eventId}/jurors`, {
@@ -361,7 +371,7 @@ describe('draft voting preparation against PostgreSQL', () => {
             juryGroupId: record.groups[0],
           })
         ).statusCode,
-      ).toBe(409);
+      ).toBe(201);
       expect(
         (await request('POST', `/votings/${record.id}/close`, {})).statusCode,
       ).toBe(200);
@@ -389,34 +399,40 @@ describe('draft voting preparation against PostgreSQL', () => {
     'rejects invalid activation (%s) without changing status or freezing setup',
     async (problem) => {
       const record = await prepared();
-      if (problem === 'configuration')
+      if (problem === 'configuration') {
         await pool.query('UPDATE votings SET max_plus_votes=NULL WHERE id=$1', [
           record.id,
         ]);
-      if (problem === 'groups')
+      }
+      if (problem === 'groups') {
         await request('PUT', `/votings/${record.id}/allowed-groups`, {
           juryGroupIds: [],
         });
-      if (problem === 'entries')
+      }
+      if (problem === 'entries') {
         await pool.query('DELETE FROM voting_items WHERE voting_id=$1', [
           record.id,
         ]);
-      if (problem === 'unlinked')
+      }
+      if (problem === 'unlinked') {
         await pool.query(
           'UPDATE voting_items SET team_id=NULL WHERE voting_id=$1',
           [record.id],
         );
-      if (problem === 'limits')
+      }
+      if (problem === 'limits') {
         await request('PUT', `/votings/${record.id}/configuration`, {
           ...limits,
           maxPlusVotes: 3,
         });
-      if (problem === 'places')
+      }
+      if (problem === 'places') {
         await request('PUT', `/votings/${record.id}/configuration`, {
           ...limits,
           selectedPlaces: 4,
           maxPlusVotes: 5,
         });
+      }
       const before = (await request('GET', `/votings/${record.id}`)).json();
       const result = await request(
         'POST',
@@ -620,8 +636,9 @@ describe('draft voting preparation against PostgreSQL', () => {
     for (const path of [
       `/events/${randomUUID()}/votings`,
       `/votings/${randomUUID()}`,
-    ])
+    ]) {
       expect((await request('GET', path)).statusCode).toBe(404);
+    }
     expect(
       (await request('POST', `/events/${randomUUID()}/votings`, input))
         .statusCode,
@@ -801,11 +818,12 @@ describe('draft voting preparation against PostgreSQL', () => {
       },
     ];
     for (const route of routes) {
-      for (const session of invalid)
+      for (const session of invalid) {
         expect(
           (await request(route.method, route.path, route.payload, session))
             .statusCode,
         ).toBe(401);
+      }
       expect(
         (
           await request(
@@ -1043,7 +1061,7 @@ describe('draft voting preparation against PostgreSQL', () => {
       { name: 'Corrected team', description: 'Corrected description' },
     );
     expect(correction.statusCode).toBe(200);
-    for (const votingId of [a.id, b.id])
+    for (const votingId of [a.id, b.id]) {
       expect(
         (await request('GET', `/votings/${votingId}/items`)).json()[0],
       ).toMatchObject({
@@ -1051,6 +1069,7 @@ describe('draft voting preparation against PostgreSQL', () => {
         description: 'Corrected description',
         teamId: shared.id,
       });
+    }
     expect(
       (
         await pool.query(
@@ -1137,10 +1156,11 @@ describe('draft voting preparation against PostgreSQL', () => {
       { teamId: ta.id, displayOrder: 1.5 },
       { teamId: ta.id, displayOrder: 0, eventId: b.eventId },
       { name: 'Independent item', displayOrder: 0 },
-    ])
+    ]) {
       expect(
         (await request('POST', `/votings/${a.id}/items`, payload)).statusCode,
       ).toBe(400);
+    }
     expect(
       (await request('PATCH', `/events/${a.eventId}/teams/${ta.id}`, {}))
         .statusCode,
@@ -1221,11 +1241,12 @@ describe('draft voting preparation against PostgreSQL', () => {
           'INSERT INTO ballots (event_id,voting_id,juror_id) VALUES ($1,$2,$3)',
           [record.eventId, record.id, j],
         );
-      } else
+      } else {
         await pool.query('UPDATE votings SET status=$2 WHERE id=$1', [
           record.id,
           status,
         ]);
+      }
       expect(
         (
           await request('PATCH', `/votings/${record.id}/items/${entry.id}`, {

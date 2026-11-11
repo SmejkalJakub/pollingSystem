@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Eventy</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button,input,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+  <header style="background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+      <span style="background: #fff; color: #182640; font-weight: 700; font-size: 13px; padding: 4px 7px; border-radius: 6px">D21</span>
+      <span style="font-weight: 600">Eventy</span>
+      <button style="margin-left: auto; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: #fff; font-size: 14px">Odhlásit se</button>
+    </div>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 32px 24px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 24px">
+      <div>
+        <h1 style="margin: 0; font-size: 30px; font-weight: 700">Vaše eventy</h1>
+        <p style="margin: 4px 0 0; color: #52627a">Otevřete event a pokračujte tam, kde jste skončili.</p>
+      </div>
+      <button style="margin-left: auto; min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #2356c7; color: #fff; font-weight: 600">+ Nový event</button>
+    </div>
+
+    <section aria-label="Nový event" style="background: #fff; border: 1.5px solid #2356c7; border-radius: 16px; padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end">
+      <label style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Název eventu<input value="Ukázkový hackathon 2027" style="min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; padding: 0 12px; font-size: 15px"></label>
+      <label style="flex: 2 1 380px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Popis pro porotce <span style="font-weight: 400; color: #52627a">(nepovinný)</span><input placeholder="Zobrazí se porotcům nad kategoriemi" style="min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; padding: 0 12px; font-size: 15px"></label>
+      <div style="display: flex; gap: 8px">
+        <button style="min-height: 44px; padding: 0 14px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600">Zrušit</button>
+        <button style="min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #2356c7; color: #fff; font-weight: 600">Vytvořit a přidat týmy →</button>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+      <a href="#" style="display: flex; flex-direction: column; gap: 14px; background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 20px; color: #182640; text-decoration: none">
+        <div style="display: flex; gap: 8px; align-items: center"><span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #e3f3ea; color: #155a37">Hlasuje se</span><span style="font-size: 12px; color: #52627a">2 ze 3 kategorií otevřeno</span></div>
+        <div><h2 style="margin: 0; font-size: 19px">Ukázkový hackathon 2026</h2><p style="margin: 4px 0 0; font-size: 14px; color: #52627a">Finále víkendového hackathonu.</p></div>
+        <div><p style="margin: 0 0 6px; font-size: 13px; color: #52627a">Odevzdané lístky <strong style="color: #182640">12 / 22</strong></p><div style="height: 8px; border-radius: 4px; background: #e6edf8"><div style="width: 55%; height: 100%; border-radius: 4px; background: #2356c7"></div></div></div>
+        <p style="margin: 0; font-size: 13px; color: #52627a">14 porotců · 8 týmů</p>
+      </a>
+      <a href="#" style="display: flex; flex-direction: column; gap: 14px; background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 20px; color: #182640; text-decoration: none">
+        <div style="display: flex; gap: 8px; align-items: center"><span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #fdf1dc; color: #7a4d06">Příprava</span><span style="font-size: 12px; color: #52627a">chybí kategorie</span></div>
+        <div><h2 style="margin: 0; font-size: 19px">Jarní kolo</h2><p style="margin: 4px 0 0; font-size: 14px; color: #52627a">Bez popisu</p></div>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 13px">
+          <li><span style="color: #1f7a4d; font-weight: 700">✓</span> 10 porotců</li>
+          <li><span style="color: #1f7a4d; font-weight: 700">✓</span> 12 týmů</li>
+          <li><span style="color: #7a4d06; font-weight: 700">!</span> 0 kategorií</li>
+        </ul>
+      </a>
+      <a href="#" style="display: flex; flex-direction: column; gap: 14px; background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 20px; color: #182640; text-decoration: none">
+        <div style="display: flex; gap: 8px; align-items: center"><span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #e6edf8; color: #52627a">Uzavřeno</span><span style="font-size: 12px; color: #52627a">finální výsledky</span></div>
+        <div><h2 style="margin: 0; font-size: 19px">Testovací event</h2><p style="margin: 4px 0 0; font-size: 14px; color: #52627a">Ověření hlasování.</p></div>
+        <p style="margin: 0; font-size: 13px; color: #52627a">Všechny kategorie uzavřeny</p>
+        <span style="font-size: 14px; font-weight: 600; color: #2356c7">Výsledky →</span>
+      </a>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,17 +1,16 @@
+import { juryGroupLabel } from '@d21/contracts';
+import type { ReactNode } from 'react';
 import type {
   JurorTableRow,
   JurorTableIssue,
   JurorTableSnapshot,
 } from '@d21/contracts';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { controlClass } from './MutationForm';
 import { rowChanged, jurorFieldError } from './juror-table-utils';
 import { JurorControls } from './JurorControls';
+
 export function JurorRows({
   editingDisabled,
   onPanelChange,
-  query,
   rows,
   baseById,
   issues,
@@ -24,10 +23,10 @@ export function JurorRows({
   copyDisabled,
   reload,
   onExpired,
+  addRow,
 }: {
   editingDisabled: boolean;
   onPanelChange: (open: boolean) => void;
-  query: string;
   rows: JurorTableRow[];
   baseById: ReadonlyMap<string, JurorTableRow>;
   issues: JurorTableIssue[];
@@ -44,142 +43,148 @@ export function JurorRows({
   copyDisabled: boolean;
   reload: (focusFeedback?: boolean) => void;
   onExpired: () => void;
+  addRow: ReactNode;
 }) {
-  return rows.length === 0 ? (
-    <p className="mt-5 border border-dashed border-border p-6 text-muted-foreground">
-      Zatím žádní porotci. Přidejte řádek nebo vložte tabulku.
-    </p>
-  ) : (
-    <table className="team-table juror-table mt-5 w-full table-fixed text-left text-sm">
-      <caption className="sr-only">
-        Upravitelná jména a přiřazení porotců k Technické a Veřejné porotě
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col" className="w-28">
-            Řádek / stav
-          </th>
-          <th scope="col">Jméno porotce</th>
-          <th scope="col" className="sm:w-36">
-            Část poroty
-          </th>
-          <th scope="col">Odkaz / členství</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, index) => {
-          const juror = snapshot.jurors.find((value) => value.id === row.id);
-          return (
-            <tr
-              key={row.id}
-              hidden={
-                !row.displayName
-                  .toLocaleLowerCase('cs')
-                  .includes(query.toLocaleLowerCase('cs'))
-              }
-            >
-              <th scope="row" className="align-top font-normal">
-                <span className="font-medium">{index + 1}.</span>{' '}
-                {!juror
-                  ? 'Nový'
-                  : rowChanged(row, baseById.get(row.id))
-                    ? 'Změněný'
-                    : 'Uložený'}
-                {showIds && (
-                  <span className="mt-2 block break-all text-xs text-muted-foreground">
-                    ID: {row.id}
-                  </span>
-                )}
-                {!juror && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="mt-1 min-h-11"
-                    aria-label={`Odebrat nový řádek ${index + 1}`}
-                    disabled={editingDisabled}
-                    onClick={() => onRemove(row.id)}
-                  >
-                    Odebrat
-                  </Button>
-                )}
-              </th>
-              {(['displayName', 'groupCode'] as const).map((field) => {
-                const id = `juror-${row.id}-${field}`,
-                  invalid = issues.some(
-                    (issue) => issue.rowId === row.id && issue.field === field,
-                  );
-                const props = {
-                  id,
-                  value: row[field],
-                  'aria-invalid': invalid,
-                  'aria-describedby': invalid ? `${id}-error` : undefined,
-                  onChange: (
-                    event: React.ChangeEvent<
-                      HTMLInputElement | HTMLSelectElement
-                    >,
-                  ) => onChange(row.id, field, event.target.value),
-                };
-                return (
-                  <td key={field} className="align-top">
-                    <label
-                      htmlFor={id}
-                      className="mb-2 block font-medium sm:sr-only"
-                    >
-                      {field === 'displayName'
-                        ? 'Jméno porotce'
-                        : 'Část poroty'}
-                      , řádek {index + 1}
-                    </label>
-                    {field === 'displayName' ? (
-                      <Input
-                        {...props}
-                        disabled={editingDisabled}
-                        autoComplete="off"
-                      />
-                    ) : (
-                      <select
-                        {...props}
-                        disabled={locked || editingDisabled}
-                        className={controlClass}
-                      >
-                        <option value="">Vyberte</option>
-                        <option value="T">Technická</option>
-                        <option value="V">Veřejná</option>
-                      </select>
-                    )}
-                    {invalid && (
-                      <p
-                        id={`${id}-error`}
-                        className="mt-2 text-sm text-destructive"
-                      >
-                        {jurorFieldError(field)}
-                      </p>
-                    )}
-                  </td>
-                );
-              })}
-              <td className="align-top">
-                {juror ? (
-                  <JurorControls
-                    onPanelChange={onPanelChange}
-                    juror={juror}
-                    locked={snapshot.locked}
-                    disabled={disabled}
-                    copyDisabled={copyDisabled}
-                    reload={reload}
-                    onExpired={onExpired}
-                  />
-                ) : (
-                  <p className="text-muted-foreground">
-                    Odkaz se vytvoří automaticky při uložení. Pak jej můžete
-                    rovnou zkopírovat.
-                  </p>
-                )}
+  return (
+    <div
+      className="roster-scroll"
+      tabIndex={0}
+      role="region"
+      aria-label="Seznam porotců"
+    >
+      <table className="roster-table" data-kind="jurors">
+        <caption className="sr-only">Tabulka porotců</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Jméno porotce</th>
+            <th scope="col">Porota</th>
+            <th scope="col">Osobní odkaz</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={4} className="roster-empty">
+                Zatím žádní porotci. Napište jméno do řádku níže nebo vložte
+                tabulku.
               </td>
             </tr>
-          );
-        })}
-      </tbody>
-    </table>
+          )}
+          {rows.map((row, index) => {
+            const juror = snapshot.jurors.find((value) => value.id === row.id);
+            const rowIssues = issues.filter((issue) => issue.rowId === row.id);
+            return (
+              <tr
+                key={row.id}
+                data-new={!juror}
+                data-edited={
+                  Boolean(juror) && rowChanged(row, baseById.get(row.id))
+                }
+                data-invalid={rowIssues.length > 0}
+              >
+                <th scope="row">
+                  {juror ? (
+                    index + 1
+                  ) : (
+                    <span className="roster-new-badge">NOVÝ</span>
+                  )}
+                  <span className="sr-only">, řádek {index + 1}</span>
+                  {showIds && (
+                    <span className="mt-2 block break-all text-xs">
+                      ID: {row.id}
+                    </span>
+                  )}
+                </th>
+                {(['displayName', 'groupCode'] as const).map((field) => {
+                  const id = `juror-${row.id}-${field}`;
+                  const invalid = rowIssues.some(
+                    (issue) => issue.field === field,
+                  );
+                  const fixedGroup =
+                    field === 'groupCode' && locked && Boolean(juror);
+                  const fieldLabel =
+                    field === 'displayName' ? 'Jméno porotce' : 'Část poroty';
+                  const props = {
+                    id,
+                    value: row[field],
+                    'aria-label': `${fieldLabel}, řádek ${index + 1}`,
+                    'aria-invalid': invalid,
+                    'aria-describedby': invalid ? `${id}-error` : undefined,
+                    disabled: editingDisabled,
+                    onChange: (
+                      event: React.ChangeEvent<
+                        HTMLInputElement | HTMLSelectElement
+                      >,
+                    ) => onChange(row.id, field, event.target.value),
+                  };
+                  return (
+                    <td key={field}>
+                      {field === 'displayName' && (
+                        <input
+                          {...props}
+                          className="roster-inline"
+                          autoComplete="off"
+                        />
+                      )}
+                      {fixedGroup && (
+                        <span
+                          id={id}
+                          tabIndex={invalid ? -1 : undefined}
+                          className="roster-group-pill"
+                        >
+                          {juryGroupLabel(row.groupCode)}
+                        </span>
+                      )}
+                      {field === 'groupCode' && !fixedGroup && (
+                        <select {...props}>
+                          <option value="">Vyberte</option>
+                          <option value="T">Technická</option>
+                          <option value="V">Veřejná</option>
+                        </select>
+                      )}
+                      {invalid && (
+                        <p id={`${id}-error`} className="roster-field-error">
+                          {jurorFieldError(field)}
+                        </p>
+                      )}
+                    </td>
+                  );
+                })}
+                <td>
+                  {juror && (
+                    <JurorControls
+                      onPanelChange={onPanelChange}
+                      juror={juror}
+                      locked={snapshot.locked}
+                      disabled={disabled}
+                      copyDisabled={copyDisabled}
+                      reload={reload}
+                      onExpired={onExpired}
+                    />
+                  )}
+                  {!juror && (
+                    <div className="roster-pending-link">
+                      <span>Odkaz vznikne po uložení</span>
+                      <button
+                        type="button"
+                        className="roster-remove-new ml-auto"
+                        aria-label={`Odebrat nový řádek ${index + 1}`}
+                        title="Odebrat nový řádek"
+                        disabled={editingDisabled}
+                        onClick={() => onRemove(row.id)}
+                      >
+                        <span aria-hidden="true">✕</span>
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {addRow}
+        </tbody>
+      </table>
+    </div>
   );
 }

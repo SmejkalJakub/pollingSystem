@@ -22,8 +22,9 @@ const vault = createLinkVault(
 );
 const name = `d21_test_${randomUUID().replaceAll('-', '')}`;
 const baseUrl = process.env.TEST_DATABASE_URL ?? readEnvironment().DATABASE_URL;
-if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseUrl).hostname))
+if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(baseUrl).hostname)) {
   throw new Error('Team tests require local PostgreSQL.');
+}
 const admin = new pg.Pool({
   connectionString: baseUrl,
   max: 2,
@@ -128,7 +129,9 @@ describe('atomic juror table against local PostgreSQL', () => {
     await app?.close();
     await pool.end();
     try {
-      if (created) await dropTestDatabase(admin, name);
+      if (created) {
+        await dropTestDatabase(admin, name);
+      }
     } finally {
       await admin.end();
     }
@@ -212,11 +215,12 @@ describe('atomic juror table against local PostgreSQL', () => {
     await save(id, (await table(id)).version, []);
     const group = (await table(id)).groups[0]!;
     const members = [row('Never issued'), row('Legacy'), row('Revoked')];
-    for (const member of members)
+    for (const member of members) {
       await pool.query(
         'INSERT INTO event_jurors(id,event_id,jury_group_id,display_name) VALUES ($1,$2,$3,$4)',
         [member.id, id, group.id, member.displayName],
       );
+    }
     const legacy = newSecret(),
       revoked = newSecret();
     await pool.query(
@@ -324,7 +328,9 @@ describe('atomic juror table against local PostgreSQL', () => {
     const failing = {
       ...vault,
       encrypt: (...args: Parameters<typeof vault.encrypt>) => {
-        if (++encryptions === 2) return createLinkVault().encrypt(...args);
+        if (++encryptions === 2) {
+          return createLinkVault().encrypt(...args);
+        }
         return vault.encrypt(...args);
       },
     };
@@ -372,8 +378,9 @@ describe('atomic juror table against local PostgreSQL', () => {
           )
         ).rowCount
       ) {
-        if (Date.now() > until)
+        if (Date.now() > until) {
           throw new Error('Expected actual event lock wait.');
+        }
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
       await lock.query(
@@ -597,23 +604,29 @@ describe('atomic juror table against local PostgreSQL', () => {
     );
     expect(await rowsIn(id)).toEqual(frozen);
     const locked = await table(id);
+    const added = row('Added after activation');
+    const additions = await save(id, locked.version, [...desired, added]);
+    expect(additions.json().status).toBe('saved');
+    const currentLocked = await table(id);
     expect(
-      (await save(id, locked.version, [...desired, row()])).json().error.code,
-    ).toBe('ROSTER_LOCKED');
+      currentLocked.jurors.find((juror) => juror.id === added.id)?.access,
+    ).toBe('stored');
     expect(
       (
-        await save(id, locked.version, [
+        await save(id, currentLocked.version, [
           {
             ...desired[0],
             groupCode: desired[0]!.groupCode === 'T' ? 'V' : 'T',
           },
+          added,
         ])
-      ).statusCode,
-    ).toBe(409);
+      ).json().error.code,
+    ).toBe('ROSTER_LOCKED');
     expect(
       (
-        await save(id, locked.version, [
+        await save(id, currentLocked.version, [
           { ...desired[0], displayName: 'Allowed correction' },
+          added,
         ])
       ).json().status,
     ).toBe('saved');
@@ -779,8 +792,9 @@ describe('atomic juror table against local PostgreSQL', () => {
       { baseVersion: snapshot.version, rows: [{ ...a, eventId: id }] },
       { baseVersion: snapshot.version, rows: [a], delete: true },
       { baseVersion: 'bad', rows: [a] },
-    ])
+    ]) {
       expect((await request('PUT', path, body)).statusCode).toBe(400);
+    }
     expect(await table(id)).toEqual(snapshot);
     const response = await request('GET', path);
     expect(response.headers['cache-control']).toContain('no-store');
@@ -865,31 +879,35 @@ describe('atomic juror table against local PostgreSQL', () => {
           const blocked = await pool.query(
             "SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND pid<>pg_backend_pid()",
           );
-          if (blocked.rowCount) break;
-          if (Date.now() > until)
+          if (blocked.rowCount) {
+            break;
+          }
+          if (Date.now() > until) {
             throw new Error('Expected actual event lock wait.');
+          }
           await new Promise((resolve) => setTimeout(resolve, 20));
         }
-        if (mode === 'change')
+        if (mode === 'change') {
           await lock.query(
             "INSERT INTO jury_groups(event_id,code,name) VALUES ($1,'V','Other writer')",
             [id],
           );
-        else if (mode === 'freeze')
+        } else if (mode === 'freeze') {
           await lock.query(
             "INSERT INTO votings(event_id,name,kind,status) VALUES ($1,'Started during wait','final','active')",
             [id],
           );
-        else if (mode === 'revoke')
+        } else if (mode === 'revoke') {
           await lock.query(
             'UPDATE sessions SET revoked_at=statement_timestamp() WHERE token_hash=$1',
             [secretHash(token)],
           );
-        else
+        } else {
           await lock.query(
             "UPDATE sessions SET created_at=now()-interval '2 hours',expires_at=statement_timestamp()-interval '1 second' WHERE token_hash=$1",
             [secretHash(token)],
           );
+        }
         await lock.query('COMMIT');
         expect((await pending).statusCode).toBe(
           mode === 'change' || mode === 'freeze' ? 409 : 401,

@@ -4,3 +4,6 @@ coverage
 package-lock.json
 apps/api/src/db/migrations
 docs/wiki/master-implementation-prompt.md
+docs/design/ux-redesign/artboards
+.claude/settings.local.json
+apps/web/.impeccable

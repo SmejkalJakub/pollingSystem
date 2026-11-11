@@ -1,5 +1,39 @@
 # Implementation plan
 
+## UX/UI redesign R7 — implemented, browser acceptance pending, 2026-11-11
+
+R7 implements Progress and Results against the existing protected dashboard, roster, results and ballot reads. The event results overview stays aggregate-only. Category results detail adds a ranking-ordered juror matrix with category-wide counted totals. D6 uses the existing category-detail unlock confirmation. The unit test verifies reconciliation and the updated Playwright workflow covers filters, refresh, D6 navigation, overview privacy, XLSX and existing voting behavior.
+
+R7 is the last redesign implementation phase. Browser, axe and visual acceptance for R1–R7 and the outstanding database checks remain in the [handoff](next-session.md).
+
+## UX/UI redesign R6 — implemented, browser acceptance pending, 2026-11-11
+
+The Categories overview shows readiness, participation and existing lifecycle operations. The category editor includes segmented controls, team inclusion and ordering, a readiness checklist, juror preview and sticky save actions. R7 covers Progress and Results in a new user-started session. [Validation and handoff](next-session.md).
+
+## UX/UI redesign R5 — implemented, browser acceptance pending, 2026-11-11
+
+R5 covers the Jurors and Teams editors. Their existing save and comparison flows support the new layout, inline fields, paste controls and row actions. The protected Teams table read now supplies per-team category counts. R6 covers Categories overview and editor in a new session. [Validation and handoff](next-session.md).
+
+## UX/UI redesign R4 — implemented, acceptance validation pending, 2026-11-11
+
+R4 covers administration login, event cards and creation, the two-row event header and the dedicated settings view. The guarded event list supplies read-only status, readiness, and participation. R5 covers Jurors and Teams tables and requires a new user-started session. [Validation and handoff](next-session.md).
+
+## UX/UI redesign R3 — implemented, acceptance validation pending, 2026-11-11
+
+The juror entry and public landing share the navy entry layout. A native sheet compares local choices with the latest saved ballot. Closed or unavailable categories show the last saved draft when present, refresh and an eligible next category. Events with no authorized categories show the refreshable empty state. [Validation and resumption](next-session.md).
+
+## UX/UI redesign R2 — Souhrn implemented, 2026-11-11
+
+Both summary URLs display the same screen. Cards expose saved choices and eligibility, a sheet confirms selected categories, and outcomes stay on Souhrn. The existing hook controls confirmed revisions, retries and independent category outcomes. R2 introduces no API or dependency changes. [Validation and handoff](next-session.md).
+
+## UX/UI redesign R1 — implemented, acceptance validation pending, 2026-11-11
+
+R1 covers the tokens and Inter, juror header and category navigation, responsive category editor, explicit draft controls, unsaved navigation prompt, submit dialog and auto-advance. The category, review and confirmation URLs and ballot operations carry forward. The category rail uses the existing authenticated review endpoint for saved positive counts. Existing review screens serve the Souhrn tab until R2. [Validation and resumption](next-session.md).
+
+## Organizer tables and juror voting — 2026-11-11
+
+One usability phase for the reported login, roster and voting issues. Make roster add actions reachable at the bottom, allow new jurors after activation, keep existing assignments fixed, and simplify voting and review. Verify that Save and continue waits for a confirmed draft save, that the client guards D21 choices, and that explicit submission and ranking still work.
+
 ## Actionable category readiness — 2026-11-11
 
 Replace the combined activation warning with a live checklist showing the team count, minimum, shortfall and available actions. Link directly to the affected controls. Verify the category can still be saved incomplete, and verify a complete save and activation across the three browser projects.

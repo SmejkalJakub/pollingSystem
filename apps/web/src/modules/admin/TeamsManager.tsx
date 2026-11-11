@@ -1,4 +1,4 @@
-import { teamTableSnapshotSchema } from '@d21/contracts';
+import { teamTableReadSchema } from '@d21/contracts';
 import { useResource } from './useResource';
 import { ResourceState } from './ResourceState';
 import { TeamTable } from './TeamTable';
@@ -12,18 +12,18 @@ export function TeamsManager({
 }) {
   const resource = useResource(
     `/events/${eventId}/teams/table`,
-    teamTableSnapshotSchema,
+    teamTableReadSchema,
     onExpired,
   );
+  const heading = (
+    <div className="roster-page-head">
+      <h1 id="teams-heading">Týmy</h1>
+      <p>Sdílené pro všechny kategorie eventu.</p>
+    </div>
+  );
   return (
-    <section className="mt-6" aria-labelledby="teams-heading">
-      <h2 id="teams-heading" className="section-title">
-        Soutěžní týmy
-      </h2>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Upravte týmy a uložte tabulku. Názvy a popisy se aktualizují ve všech
-        jejich kategoriích.
-      </p>
+    <section aria-labelledby="teams-heading">
+      {!resource.data && heading}
       <ResourceState
         resource={resource}
         errorTitle="Týmy se nepodařilo načíst"
@@ -32,6 +32,7 @@ export function TeamsManager({
         <TeamTable
           initial={resource.data}
           eventId={eventId}
+          heading={heading}
           onExpired={onExpired}
         />
       )}

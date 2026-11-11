@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Přihlášení do administrace</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 800px; background: #182640; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box">
+  <main style="width: 100%; max-width: 400px; background: #fff; border-radius: 20px; padding: 32px; box-sizing: border-box">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px">
+      <span style="background: #182640; color: #fff; font-weight: 700; font-size: 13px; padding: 4px 7px; border-radius: 6px">D21</span>
+      <span style="font-weight: 600">Administrace</span>
+    </div>
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700">Přihlášení</h1>
+    <p style="margin: 6px 0 22px; color: #52627a; font-size: 14px">Pro organizátory a garanty. Porotci se přihlašují svým osobním odkazem.</p>
+    <form style="display: flex; flex-direction: column; gap: 14px">
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Heslo
+        <input type="password" value="••••••••" aria-invalid="true" aria-describedby="err" style="min-height: 48px; border: 2px solid #b32f3e; border-radius: 10px; padding: 0 12px; font-size: 16px">
+      </label>
+      <p id="err" role="alert" style="margin: -6px 0 0; font-size: 13px; color: #8c1f2c">Heslo není správné. Zkuste to znovu.</p>
+      <button type="submit" style="min-height: 48px; border: 0; border-radius: 12px; background: #2356c7; color: #fff; font-size: 16px; font-weight: 600">Přihlásit se</button>
+    </form>
+    <p style="margin: 18px 0 0; font-size: 13px; color: #52627a">Přihlášení platí 12 hodin.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

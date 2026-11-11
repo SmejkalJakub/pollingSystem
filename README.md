@@ -1,5 +1,15 @@
 # D21 Hackathon Voting System
 
+[Admin redesign R7](docs/wiki/operational-dashboard.md#admin-redesign-r7--2026-11-11) adds a juror-by-category Progress matrix, category navigation and ranking on [Results](docs/wiki/results-ranking.md#admin-redesign-r7--2026-11-11), and a counted-vote matrix on the protected category detail. [Validation and resumption](docs/implementation/next-session.md).
+
+[Admin redesign R6](docs/wiki/voting-configuration.md#admin-redesign-r6--2026-11-11) adds category cards with readiness and participation, plus a category editor with a team checklist, ordering controls, a juror preview and a sticky save bar. [Validation and resumption](docs/implementation/next-session.md).
+
+[Admin redesign R5](docs/wiki/organizer-usability.md#admin-redesign-r5--2026-11-11) updates the Jurors and Teams editors with inline fields, spreadsheet previews, row actions, category counts and sticky save bars. [Validation and resumption](docs/implementation/next-session.md).
+
+[Admin redesign R4](docs/wiki/organizer-usability.md#admin-redesign-r4--2026-11-11) adds the event switcher, preparation counts, a dedicated event settings view and a redesigned login and event list. [Validation and resumption](docs/implementation/next-session.md).
+
+[Juror redesign R2](docs/wiki/multi-category-review.md#redesign-r2--2026-11-11) brings saved choices, category selection, confirmation and outcomes together in **Souhrn**. [Validation and resumption](docs/implementation/next-session.md).
+
 [Streamlined voting workflow](docs/wiki/streamlined-workflow.md): faster local organizer navigation, direct category save and readiness, predictable roster imports, reachable juror actions, and results with the ranking up front.
 
 Organizer usability update **DONE locally (2026-11-10)**: direct event tabs, reachable save bars, saved-link copying/export during edits, one-step table imports, reversible local discard, contextual voting controls and a DashHack-inspired blue/navy theme. [Workflow, boundaries and validation](docs/wiki/organizer-usability.md). Voting rules and post-activation locks retain their current behavior; no publication has occurred.

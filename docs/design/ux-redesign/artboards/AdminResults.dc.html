@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Výsledky</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2356c7}a:hover{color:#1a4299}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 2150px; background: #f2f5fb; color: #182640; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+  <header style="background: #182640; color: #fff">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+      <span style="background: #fff; color: #182640; font-weight: 700; font-size: 13px; padding: 4px 7px; border-radius: 6px">D21</span>
+      <a href="#" style="color: #c9d4ea; text-decoration: none; font-size: 14px">Eventy</a>
+      <span style="color: #6c7da0" aria-hidden="true">/</span>
+      <button style="min-height: 40px; padding: 0 12px; border: 1px solid #4a5b7c; border-radius: 10px; background: transparent; color: #fff; font-weight: 600; font-size: 14px">Ukázkový hackathon 2026 <span aria-hidden="true">▾</span></button>
+      <button style="margin-left: auto; min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: #fff; font-size: 14px">Odhlásit se</button>
+    </div>
+    <nav aria-label="Event" style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; gap: 4px; overflow-x: auto">
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Porotci 14</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Týmy 8</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Kategorie 3</a>
+      <span style="width: 1px; background: #33456b; margin: 10px 8px" aria-hidden="true"></span>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Průběh hlasování</a>
+      <a href="#" aria-current="page" style="padding: 12px 14px; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; border-bottom: 3px solid #9bbbff; white-space: nowrap">Výsledky</a>
+      <a href="#" style="padding: 12px 14px; color: #c9d4ea; text-decoration: none; font-size: 14px; white-space: nowrap">Nastavení eventu</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 28px 24px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700">Výsledky</h1>
+      <p style="margin: 0; color: #52627a; font-size: 14px">Počítají se jen odevzdané lístky · načteno 15:02</p>
+      <div style="margin-left: auto; display: flex; gap: 8px">
+        <button style="min-height: 44px; padding: 0 14px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Obnovit</button>
+        <button style="min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #2356c7; color: #fff; font-weight: 600; font-size: 14px">Stáhnout XLSX</button>
+      </div>
+    </div>
+
+    <div role="tablist" aria-label="Kategorie" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px">
+      <button role="tab" aria-selected="true" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #182640; background: #182640; color: #fff; font-weight: 600; font-size: 14px">Výběr do finále <span style="font-weight: 500; color: #c9d4ea">· průběžný</span></button>
+      <button role="tab" aria-selected="false" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Nejlepší technické řešení <span style="font-weight: 500; color: #52627a">· průběžný</span></button>
+      <button role="tab" aria-selected="false" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Cena publika <span style="font-weight: 500; color: #52627a">· finální</span></button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+      <section style="flex: 999 1 640px; min-width: 0; background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; overflow: hidden">
+        <div style="padding: 20px 22px; border-bottom: 1px solid #e3e9f3">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+            <h2 style="margin: 0; font-size: 22px">Výběr do finále</h2>
+            <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #fdf1dc; color: #7a4d06">PRŮBĚŽNÝ VÝSLEDEK</span>
+          </div>
+          <p style="margin: 4px 0 0; font-size: 14px; color: #52627a">Výběrové kolo · Technická + Veřejná · 4 postupová místa · odevzdáno 9 / 14</p>
+          <ul style="margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px">
+            <li style="padding: 6px 10px; border-radius: 8px; background: #f2f5fb">Hlasování ještě není uzavřené.</li>
+            <li style="padding: 6px 10px; border-radius: 8px; background: #f2f5fb">5 porotců dosud neodevzdalo.</li>
+            <li style="padding: 6px 10px; border-radius: 8px; background: #fdf1dc; color: #7a4d06; font-weight: 600">Shoda na hranici 4. místa</li>
+          </ul>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 15px">
+          <caption style="position: absolute; width: 1px; height: 1px; overflow: hidden">Pořadí týmů. Skóre = kladné − záporné hlasy. Shodné skóre sdílí pořadí.</caption>
+          <thead>
+            <tr style="text-align: left; color: #52627a; font-size: 13px; background: #f7f9fd">
+              <th scope="col" style="padding: 10px 22px; width: 70px; font-weight: 600">Pořadí</th>
+              <th scope="col" style="padding: 10px 8px; font-weight: 600">Tým</th>
+              <th scope="col" style="padding: 10px 8px; width: 70px; text-align: right; font-weight: 600">+</th>
+              <th scope="col" style="padding: 10px 8px; width: 70px; text-align: right; font-weight: 600">−</th>
+              <th scope="col" aria-sort="descending" style="padding: 10px 22px 10px 8px; width: 90px; text-align: right; font-weight: 600">Skóre</th>
+            </tr>
+          </thead>
+          <tbody style="font-variant-numeric: tabular-nums">
+            <tr style="border-top: 1px solid #e3e9f3; background: #f3f7ff"><td style="padding: 12px 22px; font-weight: 700">1.</td><th scope="row" style="padding: 12px 8px; text-align: left"><span style="font-weight: 600">Atlas</span> <span style="font-size: 12px; font-weight: 600; color: #2356c7">Průběžně postupuje</span></th><td style="padding: 12px 8px; text-align: right">7</td><td style="padding: 12px 8px; text-align: right">0</td><td style="padding: 12px 22px 12px 8px; text-align: right; font-weight: 700; font-size: 17px">7</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3; background: #f3f7ff"><td style="padding: 12px 22px; font-weight: 700">2. <span style="font-size: 11px; font-weight: 600; color: #52627a">shoda</span></td><th scope="row" style="padding: 12px 8px; text-align: left"><span style="font-weight: 600">Borealis</span> <span style="font-size: 12px; font-weight: 600; color: #2356c7">Průběžně postupuje</span></th><td style="padding: 12px 8px; text-align: right">5</td><td style="padding: 12px 8px; text-align: right">1</td><td style="padding: 12px 22px 12px 8px; text-align: right; font-weight: 700; font-size: 17px">4</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3; background: #f3f7ff"><td style="padding: 12px 22px; font-weight: 700">2. <span style="font-size: 11px; font-weight: 600; color: #52627a">shoda</span></td><th scope="row" style="padding: 12px 8px; text-align: left"><span style="font-weight: 600">Delta Labs</span> <span style="font-size: 12px; font-weight: 600; color: #2356c7">Průběžně postupuje</span></th><td style="padding: 12px 8px; text-align: right">4</td><td style="padding: 12px 8px; text-align: right">0</td><td style="padding: 12px 22px 12px 8px; text-align: right; font-weight: 700; font-size: 17px">4</td></tr>
+            <tr style="border-top: 2px dashed #e0a43a; background: #fdf8ec"><td style="padding: 12px 22px; font-weight: 700">4. <span style="font-size: 11px; font-weight: 600; color: #7a4d06">shoda</span></td><th scope="row" style="padding: 12px 8px; text-align: left"><span style="font-weight: 600">Echo</span> <span style="font-size: 12px; font-weight: 600; color: #7a4d06">Nerozhodnutá shoda</span></th><td style="padding: 12px 8px; text-align: right">3</td><td style="padding: 12px 8px; text-align: right">0</td><td style="padding: 12px 22px 12px 8px; text-align: right; font-weight: 700; font-size: 17px">3</td></tr>
+            <tr style="border-top: 1px solid #f0e2c4; background: #fdf8ec"><td style="padding: 12px 22px; font-weight: 700">4. <span style="font-size: 11px; font-weight: 600; color: #7a4d06">shoda</span></td><th scope="row" style="padding: 12px 8px; text-align: left"><span style="font-weight: 600">Helix</span> <span style="font-size: 12px; font-weight: 600; color: #7a4d06">Nerozhodnutá shoda</span></th><td style="padding: 12px 8px; text-align: right">3</td><td style="padding: 12px 8px; text-align: right">0</td><td style="padding: 12px 22px 12px 8px; text-align: right; font-weight: 700; font-size: 17px">3</td></tr>
+            <tr style="border-top: 2px dashed #e0a43a"><td style="padding: 12px 22px; color: #52627a">6.</td><th scope="row" style="padding: 12px 8px; text-align: left; font-weight: 500">Cirrus <span style="font-size: 12px; color: #52627a">Mimo výběr</span></th><td style="padding: 12px 8px; text-align: right">2</td><td style="padding: 12px 8px; text-align: right">0</td><td style="padding: 12px 22px 12px 8px; text-align: right">2</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 12px 22px; color: #52627a">7.</td><th scope="row" style="padding: 12px 8px; text-align: left; font-weight: 500">Fjord <span style="font-size: 12px; color: #52627a">Mimo výběr</span></th><td style="padding: 12px 8px; text-align: right">1</td><td style="padding: 12px 8px; text-align: right">0</td><td style="padding: 12px 22px 12px 8px; text-align: right">1</td></tr>
+            <tr style="border-top: 1px solid #e3e9f3"><td style="padding: 12px 22px; color: #52627a">8.</td><th scope="row" style="padding: 12px 8px; text-align: left; font-weight: 500">Gamma <span style="font-size: 12px; color: #52627a">Mimo výběr</span></th><td style="padding: 12px 8px; text-align: right">2</td><td style="padding: 12px 8px; text-align: right">2</td><td style="padding: 12px 22px 12px 8px; text-align: right">0</td></tr>
+          </tbody>
+        </table>
+        <p style="margin: 0; padding: 14px 22px; font-size: 13px; color: #7a4d06; background: #fdf8ec; border-top: 1px solid #f0e2c4"><strong>Hranice výběru je nerozhodnutá.</strong> Echo a Helix sdílí 4. místo. Rozhodnutí je na organizátorovi mimo aplikaci; zobrazené pořadí shodu nerozhoduje.</p>
+
+        <a href="#juror-votes" style="display: flex; min-height: 52px; align-items: center; padding: 0 22px; border-top: 1px solid #e3e9f3; font-weight: 600; text-decoration: none">Hlasy porotců ↓</a>
+      </section>
+
+      <aside style="flex: 1 1 280px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+        <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 18px 20px">
+          <h2 style="margin: 0 0 10px; font-size: 16px">Dokončit kategorii</h2>
+          <p style="margin: 0 0 6px; font-size: 13px; color: #52627a">Odevzdáno 9 / 14</p>
+          <div style="height: 8px; border-radius: 4px; background: #e6edf8; margin-bottom: 12px"><div style="width: 64%; height: 100%; border-radius: 4px; background: #2356c7"></div></div>
+          <a href="#" style="display: flex; min-height: 44px; align-items: center; justify-content: center; border: 1px solid #7b8ca8; border-radius: 10px; color: #182640; text-decoration: none; font-weight: 600; font-size: 14px; margin-bottom: 8px">Kdo ještě neodevzdal →</a>
+          <button style="width: 100%; min-height: 44px; border: 1px solid #7b8ca8; border-radius: 10px; background: #fff; color: #182640; font-weight: 600; font-size: 14px">Uzavřít hlasování…</button>
+          <p style="margin: 10px 0 0; font-size: 12px; color: #52627a">Po uzavření a odevzdání všech lístků se výsledek změní na finální.</p>
+        </section>
+        <section style="background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; padding: 18px 20px">
+          <h2 style="margin: 0 0 8px; font-size: 16px">Jak se počítá</h2>
+          <p style="margin: 0; font-size: 13px; color: #52627a">Skóre = kladné − záporné hlasy. Shodné skóre sdílí pořadí (1, 2, 2, 4).</p>
+        </section>
+      </aside>
+    </div>
+
+    <section id="juror-votes" aria-labelledby="jv-title" style="margin-top: 24px; background: #fff; border: 1px solid #cbd5e5; border-radius: 16px; overflow: hidden">
+      <div style="padding: 18px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-bottom: 1px solid #e3e9f3">
+        <div style="flex: 1 1 360px">
+          <h2 id="jv-title" style="margin: 0; font-size: 20px">Hlasy porotců · Výběr do finále</h2>
+          <p style="margin: 2px 0 0; font-size: 13px; color: #52627a">Řádky jsou porotci, sloupce týmy v pořadí výsledků. Do výsledků se počítají jen odevzdané lístky.</p>
+        </div>
+        <div role="group" aria-label="Zobrazit" style="display: flex; gap: 6px">
+          <button aria-pressed="true" style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #182640; background: #182640; color: #fff; font-weight: 600; font-size: 13px">Všichni (14)</button>
+          <button aria-pressed="false" style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Jen započtení (9)</button>
+          <button aria-pressed="false" style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Technická</button>
+          <button aria-pressed="false" style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #cbd5e5; background: #fff; color: #182640; font-weight: 600; font-size: 13px">Veřejná</button>
+        </div>
+        <ul aria-label="Legenda" style="flex-basis: 100%; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #52627a">
+          <li style="display: flex; align-items: center; gap: 6px"><span style="width: 26px; height: 26px; border-radius: 7px; background: #2356c7; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700">✓</span>kladný hlas</li>
+          <li style="display: flex; align-items: center; gap: 6px"><span style="width: 26px; height: 26px; border-radius: 7px; background: #b32f3e; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700">✕</span>záporný hlas</li>
+          <li style="display: flex; align-items: center; gap: 6px"><span style="width: 26px; height: 26px; border-radius: 7px; border: 1.5px dashed #2356c7; color: #2356c7; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; box-sizing: border-box">✓</span>uložený návrh — nezapočteno</li>
+        </ul>
+      </div>
+
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 980px">
+          <caption style="position: absolute; width: 1px; height: 1px; overflow: hidden">Hlasy jednotlivých porotců podle týmů</caption>
+          <thead>
+            <tr style="background: #f7f9fd; color: #52627a; font-size: 13px">
+              <th scope="col" style="position: sticky; left: 0; background: #f7f9fd; text-align: left; padding: 10px 22px; min-width: 210px; font-weight: 600">Porotce</th>
+              <sc-for list="{{ teams }}" as="t" hint-placeholder-count="8">
+                <th scope="col" style="padding: 10px 4px; width: 72px; text-align: center; font-weight: 600; color: #182640"><span style="display: block; font-size: 11px; color: #52627a; font-weight: 500">{{ t.rank }}.</span>{{ t.name }}</th>
+              </sc-for>
+              <th scope="col" style="padding: 10px 8px; width: 70px; text-align: center; font-weight: 600">+ / −</th>
+              <th scope="col" style="padding: 10px 22px 10px 8px; width: 190px; text-align: left; font-weight: 600">Stav lístku</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+              <tr style="{{ r.rowStyle }}">
+                <th scope="row" style="{{ r.nameStyle }}"><span style="display: block; font-weight: 600">{{ r.name }}</span><span style="font-size: 12px; font-weight: 500; color: #52627a">{{ r.group }}</span></th>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="8">
+                  <td style="padding: 8px 4px; text-align: center"><span role="img" aria-label="{{ c.label }}" style="{{ c.style }}">{{ c.glyph }}</span></td>
+                </sc-for>
+                <td style="padding: 8px; text-align: center; font-variant-numeric: tabular-nums; color: #52627a">{{ r.counts }}</td>
+                <td style="padding: 8px 22px 8px 8px"><span style="{{ r.statusStyle }}">{{ r.status }}</span><span style="display: block; font-size: 12px; color: #52627a">{{ r.note }}</span></td>
+              </tr>
+            </sc-for>
+          </tbody>
+          <tfoot style="font-variant-numeric: tabular-nums">
+            <tr style="border-top: 2px solid #182640; background: #f7f9fd">
+              <th scope="row" style="position: sticky; left: 0; background: #f7f9fd; text-align: left; padding: 10px 22px; font-weight: 600">Započteno kladných</th>
+              <sc-for list="{{ teams }}" as="t" hint-placeholder-count="8"><td style="padding: 10px 4px; text-align: center; font-weight: 700; color: #2356c7">{{ t.plus }}</td></sc-for>
+              <td colspan="2"></td>
+            </tr>
+            <tr style="background: #f7f9fd">
+              <th scope="row" style="position: sticky; left: 0; background: #f7f9fd; text-align: left; padding: 10px 22px; font-weight: 600">Započteno záporných</th>
+              <sc-for list="{{ teams }}" as="t" hint-placeholder-count="8"><td style="padding: 10px 4px; text-align: center; font-weight: 700; color: #b32f3e">{{ t.minus }}</td></sc-for>
+              <td colspan="2"></td>
+            </tr>
+            <tr style="background: #eef3fb; border-top: 1px solid #cbd5e5">
+              <th scope="row" style="position: sticky; left: 0; background: #eef3fb; text-align: left; padding: 10px 22px; font-weight: 700">Skóre</th>
+              <sc-for list="{{ teams }}" as="t" hint-placeholder-count="8"><td style="padding: 10px 4px; text-align: center; font-weight: 700; font-size: 16px">{{ t.score }}</td></sc-for>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p style="margin: 0; padding: 12px 22px; font-size: 13px; color: #52627a; border-top: 1px solid #e3e9f3">Součty v patičce se shodují s tabulkou pořadí výše.</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2150}}'>
+var TEAMS = [
+  { id: 'A', name: 'Atlas', rank: 1 },
+  { id: 'B', name: 'Borealis', rank: 2 },
+  { id: 'D', name: 'Delta Labs', rank: 2 },
+  { id: 'E', name: 'Echo', rank: 4 },
+  { id: 'H', name: 'Helix', rank: 4 },
+  { id: 'C', name: 'Cirrus', rank: 6 },
+  { id: 'F', name: 'Fjord', rank: 7 },
+  { id: 'G', name: 'Gamma', rank: 8 }
+];
+var JURORS = [
+  { name: 'Jana Nováková', group: 'Technická', state: 'submitted', time: '14:40', v: { A: 1, B: 1, D: 1, E: 1, G: -1 } },
+  { name: 'Petr Svoboda', group: 'Technická', state: 'submitted', time: '14:31', v: { A: 1, B: 1, D: 1, H: 1, G: -1 } },
+  { name: 'Karel Beneš', group: 'Technická', state: 'submitted', time: '14:28', v: { A: 1, C: 1, E: 1, H: 1 } },
+  { name: 'Hana Pokorná', group: 'Technická', state: 'submitted', time: '14:22', v: { A: 1, B: 1, D: 1, G: 1 } },
+  { name: 'Jiří Procházka', group: 'Technická', state: 'submitted', time: '14:19', v: { A: 1, B: 1, F: 1, G: 1 } },
+  { name: 'Adam Zeman', group: 'Technická', state: 'submitted', time: '14:15', v: { A: 1, D: 1, E: 1, B: -1 } },
+  { name: 'Zuzana Kučerová', group: 'Veřejná', state: 'submitted', time: '14:12', v: { A: 1, C: 1, H: 1 } },
+  { name: 'Pavel Němec', group: 'Veřejná', state: 'submitted', time: '14:05', v: { B: 1 } },
+  { name: 'Tereza Marková', group: 'Veřejná', state: 'submitted', time: '13:58', v: {} },
+  { name: 'Lucie Veselá', group: 'Veřejná', state: 'draft', v: { A: 1, C: 1 } },
+  { name: 'Eva Dvořáková', group: 'Technická', state: 'invalid', v: { E: 1, F: -1 } },
+  { name: 'Tomáš Černý', group: 'Technická', state: 'none', v: {} },
+  { name: 'Martin Král', group: 'Veřejná', state: 'none', v: {} },
+  { name: 'Ondřej Marek', group: 'Veřejná', state: 'none', v: {} }
+];
+var BADGE = 'width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; box-sizing: border-box; ';
+function cell(val, counted, team) {
+  if (val === 1) {
+    return {
+      glyph: '✓',
+      label: (counted ? 'Kladný hlas: ' : 'Kladný, nezapočteno: ') + team,
+      style: BADGE + (counted ? 'background: #2356c7; color: #fff' : 'border: 1.5px dashed #2356c7; color: #2356c7')
+    };
+  }
+  if (val === -1) {
+    return {
+      glyph: '✕',
+      label: (counted ? 'Záporný hlas: ' : 'Záporný, nezapočteno: ') + team,
+      style: BADGE + (counted ? 'background: #b32f3e; color: #fff' : 'border: 1.5px dashed #b32f3e; color: #b32f3e')
+    };
+  }
+  return { glyph: '', label: 'Bez hlasu: ' + team, style: BADGE + 'background: transparent' };
+}
+class Component extends DCLogic {
+  renderVals() {
+    var rows = JURORS.map(function (j, i) {
+      var counted = j.state === 'submitted';
+      var plus = 0;
+      var minus = 0;
+      Object.keys(j.v).forEach(function (k) {
+        if (j.v[k] === 1) {
+          plus += 1;
+        } else {
+          minus += 1;
+        }
+      });
+      var status = 'Odevzdáno';
+      var note = 'v ' + j.time + ' · započteno';
+      var statusStyle = 'font-size: 13px; font-weight: 600; color: #155a37';
+      if (counted && plus + minus === 0) {
+        note = 'v ' + j.time + ' · prázdný lístek';
+      }
+      if (j.state === 'draft') {
+        status = 'Uložený návrh';
+        note = 'nezapočteno';
+        statusStyle = 'font-size: 13px; font-weight: 600; color: #2356c7';
+      } else if (j.state === 'invalid') {
+        status = 'Neplatný návrh';
+        note = 'nezapočteno · vyžaduje opravu';
+        statusStyle = 'font-size: 13px; font-weight: 600; color: #8c1f2c';
+      } else if (j.state === 'none') {
+        status = 'Bez návrhu';
+        note = 'zatím nic neuložil';
+        statusStyle = 'font-size: 13px; font-weight: 600; color: #52627a';
+      }
+      var bg = '#fff';
+      if (!counted) {
+        bg = '#fafbfd';
+      }
+      var border = 'border-top: 1px solid #e3e9f3';
+      if (j.state === 'draft' && JURORS[i - 1] && JURORS[i - 1].state === 'submitted') {
+        border = 'border-top: 2px solid #cbd5e5';
+      }
+      return {
+        name: j.name,
+        group: j.group,
+        rowStyle: border + '; background: ' + bg,
+        nameStyle: 'position: sticky; left: 0; background: ' + bg + '; text-align: left; padding: 8px 22px; font-weight: 600' + (counted ? '' : '; color: #52627a'),
+        cells: TEAMS.map(function (t) { return cell(j.v[t.id], counted, t.name); }),
+        counts: j.state === 'none' ? '—' : plus + ' / ' + minus,
+        status: status,
+        note: note,
+        statusStyle: statusStyle
+      };
+    });
+    var teams = TEAMS.map(function (t) {
+      var p = 0;
+      var m = 0;
+      JURORS.forEach(function (j) {
+        if (j.state !== 'submitted') {
+          return;
+        }
+        if (j.v[t.id] === 1) {
+          p += 1;
+        } else if (j.v[t.id] === -1) {
+          m += 1;
+        }
+      });
+      return { name: t.name, rank: t.rank, plus: p, minus: m, score: p - m };
+    });
+    return { rows: rows, teams: teams };
+  }
+}
+</script>
+</body>
+</html>
