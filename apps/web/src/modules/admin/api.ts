@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api';
+import { ApiError, requestProblem } from '@/lib/api';
 export { apiRequest as adminRequest } from '@/lib/api';
 
 export function managementError(error: unknown) {
@@ -9,11 +9,6 @@ export function managementError(error: unknown) {
       return 'Původní odkaz funguje, ale nelze jej obnovit. Pro budoucí kopírování výslovně vytvořte náhradní odkaz u porotce; tím zrušíte dosavadní přihlášení.';
     if (error.code === 'NO_ACTIVE_LINK')
       return 'Porotce nemá aktivní osobní odkaz. Obnovte porotu a zkontrolujte stav odkazu.';
-    if (error.status === 401) return 'Přihlášení vypršelo. Přihlaste se znovu.';
-    if (error.status === 403)
-      return 'K této operaci nemáte přístup. Použijte adresu aplikace od organizátora.';
-    if (error.status === 404)
-      return 'Záznam nebyl nalezen. Obnovte seznam a zkuste to znovu.';
     if (['BALLOT_CONFLICT', 'BALLOT_NOT_SUBMITTED'].includes(error.code))
       return 'Lístek se změnil. Obnovte lístky, zkontrolujte aktuální stav a potvrďte znovu.';
     if (error.code === 'REVISION_EXHAUSTED')
@@ -42,8 +37,6 @@ export function managementError(error: unknown) {
       return 'Vyberte alespoň jednu oprávněnou část poroty.';
     if (error.code === 'MEMBERSHIP_REFERENCED')
       return 'Členství má navázané záznamy a nelze je odebrat.';
-    if (error.status === 400)
-      return 'Zkontrolujte vyplněná pole a zkuste to znovu.';
   }
-  return 'Spojení se serverem se nezdařilo. Zkuste to znovu.';
+  return requestProblem(error);
 }

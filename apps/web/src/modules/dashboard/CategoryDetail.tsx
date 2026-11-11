@@ -158,7 +158,7 @@ export function CategoryDetail({
             <h2
               id="dashboard-heading"
               tabIndex={-1}
-              className="outline-none min-w-0 break-words text-3xl font-semibold"
+              className="section-title min-w-0 outline-none"
             >
               {data.category.name}
             </h2>
@@ -239,7 +239,10 @@ export function CategoryDetail({
                 ? 'Přehled plánovaného oprávnění; koncept ještě není otevřený.'
                 : 'Odevzdané lístky jsou pro porotce uzamčené. Uložený návrh není odevzdání.'}
             </p>
-            <ResourceState resource={ballots} />
+            <ResourceState
+              resource={ballots}
+              errorTitle="Hlasovací lístky se nepodařilo načíst"
+            />
             {data.category.jurors.length ? (
               <JurorRows
                 category={data.category}

@@ -17,14 +17,17 @@ export function TeamsManager({
   );
   return (
     <section className="mt-6" aria-labelledby="teams-heading">
-      <h2 id="teams-heading" className="text-2xl font-semibold">
+      <h2 id="teams-heading" className="section-title">
         Soutěžní týmy
       </h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
         Upravte týmy a uložte tabulku. Názvy a popisy se aktualizují ve všech
         jejich kategoriích.
       </p>
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Týmy se nepodařilo načíst"
+      />
       {resource.data && (
         <TeamTable
           initial={resource.data}

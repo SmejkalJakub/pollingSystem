@@ -35,7 +35,15 @@ export function EventDetail({
   const [notice, setNotice] = useState('');
   return (
     <>
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Event se nepodařilo načíst"
+      />
+      {!resource.data && Boolean(resource.error) && (
+        <a className="wizard-link mt-3" href="/admin/events">
+          ← Všechny eventy
+        </a>
+      )}
       {resource.data && (
         <EventHeading
           event={resource.data}
@@ -126,7 +134,10 @@ function JurorPreparation({
   );
   return (
     <>
-      <ResourceState resource={roster} />
+      <ResourceState
+        resource={roster}
+        errorTitle="Porotu se nepodařilo načíst"
+      />
       {roster.data && (
         <JurorTable
           eventId={eventId}

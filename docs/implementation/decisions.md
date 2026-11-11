@@ -1,5 +1,9 @@
 # Decision log
 
+## Interface clarity — confirmed scope, 2026-11-11
+
+The user reports difficulty finding their place, recognizing buttons, reading the type hierarchy and recovering from vague errors. Group the existing event links under **Příprava** and **Hlasování** and retain the blue/navy themes and Czech interface. Use safe Czech explanations derived from known response codes and statuses. When the response is lost after a write, report that the outcome could not be confirmed. Preserve current voting rules, access, data and submission behavior. This phase runs locally.
+
 ## Streamlined voting workflow — confirmed scope, 2026-11-11
 
 The user asks for improvements across the entire workflow while away. Implement the review's actionable recommendations as one local presentation phase. Czech alphabetical order is explicit for saved rosters; event setup can still be done in any order. Readiness is guidance; existing server activation checks and first freeze confirmation remain authoritative. Keep explicit drafts, confirmation, revisions and independent submissions. Existing tie rules, identity/access, audit and exports are unchanged. No publication authorized.

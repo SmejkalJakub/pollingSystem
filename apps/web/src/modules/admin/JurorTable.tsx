@@ -215,7 +215,7 @@ export function JurorTable({
   }
   return (
     <>
-      <h2 className="mt-6 text-2xl font-semibold">Porotci</h2>
+      <h2 className="section-title mt-6">Porotci</h2>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
         Upravte porotce a uložte tabulku. Osobní odkazy zkopírujete přímo u
         jmen.

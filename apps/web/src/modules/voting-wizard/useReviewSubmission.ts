@@ -6,7 +6,7 @@ import {
   type WizardFinalSubmit,
   type WizardFinalSubmitInput,
 } from '@d21/contracts';
-import { ApiError, apiRequest } from '@/lib/api';
+import { ApiError, apiRequest, requestProblem } from '@/lib/api';
 
 export function canSubmit(category: WizardReviewCategory) {
   return (
@@ -25,7 +25,7 @@ export function useReviewSubmission(
   const [attempt, setAttempt] = useState<WizardFinalSubmitInput>();
   const [result, setResult] = useState<WizardFinalSubmit>();
   const [busy, setBusy] = useState(false);
-  const [uncertain, setUncertain] = useState(false);
+  const [uncertain, setUncertain] = useState('');
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const changed =
@@ -45,14 +45,14 @@ export function useReviewSubmission(
         entries: ballot!.entries,
       })),
     });
-    setUncertain(false);
+    setUncertain('');
   }
   async function submit() {
     if (!attempt || controller.current) return;
     const request = new AbortController();
     controller.current = request;
     setBusy(true);
-    setUncertain(false);
+    setUncertain('');
     try {
       const value = await apiRequest(
         '/wizard/final-submit',
@@ -69,7 +69,7 @@ export function useReviewSubmission(
       if (request.signal.aborted) return;
       if (error instanceof ApiError && [401, 403].includes(error.status))
         onAccessError(error);
-      else setUncertain(true);
+      else setUncertain(requestProblem(error));
     } finally {
       if (!request.signal.aborted) setBusy(false);
       controller.current = null;
@@ -95,7 +95,7 @@ export function useReviewSubmission(
     cancel() {
       if (!busy) {
         setAttempt(undefined);
-        setUncertain(false);
+        setUncertain('');
       }
     },
     loadCurrent() {
@@ -103,7 +103,7 @@ export function useReviewSubmission(
         setDisplayed(review);
         setSelected([]);
         setAttempt(undefined);
-        setUncertain(false);
+        setUncertain('');
       }
     },
   };

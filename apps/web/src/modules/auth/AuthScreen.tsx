@@ -4,20 +4,9 @@ import type { SessionResponse } from '@d21/contracts';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ApiError, authRequest } from '@/lib/api';
+import { ApiError, authRequest, requestProblem } from '@/lib/api';
 
 type State = SessionResponse | 'loading' | 'unavailable';
-function errorMessage(error: unknown) {
-  if (error instanceof ApiError) {
-    if (error.status === 401) return 'Heslo není správné. Zkuste to znovu.';
-    if (error.status === 429 || error.code === 'AUTH_BUSY')
-      return 'Příliš mnoho pokusů. Chvíli počkejte a zkuste to znovu.';
-    if (error.status === 403)
-      return 'Přihlášení z této adresy není povoleno. Použijte adresu aplikace od organizátora.';
-  }
-  return 'Spojení se serverem se nezdařilo. Zkuste to znovu.';
-}
-
 export function AuthScreen() {
   const [state, setState] = useState<State>('loading');
   const [attempt, setAttempt] = useState(0);
@@ -41,8 +30,11 @@ export function AuthScreen() {
       .then((session) => {
         if (!controller.signal.aborted) setState(session);
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setState('unavailable');
+      .catch((cause) => {
+        if (!controller.signal.aborted) {
+          setError(requestProblem(cause));
+          setState('unavailable');
+        }
       });
     return () => controller.abort();
   }, [attempt]);
@@ -100,7 +92,11 @@ export function AuthScreen() {
       setVisible(false);
       setState(session);
     } catch (cause) {
-      setError(errorMessage(cause));
+      setError(
+        cause instanceof ApiError && cause.status === 401
+          ? 'Heslo není správné. Zkuste to znovu.'
+          : `Přihlášení se nezdařilo. ${requestProblem(cause)}`,
+      );
     } finally {
       setBusy(false);
     }
@@ -115,7 +111,7 @@ export function AuthScreen() {
       setState({ authenticated: false });
       setNotice('Byli jste odhlášeni.');
     } catch (cause) {
-      setError(errorMessage(cause));
+      setError(`Odhlášení se nepodařilo potvrdit. ${requestProblem(cause)}`);
     } finally {
       setBusy(false);
     }
@@ -147,14 +143,7 @@ export function AuthScreen() {
     <>
       <AppHeader section="Administrace" />
       <main id="main" className="mx-auto max-w-md px-6 py-12 sm:py-24">
-        <p className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          Pro organizátory a garanty
-        </p>
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="text-3xl font-semibold tracking-tight outline-none sm:text-4xl"
-        >
+        <h1 ref={headingRef} tabIndex={-1} className="page-title outline-none">
           {authenticated ? 'Jste přihlášeni.' : 'Vstup do administrace'}
         </h1>
         {notice && (
@@ -171,15 +160,17 @@ export function AuthScreen() {
           </p>
         ) : state === 'unavailable' ? (
           <section
-            className="mt-8 border border-border bg-card p-6"
-            aria-label="Připojení není dostupné"
+            className="feedback-error mt-8"
+            aria-label="Ověření přihlášení"
           >
-            <p role="alert">
-              Server není dostupný. Přihlášení se nepodařilo ověřit.
+            <p className="feedback-error-title">
+              Přihlášení se nepodařilo ověřit
             </p>
+            {errorNotice}
             <Button
               className="mt-5 min-h-11"
               onClick={() => {
+                setError('');
                 setState('loading');
                 setAttempt((value) => value + 1);
               }}
@@ -257,7 +248,7 @@ export function AuthScreen() {
               <Button
                 type="button"
                 variant="ghost"
-                className="mt-1 min-h-11 px-0 text-sm"
+                className="mt-3"
                 disabled={busy}
                 aria-pressed={visible}
                 onClick={() => setVisible((value) => !value)}

@@ -15,10 +15,7 @@ export function EventList({ onExpired }: { onExpired: () => void }) {
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">Administrace</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Vaše eventy
-          </h1>
+          <h1 className="page-title">Vaše eventy</h1>
           <p className="mt-3 text-muted-foreground">
             Připravte event a sestavte jeho porotu.
           </p>
@@ -50,7 +47,10 @@ export function EventList({ onExpired }: { onExpired: () => void }) {
           />
         </div>
       )}
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Seznam eventů se nepodařilo načíst"
+      />
       {resource.data && (
         <section className="mt-8" aria-label="Seznam eventů">
           {resource.data.length === 0 ? (

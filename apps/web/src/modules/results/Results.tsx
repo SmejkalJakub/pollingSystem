@@ -41,7 +41,7 @@ function ResultsContent({
               <h2
                 id="results-heading"
                 tabIndex={-1}
-                className="break-words text-xl font-semibold outline-none sm:text-2xl"
+                className="section-title outline-none"
               >
                 Výsledky hlasování
               </h2>

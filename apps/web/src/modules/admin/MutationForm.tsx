@@ -124,15 +124,18 @@ export function MutationForm<T>({
           ref={errorRef}
           tabIndex={-1}
           role="alert"
-          className="space-y-2 text-sm text-destructive outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+          className="feedback-error space-y-2 text-sm outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
         >
-          {error || 'Zkontrolujte formulář:'}
+          <p className="feedback-error-title">
+            {error ? 'Akci se nepodařilo dokončit' : 'Opravte označená pole'}
+          </p>
+          {error && <p>{error}</p>}
           {fields
             .filter((field) => errors[field.key])
             .map((field) => (
               <a
                 key={field.key}
-                className="block underline"
+                className="block text-destructive underline underline-offset-4"
                 href={`#${id}-${field.key}`}
               >
                 {field.label}: {errors[field.key]}

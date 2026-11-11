@@ -86,8 +86,14 @@ export function VotingGroups({
           )}
         </div>
       </div>
-      <ResourceState resource={available} />
-      <ResourceState resource={selected} />
+      <ResourceState
+        resource={available}
+        errorTitle="Části poroty v eventu se nepodařilo načíst"
+      />
+      <ResourceState
+        resource={selected}
+        errorTitle="Přiřazené části poroty se nepodařilo načíst"
+      />
       {selected.data && (
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {selected.data.length

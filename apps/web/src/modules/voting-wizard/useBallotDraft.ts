@@ -6,7 +6,7 @@ import {
   type BallotEntry,
   type WizardStepDetail,
 } from '@d21/contracts';
-import { ApiError, apiRequest } from '@/lib/api';
+import { ApiError, apiRequest, requestProblem } from '@/lib/api';
 
 function sameEntries(a: BallotEntry[], b: BallotEntry[]) {
   return (
@@ -124,7 +124,7 @@ export function useBallotDraft(
             return;
           }
           setMessage(
-            'Novější návrh se nepodařilo načíst. Váš výběr zůstává na stránce. Zkuste načtení znovu.',
+            `Novější návrh se nepodařilo načíst. ${requestProblem(cause)} Váš výběr zůstává na stránce.`,
           );
         }
         return 'conflict' as const;
@@ -143,7 +143,7 @@ export function useBallotDraft(
         setMessage('');
       } else
         setMessage(
-          'Výsledek operace se nepodařilo potvrdit. Váš výběr zůstává na stránce. Zkontrolujte připojení a zkuste to znovu.',
+          `Změnu hlasovacího lístku se nepodařilo potvrdit. ${requestProblem(error)} Váš výběr zůstává na stránce.`,
         );
     } finally {
       if (!request.signal.aborted) setBusy(false);

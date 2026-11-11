@@ -77,13 +77,10 @@ export function WizardReviewScreen({
       <a className="wizard-link" href="/wizard">
         ← Všechny kategorie
       </a>
-      <p className="eyebrow mt-6">
-        {confirmation ? 'Stav vašich hlasů' : 'Před odevzdáním'}
-      </p>
       <h1
         ref={headingRef}
         tabIndex={-1}
-        className="mt-3 break-words text-3xl font-semibold tracking-tight outline-none sm:text-4xl"
+        className="page-title mt-4 outline-none"
       >
         {confirmation ? 'Potvrzení hlasování' : 'Rekapitulace a odevzdání'}
       </h1>
@@ -219,11 +216,16 @@ export function WizardReviewScreen({
               ref={feedback}
               tabIndex={-1}
               role="alert"
-              className="mb-6 border-l-2 border-destructive bg-card p-5 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+              className="feedback-error mb-6 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
             >
-              Výsledek se nepodařilo potvrdit. Některé kategorie již mohou být
-              odevzdané. Můžete zopakovat stejné odevzdání; již potvrzené hlasy
-              se nezmění. Nebo ověřte stav a načtěte aktuální přehled.
+              <p className="feedback-error-title">
+                Odevzdání se nepodařilo potvrdit
+              </p>
+              <p>{flow.uncertain}</p>
+              <p className="mt-2">
+                Některé kategorie už mohou být odevzdané. Ověřte stav v
+                aktuálním přehledu nebo zopakujte stejné odevzdání.
+              </p>
             </div>
           )}
           {flow.attempt ? (

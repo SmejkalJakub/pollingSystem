@@ -1,5 +1,9 @@
 # Session handoff
 
+## Interface clarity — local handoff, 2026-11-11
+
+Review the updated [local administration](http://127.0.0.1:3001/admin/events) with the existing local password. The event name, grouped tabs and active selection anchor the event views. Test the outlines on secondary controls and the new operation-specific messages on a failed save or unavailable service. Validation and remaining limits are recorded in [progress](progress.md). Changes are in the working tree and available on the local server. Publication requires separate authorization.
+
 ## Streamlined voting workflow — DONE locally, 2026-11-11
 
 The changes are local on top of the uncommitted organizer work. See [workflow](../wiki/streamlined-workflow.md) and [validation](progress.md#streamlined-voting-workflow--done-locally-2026-11-11). The tested build is running on [local administration](http://127.0.0.1:3001/admin/login); reload a previously open tab for the new assets. The labelled fictional event's [results](http://127.0.0.1:3001/admin/events/3f98be40-e641-4200-aece-abfec8b54418/results) remain available for visual testing. Restart the built same-origin server after a new web build so it recognizes the new asset names.

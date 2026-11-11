@@ -97,11 +97,10 @@ export function WizardContent({
         />
       ) : !detail ? (
         <section className="py-8 sm:py-12">
-          <p className="eyebrow">Vítejte v porotě</p>
           <h1
             ref={headingRef}
             tabIndex={-1}
-            className="mt-3 break-words text-3xl font-semibold tracking-tight outline-none sm:text-4xl"
+            className="page-title outline-none"
           >
             Vaše kategorie
           </h1>
@@ -212,7 +211,7 @@ export function WizardContent({
               id="category-title"
               ref={headingRef}
               tabIndex={-1}
-              className="mt-3 break-words text-3xl font-semibold tracking-tight outline-none sm:text-4xl"
+              className="page-title outline-none"
             >
               {detail.step.name}
             </h1>

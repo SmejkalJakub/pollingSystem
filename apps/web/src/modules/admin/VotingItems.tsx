@@ -90,8 +90,14 @@ export function VotingItems({
           )}
         </div>
       </div>
-      <ResourceState resource={items} />
-      <ResourceState resource={teams} />
+      <ResourceState
+        resource={items}
+        errorTitle="Položky hlasování se nepodařilo načíst"
+      />
+      <ResourceState
+        resource={teams}
+        errorTitle="Týmy eventu se nepodařilo načíst"
+      />
       {items.data && (
         <p className="mt-3 text-sm text-muted-foreground">
           Přihlášené týmy: {items.data.length}.

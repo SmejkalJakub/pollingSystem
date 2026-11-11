@@ -153,7 +153,7 @@ export function Dashboard({
             <h2
               id="dashboard-heading"
               tabIndex={-1}
-              className="outline-none min-w-0 break-words text-xl font-semibold tracking-tight sm:text-2xl"
+              className="section-title min-w-0 outline-none"
             >
               Průběh hlasování
             </h2>

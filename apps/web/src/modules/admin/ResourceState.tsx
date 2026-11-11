@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button';
 import { managementError } from './api';
 export function ResourceState({
   resource,
+  errorTitle,
 }: {
+  errorTitle: string;
   resource: {
     data?: unknown;
     loading?: boolean;
@@ -12,8 +14,11 @@ export function ResourceState({
 }) {
   if (resource.error)
     return (
-      <div className="mt-8 border border-border bg-card p-6">
-        <p role="alert">{managementError(resource.error)}</p>
+      <div className="feedback-error mt-6">
+        <div role="alert">
+          <p className="feedback-error-title">{errorTitle}</p>
+          <p>{managementError(resource.error)}</p>
+        </div>
         <Button
           onClick={resource.reload}
           variant="outline"

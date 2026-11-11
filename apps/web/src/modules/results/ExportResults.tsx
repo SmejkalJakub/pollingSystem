@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { apiErrorSchema } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
-import { ApiError } from '@/lib/api';
+import { ApiError, apiFetch, requestProblem } from '@/lib/api';
 
 export function ExportResults({
   eventId,
@@ -13,6 +12,7 @@ export function ExportResults({
   const [state, setState] = useState<'idle' | 'pending' | 'success' | 'error'>(
     'idle',
   );
+  const [errorMessage, setErrorMessage] = useState('');
   const controller = useRef<AbortController | null>(null);
   const feedback = useRef<HTMLParagraphElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -27,21 +27,10 @@ export function ExportResults({
     controller.current = request;
     setState('pending');
     try {
-      const response = await fetch(
-        `/api/results/export.xlsx?eventId=${eventId}`,
-        {
-          credentials: 'same-origin',
-          cache: 'no-store',
-          signal: request.signal,
-        },
+      const response = await apiFetch(
+        `/results/export.xlsx?eventId=${eventId}`,
+        { signal: request.signal },
       );
-      if (!response.ok) {
-        const error = apiErrorSchema.safeParse(await response.json());
-        throw new ApiError(
-          response.status,
-          error.success ? error.data.error.code : 'UNKNOWN',
-        );
-      }
       if (
         !response.headers
           .get('content-type')
@@ -49,7 +38,7 @@ export function ExportResults({
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           )
       )
-        throw new Error('Unexpected export response');
+        throw new ApiError(response.status, 'UNEXPECTED_RESPONSE');
       const blob = await response.blob();
       if (request.signal.aborted) return;
       const url = URL.createObjectURL(blob);
@@ -63,12 +52,11 @@ export function ExportResults({
       setState('success');
     } catch (error) {
       if (request.signal.aborted) return;
-      if (
-        error instanceof ApiError &&
-        (error.status === 401 || error.status === 403)
-      )
-        onExpired();
-      else setState('error');
+      if (error instanceof ApiError && error.status === 401) onExpired();
+      else {
+        setErrorMessage(requestProblem(error));
+        setState('error');
+      }
     } finally {
       controller.current = null;
     }
@@ -104,8 +92,7 @@ export function ExportResults({
           tabIndex={-1}
           className="mt-2 max-w-xs text-sm text-destructive outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
         >
-          Export se nepodařilo připravit. Zkontrolujte připojení a zkuste export
-          znovu.
+          Výsledky se nepodařilo stáhnout. {errorMessage}
         </p>
       )}
     </div>

@@ -43,13 +43,9 @@ export function AdminWorkspace({
         section="Administrace"
         actions={
           <nav aria-label="Administrace" className="flex items-center gap-2">
-            <a
-              className="wizard-link text-sm"
-              href="/admin/events"
-              aria-current={!eventId ? 'page' : undefined}
-            >
-              Eventy
-            </a>
+            <span className="hidden text-sm font-semibold text-muted-foreground sm:inline">
+              Administrace
+            </span>
             <Button
               className="min-h-11"
               variant="ghost"

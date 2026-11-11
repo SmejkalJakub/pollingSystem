@@ -11,7 +11,7 @@ import {
 } from '@d21/contracts';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
-import { ApiError, apiRequest, authRequest } from '@/lib/api';
+import { ApiError, apiRequest, authRequest, requestProblem } from '@/lib/api';
 import { JurorLanding } from '@/modules/auth/JurorLanding';
 import { WizardContent } from './WizardContent';
 
@@ -37,7 +37,7 @@ function errorText(error: unknown) {
     if (error.status === 429)
       return 'Příliš mnoho pokusů. Chvíli počkejte a zkuste to znovu.';
   }
-  return 'Spojení se serverem se nezdařilo. Zkontrolujte připojení a zkuste to znovu.';
+  return requestProblem(error);
 }
 
 export function JurorPortal({
@@ -215,12 +215,7 @@ export function JurorPortal({
       >
         {link ? (
           <section className="mx-auto max-w-md py-4 sm:py-12">
-            <p className="eyebrow">Váš osobní přístup</p>
-            <h1
-              ref={heading}
-              tabIndex={-1}
-              className="mt-3 text-3xl font-semibold tracking-tight outline-none"
-            >
+            <h1 ref={heading} tabIndex={-1} className="page-title outline-none">
               Vstup pro porotce
             </h1>
             <p className="mt-4 leading-relaxed text-muted-foreground">
@@ -269,13 +264,11 @@ export function JurorPortal({
           )
         )}
         {!link && !data && !loading && (
-          <h1 className="mt-8 text-3xl font-semibold tracking-tight">
-            Přístup ke hlasování
-          </h1>
+          <h1 className="page-title mt-8">Přístup ke hlasování</h1>
         )}
         {error !== undefined && (
           <section
-            className="mt-6 border border-border bg-card p-6"
+            className="feedback-error mt-6"
             aria-label="Přístup se nepodařilo ověřit"
           >
             <p

@@ -1,5 +1,9 @@
 # Implementation plan
 
+## Interface clarity — 2026-11-11
+
+One local presentation and error-recovery phase from the user's feedback. Keep the event name and current destination visible, group the five existing destinations by task, use filled primary actions and visible outlined secondary actions, and strengthen the heading hierarchy. Explain the operation, known cause and recovery for failures. Verify existing workflows and error recovery at desktop, phone and dark landscape sizes. See [progress](progress.md) for validation.
+
 ## Streamlined voting workflow — DONE locally, 2026-11-11
 
 The user explicitly started one end-to-end usability phase after the local Impeccable review. Event navigation and creation, rosters, category save/readiness, juror entry and ballot controls, and results hierarchy are complete. Source and browser validation across desktop, phone and dark landscape, visual review, and local handoff are recorded in [progress](progress.md). Existing rules and authorization remain in place. [Scope](../wiki/streamlined-workflow.md).

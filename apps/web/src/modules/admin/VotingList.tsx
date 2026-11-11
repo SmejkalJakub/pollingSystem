@@ -27,7 +27,7 @@ export function VotingList({
     <section className="mt-6" aria-labelledby="votings-heading">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 id="votings-heading" className="mt-2 text-2xl font-semibold">
+          <h2 id="votings-heading" className="section-title">
             Kategorie hlasování
           </h2>
         </div>
@@ -61,7 +61,10 @@ export function VotingList({
           </Suspense>
         </div>
       )}
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Kategorie se nepodařilo načíst"
+      />
       {resource.data &&
         (resource.data.length === 0 ? (
           <div className="mt-6 border border-dashed border-border p-6">

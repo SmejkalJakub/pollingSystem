@@ -39,7 +39,10 @@ export function VotingDetail({
   const [showSetup, setShowSetup] = useState(false);
   return (
     <>
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Kategorii se nepodařilo načíst"
+      />
       {resource.data && (
         <>
           <VotingEventHeading
@@ -60,9 +63,7 @@ export function VotingDetail({
                   : 'Finálová kategorie'}{' '}
                 · {votingStatusLabels[resource.data.status]}
               </p>
-              <h2 className="mt-2 break-words text-2xl font-semibold tracking-tight">
-                {resource.data.name}
-              </h2>
+              <h2 className="section-title">{resource.data.name}</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {resource.data.status !== 'draft' && (
@@ -201,7 +202,10 @@ function VotingEventHeading({
   const resource = useResource(`/events/${eventId}`, eventSchema, onExpired);
   return (
     <>
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Event se nepodařilo načíst"
+      />
       {resource.data && (
         <EventHeading event={resource.data} section="preparation" />
       )}

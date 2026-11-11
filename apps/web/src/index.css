@@ -33,6 +33,7 @@
   --muted-foreground: #52627a;
   --destructive: #b32f3e;
   --border: #cbd5e5;
+  --control-border: #7b8ca8;
   --ring: #2356c7;
   --radius: 0.625rem;
 }
@@ -49,6 +50,7 @@
     --muted-foreground: #b2c0d5;
     --destructive: #ff9ba6;
     --border: #465670;
+    --control-border: #8295b5;
     --ring: #9bbbff;
   }
 }
@@ -58,7 +60,7 @@
     @apply border-border;
   }
   body {
-    @apply m-0 bg-background font-sans text-foreground antialiased;
+    @apply m-0 bg-background font-sans leading-relaxed text-foreground antialiased;
   }
   input,
   textarea,
@@ -88,28 +90,52 @@
   .wizard-link {
     @apply inline-flex min-h-11 min-w-11 items-center underline underline-offset-4 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
   }
+  .page-title {
+    @apply break-words text-3xl font-bold leading-tight tracking-tight sm:text-4xl;
+  }
+  .section-title {
+    @apply break-words text-2xl font-bold leading-tight tracking-tight sm:text-[1.75rem];
+  }
+  .event-heading {
+    @apply mb-6 border-b border-border pb-5;
+  }
   .event-navigation {
-    @apply mt-5 flex flex-wrap items-center gap-1 rounded-lg bg-card p-1.5;
+    @apply mt-5 grid gap-3 sm:flex sm:flex-wrap sm:gap-5;
+  }
+  .event-nav-label {
+    @apply mb-1.5 block text-sm font-semibold text-muted-foreground;
+  }
+  .event-nav-links {
+    @apply flex flex-wrap gap-1.5;
   }
   .event-navigation a {
-    @apply inline-flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground outline-offset-4 hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring;
+    @apply inline-flex min-h-11 items-center justify-center rounded-md border bg-card px-3 py-2 text-center text-sm font-semibold leading-tight outline-offset-2 hover:border-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring;
+    border-color: var(--control-border);
   }
   .event-navigation a[aria-current='page'] {
-    @apply bg-primary text-primary-foreground;
+    @apply border-primary bg-primary text-primary-foreground;
   }
-  .preparation-navigation {
-    @apply flex flex-wrap gap-1;
+  .feedback-error {
+    @apply rounded-lg border border-destructive/40 bg-card p-4 sm:p-5;
+  }
+  .feedback-error-title {
+    @apply mb-1 font-bold text-destructive;
+  }
+  .admin-workspace summary {
+    @apply w-fit rounded-md border bg-card px-3 text-sm font-semibold hover:bg-secondary;
+    border-color: var(--control-border);
   }
   .app-header {
     background: #182640;
     color: #f4f7ff;
     --muted-foreground: #bdcbea;
     --ring: #9bbbff;
-  }
-  .app-header .wizard-link:hover,
-  .app-header button:hover {
-    background: #2a3b58;
-    color: #fff;
+    --control-border: #8295b5;
+    --background: #243653;
+    --card: #243653;
+    --secondary: #34496b;
+    --primary: #b3caff;
+    --primary-foreground: #182640;
   }
   .brand-mark {
     @apply rounded-lg bg-primary px-2.5 py-2 text-sm font-bold text-primary-foreground;

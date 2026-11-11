@@ -1,5 +1,13 @@
 # Progress
 
+## Interface clarity — DONE locally, 2026-11-11
+
+Grouped the five event destinations under **Příprava** and **Hlasování** with a filled active tab and retained direct links. Updated shared action borders, labels and focus, and strengthened page and section headings in the admin and juror flows. Load errors name the affected resource. Requests distinguish a failed connection, unavailable service, invalid response, rejected data and permission errors. Form feedback points to invalid fields, and voting writes with an uncertain outcome retain recovery guidance. No backend, database migration or product-rule changes.
+
+**Validation:** typechecks, lint, formatting of changed files, 79 fast tests and both builds pass. The first browser run passed 27/30. Two organizer tests expected the replaced error wording, and a phone reload hit a 404 during the asset rebuild. Final build passed **30/30** across desktop, phone and dark landscape in two runs, without retries. The strengthened recovery test passed separately on all three and verifies a successful event list reload after offline and HTML 502 responses. Reviewed desktop results and ballot, phone progress and dark results screenshots from disposable fixtures. Repository-wide formatting still flags the pre-existing local Claude settings and the archived critique. Hosted verification and full PostgreSQL integration tests were outside this UI phase.
+
+The final build is running at [local administration](http://127.0.0.1:3001/admin/events) with readiness reporting a connected database. The working-tree changes are available for local review.
+
 ## Streamlined voting workflow — DONE locally, 2026-11-11
 
 Implemented and reviewed [the end-to-end workflow changes](../wiki/streamlined-workflow.md). The administration test verifies one document, zero extra session requests and one event metadata read across its tabs, cancellation of both link and Back navigation with unsaved edits, and immediate category creation handoff. Juror-link entry verifies one document and no duplicate overview read. The full voting case verifies reachable submission controls after scrolling, an explicit confirmation, independent submissions, unlocking, ranking and four-sheet XLSX.

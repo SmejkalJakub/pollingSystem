@@ -58,9 +58,13 @@ export function VotingLifecycleActions({
       onChanged();
     } catch (cause) {
       if (request.signal.aborted) return;
-      if (cause instanceof ApiError && [401, 403].includes(cause.status))
-        onExpired();
-      else setError(managementError(cause));
+      if (cause instanceof ApiError && cause.status === 401) onExpired();
+      else {
+        const operation = action === 'close' ? 'Uzavření' : 'Otevření';
+        setError(
+          `${operation} hlasování se nepodařilo potvrdit. ${managementError(cause)}`,
+        );
+      }
     } finally {
       if (!request.signal.aborted) {
         setBusy(false);

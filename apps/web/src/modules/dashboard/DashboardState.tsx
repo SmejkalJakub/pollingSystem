@@ -28,7 +28,10 @@ export function DashboardState({
       tabIndex={-1}
       className="outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
     >
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Průběh hlasování se nepodařilo načíst"
+      />
     </div>
   );
 }

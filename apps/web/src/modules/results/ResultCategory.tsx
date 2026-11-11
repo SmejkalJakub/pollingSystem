@@ -41,12 +41,7 @@ export function ResultCategory({
       className="min-w-0 border border-border bg-card p-5 sm:p-6"
       aria-labelledby={`result-${c.id}`}
     >
-      <p className="eyebrow">
-        {c.kind === 'selection' ? 'Výběrové kolo' : 'Finálová kategorie'} ·{' '}
-        {c.groups.map((g) => juryGroupLabel(g.code)).join(' + ') ||
-          'Bez poroty'}
-      </p>
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <h2
           id={`result-${c.id}`}
           className="min-w-0 break-words text-xl font-semibold"
@@ -59,7 +54,12 @@ export function ResultCategory({
           {c.stage === 'final' ? 'Finální výsledek' : 'Průběžný výsledek'}
         </span>
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">
+      <p className="mt-2 break-words text-sm text-muted-foreground">
+        {c.kind === 'selection' ? 'Výběrové kolo' : 'Finálová kategorie'} ·{' '}
+        {c.groups.map((g) => juryGroupLabel(g.code)).join(' + ') ||
+          'Bez poroty'}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
         {lifecycleLabels[c.status]} · Odevzdáno {c.counts.submitted}/
         {c.counts.expected} ·{' '}
         {c.kind === 'selection' ? 'Postupových míst' : 'Vítězných míst'}:{' '}
@@ -78,8 +78,8 @@ export function ResultCategory({
         </ul>
       )}
       {c.problems.length > 0 && (
-        <div className="mt-4 border-l-2 border-destructive pl-4 text-sm">
-          <p className="font-medium">Ke kontrole</p>
+        <div className="feedback-error mt-4 text-sm">
+          <p className="feedback-error-title">Co vyžaduje kontrolu</p>
           <ul className="mt-2 list-inside list-disc space-y-1">
             {c.problems.map((p) => (
               <li key={p}>{problemLabels[p]}</li>

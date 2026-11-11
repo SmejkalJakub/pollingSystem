@@ -40,13 +40,30 @@ test('protected direct routes recover from network failure and session loss', as
   await expect(
     page.getByRole('button', { name: 'Zkusit znovu', exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText(
+    'Prohlížeč se nedokázal spojit se serverem.',
+  );
+  await page.unroute('**/api/events');
+  await page.route('**/api/events', (route) =>
+    route.fulfill({
+      status: 502,
+      contentType: 'text/html',
+      body: '<p>Bad gateway</p>',
+    }),
+  );
+  await page.getByRole('button', { name: 'Zkusit znovu' }).click();
+  await expect(page.getByRole('alert')).toContainText(
+    'Server aplikace neodpověděl včas nebo je nedostupný.',
+  );
+  await expect(page.getByRole('alert')).not.toContainText('Bad gateway');
   await page.unroute('**/api/events');
   await page
     .getByRole('button', { name: 'Zkusit znovu', exact: true })
     .press('Enter');
   await expect(
-    page.getByRole('heading', { name: 'Vaše eventy' }),
+    page.getByRole('heading', { name: 'Začněte prvním eventem' }),
   ).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   // Only the generated fixture database is touched; development credentials remain intact.
   await runtime.pool.query(
     'UPDATE sessions SET revoked_at=statement_timestamp() WHERE admin_user_id IS NOT NULL AND revoked_at IS NULL',

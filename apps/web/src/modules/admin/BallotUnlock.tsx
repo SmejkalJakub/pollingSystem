@@ -48,7 +48,10 @@ export function BallotUnlock({
       >
         Obnovit lístky
       </Button>
-      <ResourceState resource={resource} />
+      <ResourceState
+        resource={resource}
+        errorTitle="Hlasovací lístky se nepodařilo načíst"
+      />
       {notice && (
         <p role="status" className="mt-4 text-sm">
           {notice}

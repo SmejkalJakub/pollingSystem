@@ -179,7 +179,9 @@ test('organizer works directly with saved links, undo, imports and voting contro
     route.abort('connectionfailed'),
   );
   await card.getByRole('button', { name: /^Uzavřít hlasování:/ }).click();
-  await expect(card.getByRole('alert')).toContainText('Spojení se serverem');
+  await expect(card.getByRole('alert')).toContainText(
+    'Uzavření hlasování se nepodařilo potvrdit. Prohlížeč se nedokázal spojit se serverem.',
+  );
   expect(
     (
       await runtime.pool.query('SELECT status FROM votings WHERE id=$1', [
