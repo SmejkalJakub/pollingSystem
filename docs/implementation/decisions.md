@@ -1,5 +1,15 @@
 # Decision log
 
+## Streamlined voting workflow — confirmed scope, 2026-11-11
+
+The user asks for improvements across the entire workflow while away. Implement the review's actionable recommendations as one local presentation phase. Czech alphabetical order is explicit for saved rosters; event setup can still be done in any order. Readiness is guidance; existing server activation checks and first freeze confirmation remain authoritative. Keep explicit drafts, confirmation, revisions and independent submissions. Existing tie rules, identity/access, audit and exports are unchanged. No publication authorized.
+
+## Organizer usability — confirmed and DONE locally, 2026-11-10
+
+The user approves making the app friendlier after the Impeccable review, explicitly treating the organizer as experienced, and provides DashHack as visual inspiration. Implement routine workflow guidance in place of unrelated blocking: Copy/export use saved data during table edits; reversible close/reopen acts directly; local discard offers in-memory Undo; valid spreadsheet rows need one staging action. Five destinations and existing operational controls remain in event context. Existing semantic tokens/components now provide the blue/navy light/dark refinement.
+
+Keep initial activation, access replacement/revocation and submitted-ballot unlock consequence acknowledgements. D21, post-activation configuration/roster policy, submission, identity, history and ranking are unchanged. Existing protected endpoints/expected revisions remain authoritative. No juror wizard redesign, controlled freeze overrides or publication. [Exact semantics and limits](../wiki/organizer-usability.md). Final validation/review/handoff complete; see progress for 27/27 full browser and subsequent 9/9 layout checks.
+
 ## Individual-juror-votes release — DEPLOYED, 2026-10-21
 
 The user explicitly approved commit, push and deployment. Source `7c6de123ccfa7fe3442bad702ff84ad20db73242` (**feat: show and export individual juror votes**) was pushed to main without trailers and manually deployed from the Render dashboard (after the user signed in) to the existing [Free test app](https://d21-voting-test.onrender.com), deploy `dep-dbcbq0eq1p3s73cu83kg`, **Deploy succeeded / Live** at about 13:25 UTC (1m25s). Same Free/Frankfurt service `srv-dbac88eq1p3s73b4jqm0`, manual deploys, no configuration/key/password/paid/other-project change.

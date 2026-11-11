@@ -75,9 +75,10 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     .getByLabel('Název eventu', { exact: true })
     .fill('Integrovaný test');
   await saveForm(page, 'Nový event');
-  await expect(page).toHaveURL(/\/admin\/events\/[0-9a-f-]+$/);
-  const eventId = page.url().split('/').at(-1)!;
+  await expect(page).toHaveURL(/\/admin\/events\/[0-9a-f-]+\?setup=teams$/);
+  const eventId = new URL(page.url()).pathname.split('/').at(-1)!;
   eventSchema.parse(await api(page.request, 'GET', `/events/${eventId}`));
+  await page.getByRole('link', { name: 'Porotci', exact: true }).click();
   await page.getByRole('button', { name: 'Nový porotce', exact: true }).click();
   await page
     .getByLabel('Jméno porotce, řádek 1', { exact: true })
@@ -352,6 +353,18 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
             entries: detail.ballot!.entries,
           });
         await accessible(jurorPage);
+        if (code === 'T' && category.name === 'Celkový vítěz') {
+          await positive.last().scrollIntoViewIfNeeded();
+          await expect(
+            jurorPage.getByRole('button', {
+              name: 'Odevzdat kategorii',
+              exact: true,
+            }),
+          ).toBeInViewport();
+          await jurorPage.screenshot({
+            path: testInfo.outputPath('ballot-actions.png'),
+          });
+        }
       }
       await jurorPage.goto('/wizard/review');
       await expect(
@@ -511,15 +524,11 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     await page.goto(`/admin/votings/${selection}`);
     await expect(
       page.getByRole('button', {
-        name: 'Znovu otevřít hlasování',
-        exact: true,
+        name: /^Znovu otevřít hlasování:/,
       }),
     ).toBeVisible();
     await page
-      .getByRole('button', { name: 'Znovu otevřít hlasování', exact: true })
-      .click();
-    await page
-      .getByRole('button', { name: 'Znovu otevřít', exact: true })
+      .getByRole('button', { name: /^Znovu otevřít hlasování:/ })
       .click();
     await expect(
       page.getByText('Hlasování bylo znovu otevřeno.', { exact: true }),
@@ -607,7 +616,7 @@ test('admin prepares an event; T/V jurors vote; dashboard, ranking, unlock and X
     });
     // Real administrator UI unlock removes the current contribution; replacement restores it.
     const technical = categories.find((c) => c.group === 'T')!;
-    await page.goto(`/admin/votings/${technical.id}`);
+    await page.goto(`/admin/dashboard/votings/${technical.id}`);
     await page
       .getByRole('button', { name: /^Odemknout lístek: Porotce T1,/ })
       .click();

@@ -45,12 +45,19 @@ export const rowChanged = (row: JurorTableRow, base?: JurorTableRow) =>
   row.displayName !== base.displayName ||
   row.groupCode !== base.groupCode;
 export const tableRows = (snapshot: JurorTableSnapshot): JurorTableRow[] =>
-  snapshot.jurors.map((juror) => ({
-    id: juror.id,
-    displayName: juror.displayName,
-    groupCode: snapshot.groups.find((group) => group.id === juror.juryGroupId)!
-      .code,
-  }));
+  [...snapshot.jurors]
+    .sort(
+      (a, b) =>
+        a.displayName.localeCompare(b.displayName, 'cs', { numeric: true }) ||
+        a.id.localeCompare(b.id),
+    )
+    .map((juror) => ({
+      id: juror.id,
+      displayName: juror.displayName,
+      groupCode: snapshot.groups.find(
+        (group) => group.id === juror.juryGroupId,
+      )!.code,
+    }));
 // Never recreate an externally removed saved membership or carry forbidden assignments across a freeze.
 export function canRebase(
   rows: JurorTableRow[],

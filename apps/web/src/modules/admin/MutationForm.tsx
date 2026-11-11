@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ApiError } from '@/lib/api';
 import { managementError } from './api';
+import { useAdminLeaveWarning } from './navigation';
 
 export type FormField = {
   key: string;
@@ -50,6 +51,9 @@ export function MutationForm<T>({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  useAdminLeaveWarning(
+    busy || fields.some(({ key }) => values[key] !== initial[key]),
+  );
   // Capture before React disables the opener during this form's mount.
   const [returnFocus] = useState(() => document.activeElement);
   const errorRef = useRef<HTMLDivElement>(null);

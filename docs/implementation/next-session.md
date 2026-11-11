@@ -1,5 +1,19 @@
 # Session handoff
 
+## Streamlined voting workflow — DONE locally, 2026-11-11
+
+The changes are local on top of the uncommitted organizer work. See [workflow](../wiki/streamlined-workflow.md) and [validation](progress.md#streamlined-voting-workflow--done-locally-2026-11-11). The tested build is running on [local administration](http://127.0.0.1:3001/admin/login); reload a previously open tab for the new assets. The labelled fictional event's [results](http://127.0.0.1:3001/admin/events/3f98be40-e641-4200-aece-abfec8b54418/results) remain available for visual testing. Restart the built same-origin server after a new web build so it recognizes the new asset names.
+
+Preserve the local environment file, private link key ring, database records, and review archives. No commit, push, deployment or subsequent phase is authorized. Juror category-to-category links still use normal page navigation; voting rules, locks and result policies remain unchanged.
+
+## Organizer usability — DONE locally, 2026-11-10
+
+Completed the user-approved organizer improvements and DashHack-inspired light/dark refinement. [Workflow, components and boundaries](../wiki/organizer-usability.md). Current source is local/uncommitted: no push/deploy/hosted data or configuration change. The earlier critique archive remains under apps/web/.impeccable/critique/; preserve it. No further implementation phase starts automatically.
+
+Validation: workspace/E2E typechecks, lint, 79 fast tests, formatting and builds pass. Full built-app browser suite 27/27 without retries, then a two-file dashboard markup/layout refinement with final web typecheck/lint/build and affected organizer/full-voting/navigation checks 9/9 across desktop/phone/dark landscape. Two bounded visual passes and source review complete. Final local inventory: zero generated d21_test databases; fixtures stopped their own servers. Final screenshots are retained outside the checkout under this session's visualization directory, organizer-update/.
+
+Publication requires explicit commit/push/deploy authorization under AGENTS.md. Preserve all development/hosted configuration, encryption keys, original records and backups. Juror save/check/submit simplification and controlled overrides of post-activation roster/rule locks remain future work with separately agreed scope/product decisions. Do not infer changed voting rules from the new design. Existing >500 kB build warning remains; native-device/full screen-reader/all-browser/load and hosted checks were not performed, nor was the PostgreSQL integration suite rerun for this web-only change. Use the existing local development/test commands; browser fixtures must target a local disposable-capable database.
+
 ## Individual-juror-votes release — DEPLOYED, 2026-10-21
 
 The user explicitly approved commit, push and deployment. Source `7c6de123ccfa7fe3442bad702ff84ad20db73242` (**feat: show and export individual juror votes**) was pushed to main without trailers and manually deployed from the Render dashboard (after the user signed in) to the existing [Free test app](https://d21-voting-test.onrender.com), deploy `dep-dbcbq0eq1p3s73cu83kg`, **Deploy succeeded / Live** at about 13:25 UTC (1m25s). Same Free/Frankfurt service `srv-dbac88eq1p3s73b4jqm0`, manual deploys, no configuration/key/password/paid/other-project change.

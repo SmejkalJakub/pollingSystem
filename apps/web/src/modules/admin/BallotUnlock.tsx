@@ -96,23 +96,12 @@ export function BallotUnlock({
         ))}
       </ul>
       {selected && (
-        <MutationForm
-          key={`${selected.id}:${selected.revision}`}
-          headingLevel={3}
-          title={`Odemknout lístek: ${selected.displayName}`}
-          description="Výběr zůstane zachovaný jako návrh. Dosavadní odevzdání přestane být aktuální; porotce jej může upravit a znovu odevzdat. Historie zůstane zachovaná."
-          initial={{}}
-          fields={[]}
-          schema={votingActionSchema}
-          submitLabel="Potvrdit odemčení"
-          cancel={() => setSelected(undefined)}
+        <UnlockBallotForm
+          votingId={votingId}
+          ballot={selected}
           onExpired={onExpired}
-          save={async () => {
-            await adminRequest(
-              `/votings/${votingId}/ballots/${selected.id}/unlock`,
-              adminBallotSchema,
-              { method: 'POST', body: { expectedRevision: selected.revision } },
-            );
+          cancel={() => setSelected(undefined)}
+          done={() => {
             setSelected(undefined);
             setNotice(
               'Lístek byl odemčen porotci. Historie odevzdání je zachovaná.',
@@ -122,5 +111,42 @@ export function BallotUnlock({
         />
       )}
     </section>
+  );
+}
+
+export function UnlockBallotForm({
+  votingId,
+  ballot,
+  onExpired,
+  cancel,
+  done,
+}: {
+  votingId: string;
+  ballot: AdminBallot;
+  onExpired: () => void;
+  cancel: () => void;
+  done: () => void;
+}) {
+  return (
+    <MutationForm
+      key={`${ballot.id}:${ballot.revision}`}
+      headingLevel={3}
+      title={`Odemknout lístek: ${ballot.displayName}`}
+      description="Výběr zůstane zachovaný jako návrh. Dosavadní odevzdání přestane být aktuální; porotce jej může upravit a znovu odevzdat. Historie zůstane zachovaná."
+      initial={{}}
+      fields={[]}
+      schema={votingActionSchema}
+      submitLabel="Potvrdit odemčení"
+      cancel={cancel}
+      onExpired={onExpired}
+      save={async () => {
+        await adminRequest(
+          `/votings/${votingId}/ballots/${ballot.id}/unlock`,
+          adminBallotSchema,
+          { method: 'POST', body: { expectedRevision: ballot.revision } },
+        );
+        done();
+      }}
+    />
   );
 }

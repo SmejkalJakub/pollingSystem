@@ -13,6 +13,7 @@ export function JurorControls({
   juror,
   locked,
   disabled,
+  copyDisabled,
   reload,
   onExpired,
 }: {
@@ -20,6 +21,7 @@ export function JurorControls({
   juror: Roster['jurors'][number];
   locked: boolean;
   disabled: boolean;
+  copyDisabled: boolean;
   reload: (focusFeedback?: boolean) => void;
   onExpired: () => void;
 }) {
@@ -53,14 +55,11 @@ export function JurorControls({
   }
   return (
     <div ref={container} className="min-w-0 space-y-2">
-      <p id={`${identityId}-name`} className="break-words font-medium">
+      <p id={`${identityId}-name`} className="sr-only">
         {juror.displayName}
       </p>
-      <p id={identityId} className="font-mono text-xs text-muted-foreground">
-        ID {juror.id.slice(0, 8)}
-      </p>
       <fieldset
-        disabled={disabled}
+        disabled={copyDisabled}
         className="flex min-w-0 flex-wrap items-start gap-2"
       >
         <CopyJurorLink
@@ -69,45 +68,63 @@ export function JurorControls({
           access={juror.access}
           onExpired={onExpired}
         />
-        {juror.access !== 'none' && (
-          <>
-            <Button
-              ref={replacement}
-              aria-describedby={`${identityId}-name ${identityId}`}
-              type="button"
-              className="min-h-11"
-              variant="ghost"
-              onClick={() => confirm('replace')}
-            >
-              {juror.access === 'revoked' ? 'Obnovit odkaz' : 'Nahradit odkaz'}
-            </Button>
-            {juror.access !== 'revoked' && (
+      </fieldset>
+      <details>
+        <summary
+          aria-label={`Další možnosti: ${juror.displayName}`}
+          className="min-h-11 cursor-pointer py-3 text-sm text-muted-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+        >
+          Další možnosti
+        </summary>
+        <p
+          id={identityId}
+          className="mb-2 font-mono text-xs text-muted-foreground"
+        >
+          ID {juror.id.slice(0, 8)}
+        </p>
+        <fieldset disabled={disabled} className="flex flex-wrap gap-2">
+          {juror.access !== 'none' && (
+            <>
               <Button
+                ref={replacement}
                 aria-describedby={`${identityId}-name ${identityId}`}
                 type="button"
                 className="min-h-11"
                 variant="ghost"
-                onClick={() => confirm('revoke')}
+                onClick={() => confirm('replace')}
               >
-                Zrušit odkazy a přihlášení
+                {juror.access === 'revoked'
+                  ? 'Obnovit odkaz'
+                  : 'Nahradit odkaz'}
               </Button>
-            )}
-          </>
-        )}
-        <Button
-          type="button"
-          className="min-h-11"
-          variant="ghost"
-          disabled={locked || action !== null || removing}
-          aria-label={`Odebrat členství ${juror.displayName}, ID ${juror.id.slice(0, 8)}`}
-          onClick={() => {
-            setRemoving(true);
-            onPanelChange(true);
-          }}
-        >
-          Odebrat
-        </Button>
-      </fieldset>
+              {juror.access !== 'revoked' && (
+                <Button
+                  aria-describedby={`${identityId}-name ${identityId}`}
+                  type="button"
+                  className="min-h-11"
+                  variant="ghost"
+                  onClick={() => confirm('revoke')}
+                >
+                  Zrušit odkazy a přihlášení
+                </Button>
+              )}
+            </>
+          )}
+          <Button
+            type="button"
+            className="min-h-11"
+            variant="ghost"
+            disabled={locked || action !== null || removing}
+            aria-label={`Odebrat členství ${juror.displayName}, ID ${juror.id.slice(0, 8)}`}
+            onClick={() => {
+              setRemoving(true);
+              onPanelChange(true);
+            }}
+          >
+            Odebrat
+          </Button>
+        </fieldset>
+      </details>
       {notice && (
         <p role="status" aria-atomic="true" className="text-sm">
           {notice}

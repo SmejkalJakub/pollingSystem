@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useResource } from './useResource';
 import { ResourceState } from './ResourceState';
 import { votingStatusLabels } from './votingFields';
+import { openSavedAdminPage } from './navigation';
 
 const VotingSetup = lazy(() =>
   import('./VotingSetup').then((module) => ({ default: module.VotingSetup })),
@@ -55,9 +56,7 @@ export function VotingList({
               votingId={creating}
               onExpired={onExpired}
               onCancel={() => setCreating(null)}
-              onSaved={() =>
-                window.location.assign(`/admin/votings/${creating}`)
-              }
+              onSaved={() => openSavedAdminPage(`/admin/votings/${creating}`)}
             />
           </Suspense>
         </div>

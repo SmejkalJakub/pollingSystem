@@ -23,17 +23,34 @@
 }
 
 :root {
-  --background: #f7f6f2;
-  --foreground: #20252d;
+  color-scheme: light;
+  --background: #f2f5fb;
+  --foreground: #182640;
   --card: #fff;
-  --primary: #20252d;
+  --primary: #2356c7;
   --primary-foreground: #fff;
-  --secondary: #ecebe6;
-  --muted-foreground: #626560;
-  --destructive: #a23832;
-  --border: #d7d8d1;
-  --ring: #3d7048;
-  --radius: 0.25rem;
+  --secondary: #e6edf8;
+  --muted-foreground: #52627a;
+  --destructive: #b32f3e;
+  --border: #cbd5e5;
+  --ring: #2356c7;
+  --radius: 0.625rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #111827;
+    --foreground: #edf2fb;
+    --card: #1f2937;
+    --primary: #9bbbff;
+    --primary-foreground: #101c34;
+    --secondary: #2a374b;
+    --muted-foreground: #b2c0d5;
+    --destructive: #ff9ba6;
+    --border: #465670;
+    --ring: #9bbbff;
+  }
 }
 
 @layer base {
@@ -43,32 +60,76 @@
   body {
     @apply m-0 bg-background font-sans text-foreground antialiased;
   }
+  input,
+  textarea,
+  select,
+  button,
+  summary,
+  a {
+    scroll-margin-block: 9rem 2rem;
+  }
+  input,
+  textarea {
+    caret-color: var(--primary);
+  }
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  * {
+    scrollbar-color: var(--border) var(--background);
+  }
 }
 
 @layer components {
   .eyebrow {
-    @apply font-mono text-xs uppercase tracking-widest text-muted-foreground;
+    @apply text-sm font-medium text-muted-foreground;
   }
   .wizard-link {
     @apply inline-flex min-h-11 min-w-11 items-center underline underline-offset-4 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
   }
   .event-navigation {
-    @apply mt-4 flex flex-wrap gap-x-5 border-b border-border;
+    @apply mt-5 flex flex-wrap items-center gap-1 rounded-lg bg-card p-1.5;
   }
   .event-navigation a {
-    @apply inline-flex min-h-11 items-center border-b-2 border-transparent py-2 text-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
+    @apply inline-flex min-h-11 items-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground outline-offset-4 hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring;
   }
   .event-navigation a[aria-current='page'] {
-    @apply border-primary;
+    @apply bg-primary text-primary-foreground;
   }
   .preparation-navigation {
-    @apply mt-5 flex flex-wrap gap-2;
+    @apply flex flex-wrap gap-1;
   }
-  .preparation-navigation a {
-    @apply inline-flex min-h-11 items-center rounded-sm border border-transparent px-4 text-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring;
+  .app-header {
+    background: #182640;
+    color: #f4f7ff;
+    --muted-foreground: #bdcbea;
+    --ring: #9bbbff;
   }
-  .preparation-navigation a[aria-current='page'] {
-    @apply border-border bg-card;
+  .app-header .wizard-link:hover,
+  .app-header button:hover {
+    background: #2a3b58;
+    color: #fff;
+  }
+  .brand-mark {
+    @apply rounded-lg bg-primary px-2.5 py-2 text-sm font-bold text-primary-foreground;
+  }
+  .editor-actions {
+    @apply sticky top-0 z-20 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3;
+  }
+  .admin-workspace > section,
+  .admin-workspace article,
+  .admin-workspace form[aria-label='Příprava kategorie'] {
+    @apply rounded-xl;
+  }
+  .team-table {
+    @apply bg-card;
+  }
+  .team-table tbody tr:focus-within {
+    @apply bg-secondary;
+  }
+  .team-table thead {
+    @apply bg-secondary;
   }
 }
 

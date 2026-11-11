@@ -228,6 +228,15 @@ export function WizardContent({
               onUnsavedChange={setUnsaved}
               onRefresh={onRefresh}
               refreshing={refreshing}
+              completedAction={
+                <Button asChild className="min-h-11">
+                  <a href={next ? stepUrl(next.id) : '/wizard/review'}>
+                    {next
+                      ? 'Pokračovat na další kategorii'
+                      : 'Přejít k rekapitulaci'}
+                  </a>
+                </Button>
+              }
             />
           </section>
           <nav

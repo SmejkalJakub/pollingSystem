@@ -38,6 +38,13 @@ test('team table saves atomically with preview, retained errors, conflicts and r
       await Promise.all(
         document
           .getAnimations()
+          // Closed native details can suspend transitions indefinitely.
+          .filter(
+            (animation) =>
+              animation.effect instanceof KeyframeEffect &&
+              animation.effect.target instanceof Element &&
+              animation.effect.target.checkVisibility(),
+          )
           .map((animation) => animation.finished.catch(() => {})),
       );
     });
@@ -77,7 +84,7 @@ test('team table saves atomically with preview, retained errors, conflicts and r
   await page.getByText('Vložit ze spreadsheetu', { exact: true }).click();
   const paste = page.getByLabel('Řádky z tabulky', { exact: true });
   const preview = page.getByRole('button', {
-    name: 'Zobrazit náhled',
+    name: 'Přidat řádky do tabulky',
     exact: true,
   });
   await paste.fill('A\tB\tC');
@@ -85,20 +92,12 @@ test('team table saves atomically with preview, retained errors, conflicts and r
   await expect(page.getByRole('alert')).toContainText('nejvýše dva sloupce');
   await paste.fill('\tBez názvu');
   await preview.click();
-  await expect(
-    page.getByRole('button', { name: 'Přidat náhled do tabulky' }),
-  ).toBeDisabled();
+  await expect(page.getByRole('alert')).toBeVisible();
   await paste.fill(
     'Stejný tým\tPopis\r\nStejný tým\t"Více\nřádků a ""uvozovky"""',
   );
   await preview.click();
-  await expect(
-    page.getByRole('heading', { name: 'Náhled nových týmů (2)' }),
-  ).toBeVisible();
   expect(await values()).toHaveLength(1);
-  await page
-    .getByRole('button', { name: 'Přidat náhled do tabulky', exact: true })
-    .click();
   await expect(field(2)).toBeFocused();
   await expect(field(3, 'Popis týmu')).toHaveValue('Více\nřádků a "uvozovky"');
   await audit();

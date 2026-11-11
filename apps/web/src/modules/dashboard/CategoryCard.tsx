@@ -1,6 +1,7 @@
 import { juryGroupLabel } from '@d21/contracts';
 import type { DashboardCategory } from '@d21/contracts';
 import { lifecycleLabels, stateLabels } from './presentation';
+import { VotingLifecycleActions } from '../admin/VotingLifecycleActions';
 export function Progress({
   submitted,
   expected,
@@ -31,9 +32,22 @@ export function Progress({
     </div>
   );
 }
-export function CategoryCard({ category: c }: { category: DashboardCategory }) {
+export function CategoryCard({
+  category: c,
+  onExpired,
+  onChanged,
+  disabled,
+}: {
+  category: DashboardCategory;
+  onExpired: () => void;
+  onChanged: () => void;
+  disabled: boolean;
+}) {
   return (
-    <article className="min-w-0 border border-border bg-card p-6">
+    <article
+      aria-label={c.name}
+      className="min-w-0 border border-border bg-card p-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <span className="eyebrow">
           {c.kind === 'selection' ? 'Selekce' : 'Finále'}
@@ -61,6 +75,25 @@ export function CategoryCard({ category: c }: { category: DashboardCategory }) {
           .map((g) => `${juryGroupLabel(g.code)} — ${g.name}`)
           .join(', ') || 'Bez oprávněných částí poroty'}
       </p>
+      <div className="mt-5 flex flex-wrap items-start gap-3">
+        <VotingLifecycleActions
+          voting={c}
+          onExpired={onExpired}
+          onChanged={onChanged}
+          disabled={disabled}
+        />
+        <a
+          className="wizard-link text-sm"
+          href={`/admin/results/votings/${c.id}`}
+        >
+          Výsledky
+        </a>
+        {c.status === 'draft' && (
+          <a className="wizard-link text-sm" href={`/admin/votings/${c.id}`}>
+            Připravit kategorii
+          </a>
+        )}
+      </div>
       <div className="mt-6">
         <Progress
           submitted={c.counts.submitted}

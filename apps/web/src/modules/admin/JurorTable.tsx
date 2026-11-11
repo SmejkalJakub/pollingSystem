@@ -22,6 +22,7 @@ import { ExportJurorLinks } from './ExportJurorLinks';
 import { JurorPaste } from './JurorPaste';
 import { JurorRows } from './JurorRows';
 import { JuryGroups } from './JuryGroups';
+import { useAdminLeaveWarning } from './navigation';
 
 export function JurorTable({
   initial,
@@ -42,7 +43,13 @@ export function JurorTable({
   const [busy, setBusy] = useState(false);
   const [latest, setLatest] = useState<JurorTableSnapshot>();
   const [conflict, setConflict] = useState(false);
-  const [discard, setDiscard] = useState(false);
+  const [undo, setUndo] = useState<{
+    rows: JurorTableRow[];
+    issues: JurorTableIssue[];
+    error: string;
+    latest?: JurorTableSnapshot;
+    conflict: boolean;
+  }>();
   const [focusTarget, setFocusTarget] = useState<{ id: string }>();
   const feedback = useRef<HTMLDivElement>(null);
   const controller = useRef<AbortController | null>(null);
@@ -65,21 +72,14 @@ export function JurorTable({
   useEffect(() => {
     if (focusTarget) document.getElementById(focusTarget.id)?.focus();
   }, [focusTarget]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+  useAdminLeaveWarning(dirty || busy);
   function reset(snapshot: JurorTableSnapshot) {
     setBase(snapshot);
     setRows(tableRows(snapshot));
     setLatest(undefined);
     setConflict(false);
     setIssues([]);
-    setDiscard(false);
+    setUndo(undefined);
   }
   function fail(cause: unknown) {
     if (cause instanceof ApiError && [401, 403].includes(cause.status)) {
@@ -104,6 +104,7 @@ export function JurorTable({
   async function loadLatest(focusFeedback = true) {
     if (busy) return;
     setBusy(true);
+    setUndo(undefined);
     setError('');
     setNotice('');
     const request = new AbortController();
@@ -175,15 +176,17 @@ export function JurorTable({
       current.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     );
     setNotice('');
-    setDiscard(false);
+    setUndo(undefined);
     // Retain submitted errors until another validation, including while correcting fields.
   }
   function append(added: JurorTableRow[]) {
+    setUndo(undefined);
     setRows((current) => [...current, ...added]);
     setNotice('Nové řádky jsou připraveny. Uložte tabulku.');
     if (added[0]) setFocusTarget({ id: `juror-${added[0].id}-displayName` });
   }
   function rebase() {
+    setUndo(undefined);
     if (!latest || !canRebase(rows, base, latest)) return;
     const local = new Map(rows.map((row) => [row.id, row]));
     const merged: JurorTableRow[] = tableRows(latest).map((juror) => {
@@ -193,6 +196,13 @@ export function JurorTable({
     const ids = new Set(merged.map((row) => row.id));
     for (const row of rows)
       if (!ids.has(row.id) && !baseById.has(row.id)) merged.push(row);
+    const positions = new Map(rows.map((row, index) => [row.id, index]));
+    // Keep edited rows in place while reviewing a merge; sort after saving.
+    merged.sort(
+      (a, b) =>
+        (positions.get(a.id) ?? rows.length) -
+        (positions.get(b.id) ?? rows.length),
+    );
     setRows(merged);
     setBase(latest);
     setLatest(undefined);
@@ -207,8 +217,8 @@ export function JurorTable({
     <>
       <h2 className="mt-6 text-2xl font-semibold">Porotci</h2>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-        Upravte jména a přiřazení k Technické či Veřejné porotě a uložte celou
-        tabulku najednou. Stejná jména označují samostatná členství.
+        Upravte porotce a uložte tabulku. Osobní odkazy zkopírujete přímo u
+        jmen.
       </p>
       {missingGroups && (
         <p className="mt-4 text-sm text-muted-foreground">
@@ -217,12 +227,8 @@ export function JurorTable({
         </p>
       )}
       {base.locked && (
-        <p
-          role="status"
-          className="mt-4 border-l-2 border-primary bg-secondary p-4 text-sm"
-        >
-          Složení poroty je uzamčeno. Jména lze opravit; členství a přiřazení k
-          Technické či Veřejné porotě měnit nelze.
+        <p role="status" className="mt-2 text-sm text-muted-foreground">
+          Složení poroty je uzamčeno. Jména lze dál opravit.
         </p>
       )}
       <div
@@ -231,9 +237,68 @@ export function JurorTable({
         role="form"
         aria-busy={busy}
       >
+        <div className="editor-actions mb-4">
+          <Button
+            className="min-h-11"
+            id="jurors-save"
+            type="button"
+            onClick={() => void save()}
+            disabled={
+              busy ||
+              auxiliary ||
+              (!dirty && !missingGroups && !missingLinks) ||
+              conflict
+            }
+          >
+            {busy ? 'Probíhá požadavek…' : 'Uložit tabulku'}
+          </Button>
+          {dirty && (
+            <Button
+              className="min-h-11"
+              type="button"
+              variant="ghost"
+              disabled={busy || auxiliary}
+              onClick={() => {
+                const previous = { rows, issues, error, latest, conflict };
+                reset(base);
+                setUndo(previous);
+                setError('');
+                setNotice('Místní změny byly zahozeny.');
+                setFocusTarget({ id: 'jurors-status' });
+              }}
+            >
+              Zahodit změny
+            </Button>
+          )}
+          {undo && (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={busy || auxiliary}
+              onClick={() => {
+                setRows(undo.rows);
+                setIssues(undo.issues);
+                setError(undo.error);
+                setLatest(undo.latest);
+                setConflict(undo.conflict);
+                setUndo(undefined);
+                setNotice('Místní změny byly obnoveny.');
+                setFocusTarget({ id: 'jurors-status' });
+              }}
+            >
+              Vrátit změny
+            </Button>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {dirty
+              ? `${changed} změněných řádků · neuloženo`
+              : 'Všechny změny uloženy'}
+          </p>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {rows.length} porotců · {changed} změněných řádků
+            {rows.length} porotců · uložení porotci podle jména
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -292,6 +357,14 @@ export function JurorTable({
             {notice}
           </p>
         )}
+        {!dirty && notice === 'Tabulka porotců byla uložena.' && (
+          <a
+            className="wizard-link mt-2 text-sm"
+            href={`/admin/events/${eventId}?setup=categories`}
+          >
+            Pokračovat ke kategoriím
+          </a>
+        )}
         <div className="mt-4 max-w-sm">
           <label
             htmlFor="juror-search"
@@ -309,14 +382,20 @@ export function JurorTable({
         </div>
         {dirty && (
           <p className="mt-3 text-sm text-muted-foreground">
-            Před správou osobních odkazů, členství nebo názvů částí uložte či
-            zahoďte změny v tabulce.
+            Kopírování a export používají uložené údaje. Správa přístupu a
+            členství vyžaduje nejdřív uložit změny.
           </p>
         )}
         {query && (
           <p className="mt-2 text-sm text-muted-foreground">
             Hledání skrývá řádky; uloží se celá tabulka.
           </p>
+        )}
+        {!base.locked && (
+          <JurorPaste
+            disabled={busy || auxiliary || conflict}
+            append={append}
+          />
         )}
         <fieldset disabled={busy} className="min-w-0">
           <JurorRows
@@ -326,6 +405,7 @@ export function JurorTable({
             query={query}
             snapshot={base}
             disabled={busy || auxiliary || dirty || conflict}
+            copyDisabled={busy || auxiliary}
             reload={(focusFeedback = true) => void loadLatest(focusFeedback)}
             onExpired={onExpired}
             showIds={conflict}
@@ -423,76 +503,11 @@ export function JurorTable({
             )}
           </div>
         )}
-        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
-          <Button
-            className="min-h-11"
-            id="jurors-save"
-            type="button"
-            onClick={() => void save()}
-            disabled={
-              busy ||
-              auxiliary ||
-              (!dirty && !missingGroups && !missingLinks) ||
-              conflict
-            }
-          >
-            {busy ? 'Probíhá požadavek…' : 'Uložit tabulku'}
-          </Button>
-          {dirty && (
-            <Button
-              className="min-h-11"
-              type="button"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => setDiscard(true)}
-            >
-              Zahodit změny
-            </Button>
-          )}
-          <p className="text-sm text-muted-foreground">
-            Uloží se vše, nebo nic. Před odchodem uložte změny.
-          </p>
-        </div>
-        {discard && (
-          <div className="mt-3 flex flex-wrap items-center gap-3 border border-border p-4">
-            <p>Zahodit všechny místní úpravy?</p>
-            <Button
-              className="min-h-11"
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                reset(base);
-                setFocusTarget({ id: 'jurors-status' });
-                setError('');
-                setNotice('Místní změny byly zahozeny.');
-              }}
-            >
-              Ano, zahodit
-            </Button>
-            <Button
-              className="min-h-11"
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setDiscard(false);
-                setFocusTarget({ id: 'jurors-add' });
-              }}
-            >
-              Pokračovat v úpravách
-            </Button>
-          </div>
-        )}
       </div>
       <ExportJurorLinks
         eventId={eventId}
         onExpired={onExpired}
-        disabled={
-          busy || auxiliary || dirty || conflict || base.jurors.length === 0
-        }
-      />
-      <JurorPaste
-        disabled={busy || auxiliary || conflict || base.locked}
-        append={append}
+        disabled={busy || auxiliary || base.jurors.length === 0}
       />
       <JuryGroups
         onPanelChange={setAuxiliary}

@@ -1,9 +1,35 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { AppHeader } from '@/components/AppHeader';
-import { AuthScreen } from '@/modules/auth/AuthScreen';
-import { JurorPortal } from '@/modules/voting-wizard/JurorPortal';
+
+const AuthScreen = lazy(() =>
+  import('@/modules/auth/AuthScreen').then((module) => ({
+    default: module.AuthScreen,
+  })),
+);
+const JurorPortal = lazy(() =>
+  import('@/modules/voting-wizard/JurorPortal').then((module) => ({
+    default: module.JurorPortal,
+  })),
+);
 
 export function App() {
+  return (
+    <Suspense
+      fallback={
+        <>
+          <AppHeader />
+          <main className="mx-auto max-w-6xl px-6 py-8" aria-busy="true">
+            <p role="status">Načítání aplikace…</p>
+          </main>
+        </>
+      }
+    >
+      <AppRoutes />
+    </Suspense>
+  );
+}
+
+function AppRoutes() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   const adminLogin =
     path === '/admin/login' ||

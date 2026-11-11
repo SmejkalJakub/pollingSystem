@@ -88,8 +88,8 @@ export function ExportJurorLinks({
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Excel obsahuje všechny uložené porotce, jejich porotu a klikací
             osobní odkazy. Zrušené, starší neobnovitelné nebo chybějící odkazy
-            mají vysvětlení ve sloupci Stav přístupu. Nejdříve uložte změny.
-            Každému porotci předejte pouze jeho vlastní odkaz.
+            mají vysvětlení ve sloupci Stav přístupu. Export používá uložené
+            údaje. Každému porotci předejte pouze jeho vlastní odkaz.
           </p>
         </div>
         <Button

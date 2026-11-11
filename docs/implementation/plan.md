@@ -1,5 +1,15 @@
 # Implementation plan
 
+## Streamlined voting workflow — DONE locally, 2026-11-11
+
+The user explicitly started one end-to-end usability phase after the local Impeccable review. Event navigation and creation, rosters, category save/readiness, juror entry and ballot controls, and results hierarchy are complete. Source and browser validation across desktop, phone and dark landscape, visual review, and local handoff are recorded in [progress](progress.md). Existing rules and authorization remain in place. [Scope](../wiki/streamlined-workflow.md).
+
+## Organizer usability — DONE locally, 2026-11-10
+
+Completed the user-approved organizer-focused Impeccable implementation with DashHack visual inspiration: five direct event tabs; Copy/saved-data export during unrelated edits; sticky saves and local Undo; direct validated spreadsheet staging; contextual close/reopen and expected-revision unlock; blue/navy light/dark styling; compact operational overview and calm no-votes results. [Scope](../wiki/organizer-usability.md).
+
+Acceptance complete: workspace/E2E typechecks, lint, formatting, 79 fast tests and builds pass; full built-app browser suite 27/27 without retries, then final dashboard-layout follow-up 9/9 across desktop/phone/dark landscape. Source review and two bounded visual passes complete; fixture databases cleaned, documentation/handoff updated. Exact sequence and limits are in progress.md. No backend, dependency, migration or voting-rule change. No publication or subsequent phase.
+
 ## Individual-juror-votes release — DEPLOYED, 2026-10-21
 
 The user explicitly approved commit, push and deployment. Source `7c6de123ccfa7fe3442bad702ff84ad20db73242` (**feat: show and export individual juror votes**) was pushed to main without trailers and manually deployed from the Render dashboard (after the user signed in) to the existing [Free test app](https://d21-voting-test.onrender.com), deploy `dep-dbcbq0eq1p3s73cu83kg`, **Deploy succeeded / Live** at about 13:25 UTC (1m25s). Same Free/Frankfurt service `srv-dbac88eq1p3s73b4jqm0`, manual deploys, no configuration/key/password/paid/other-project change.

@@ -1,5 +1,7 @@
 # Operational dashboard
 
+The 2026-11-10 [organizer usability update](organizer-usability.md) adds existing close/reopen actions to category cards/detail and revision-checked ballot unlock beside submitted jurors. The dashboard counting API below stays read-only and unchanged; controls use the existing protected mutation endpoints and a separate ballot metadata read.
+
 Phase 10 implements a read-only dashboard for the existing shared administration/guarantor identity. Validation evidence and current completion status are in [progress](../implementation/progress.md).
 
 ## Screens and refresh

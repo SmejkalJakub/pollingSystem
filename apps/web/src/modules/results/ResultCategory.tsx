@@ -9,6 +9,7 @@ const reasonLabels: Record<ResultsReason, string> = {
   CUTOFF_TIE: 'Shoda skóre zasahuje přes hranici dostupných míst.',
 };
 function selectionLabel(row: ResultRow, c: ResultsCategory) {
+  if (c.counts.submitted === 0) return 'Zatím bez hlasů';
   if (row.selection === 'unresolved') return 'Nerozhodnutá shoda';
   if (c.problems.includes('CONFIGURATION_NOT_READY'))
     return 'Výběr není vyhodnocen';
@@ -25,6 +26,16 @@ export function ResultCategory({
   category: ResultsCategory;
   detail?: boolean;
 }) {
+  const winners =
+    c.kind === 'final' && c.stage === 'final'
+      ? c.rows.filter((row) => row.selection === 'selected')
+      : [];
+  const names = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const row of c.rows) {
+    if (names.has(row.name)) duplicates.add(row.name);
+    names.add(row.name);
+  }
   return (
     <section
       className="min-w-0 border border-border bg-card p-5 sm:p-6"
@@ -54,7 +65,12 @@ export function ResultCategory({
         {c.kind === 'selection' ? 'Postupových míst' : 'Vítězných míst'}:{' '}
         {c.selectedPlaces ?? 'nenastaveno'}
       </p>
-      {c.stage === 'provisional' && (
+      {winners.length === 1 && (
+        <p className="mt-4 break-words text-sm">
+          Vítěz: <strong>{winners[0]!.name}</strong>
+        </p>
+      )}
+      {c.stage === 'provisional' && c.counts.submitted > 0 && (
         <ul className="mt-4 list-inside list-disc space-y-1 text-sm">
           {c.reasons.map((r) => (
             <li key={r}>{reasonLabels[r]}</li>
@@ -82,7 +98,7 @@ export function ResultCategory({
           )}
         </div>
       )}
-      {c.boundaryTie && (
+      {c.boundaryTie && c.counts.submitted > 0 && (
         <p className="mt-5 border border-destructive p-4 text-sm">
           <strong>Hranice výběru je nerozhodnutá.</strong> Celá shodná skupina
           zůstává nerozhodnutá. Rozhodnutí je na organizátorovi mimo aplikaci;
@@ -149,7 +165,7 @@ export function ResultCategory({
                 >
                   <span className="sr-only sm:hidden">Pořadí </span>
                   {row.rank}.
-                  {row.tied && (
+                  {row.tied && c.counts.submitted > 0 && (
                     <span className="mt-1 block font-sans text-xs text-muted-foreground">
                       shoda
                     </span>
@@ -162,13 +178,17 @@ export function ResultCategory({
                 >
                   <p className="break-words font-medium">{row.name}</p>
                   <p
-                    className={`mt-1 text-xs ${row.selection === 'unresolved' ? 'text-destructive' : row.selection === 'selected' && c.stage === 'final' ? 'text-ring' : 'text-muted-foreground'}`}
+                    className={`mt-1 text-xs ${row.selection === 'unresolved' && c.counts.submitted > 0 ? 'text-destructive' : row.selection === 'selected' && c.stage === 'final' ? 'text-ring' : 'text-muted-foreground'}`}
                   >
                     {selectionLabel(row, c)}
                   </p>
-                  <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">
-                    {row.teamId ?? row.id}
-                  </p>
+                  {(detail || duplicates.has(row.name)) && (
+                    <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                      {detail
+                        ? (row.teamId ?? row.id)
+                        : (row.teamId ?? row.id).slice(0, 8)}
+                    </p>
+                  )}
                   {detail && row.description && (
                     <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
                       {row.description}

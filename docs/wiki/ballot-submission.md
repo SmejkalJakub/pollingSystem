@@ -1,5 +1,7 @@
 # Category submission and administrator unlocking
 
+The 2026-11-10 [organizer usability update](organizer-usability.md) also exposes the existing revision-checked administrator unlock confirmation beside submitted jurors on category progress detail. The original management view and all submission/history rules remain unchanged.
+
 Phase 8 is DONE (2026-10-17). Categories are independent: jurors may submit some and finish the remainder later. Saving a draft never submits it. Phase 9 now adds [saved review and selected independent final submission](multi-category-review.md) under the explicitly approved contract.
 
 ## Juror workflow

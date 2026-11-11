@@ -103,6 +103,14 @@ test('roster copies existing links in one click with keyboard, fallback and unti
   try {
     const jurorPage = await jurorContext.newPage();
     await jurorPage.goto(link);
+    const entryDocument = await jurorPage.evaluate(
+      () => performance.timeOrigin,
+    );
+    const entryReads: string[] = [];
+    jurorPage.on('request', (request) => {
+      if (request.method() === 'GET')
+        entryReads.push(new URL(request.url()).pathname);
+    });
     await jurorPage
       .getByRole('button', { name: 'Pokračovat k přehledu', exact: true })
       .click();
@@ -110,7 +118,12 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     await expect(
       jurorPage.getByText('Kopírování', { exact: true }),
     ).toBeVisible();
+    expect(await jurorPage.evaluate(() => performance.timeOrigin)).toBe(
+      entryDocument,
+    );
+    expect(entryReads).not.toContain('/api/wizard/current');
     // Legacy replacement stays explicit; cancellation preserves the working session.
+    await legacyRow.getByText('Další možnosti', { exact: true }).click();
     const legacyContext = await browser.newContext({ baseURL: runtime.origin });
     try {
       const entered = await legacyContext.request.post(
@@ -137,10 +150,7 @@ test('roster copies existing links in one click with keyboard, fallback and unti
         page.getByRole('form', { name: 'Nahradit osobní odkaz?', exact: true }),
       ).toContainText('Původní odkaz');
       await expect(
-        row.getByRole('textbox', {
-          name: 'Jméno porotce, řádek 1',
-          exact: true,
-        }),
+        row.getByRole('textbox', { name: /^Jméno porotce,/ }),
       ).toBeDisabled();
       await page
         .getByRole('button', { name: 'Zrušit', exact: true })
@@ -268,6 +278,7 @@ test('roster copies existing links in one click with keyboard, fallback and unti
       .press('Enter');
     await expect(copy).toBeFocused();
     await page.getByLabel('Hledat porotce', { exact: true }).fill('Kopírování');
+    await row.getByText('Další možnosti', { exact: true }).click();
     await page
       .getByRole('button', { name: 'Nahradit odkaz', exact: true })
       .click();
@@ -286,11 +297,11 @@ test('roster copies existing links in one click with keyboard, fallback and unti
       .getByRole('form', { name: 'Zrušit odkazy a přihlášení?' })
       .getByRole('button', { name: 'Zrušit přístup', exact: true })
       .click();
+    await expect(row.getByText(/Přístup byl zrušen/)).toBeVisible();
     expect((await jurorPage.request.get('/api/wizard/current')).status()).toBe(
       401,
     );
     await expect(copy).toBeDisabled();
-    await expect(row.getByText(/Přístup byl zrušen/)).toBeVisible();
     await expect(
       row.getByRole('button', { name: 'Obnovit odkaz', exact: true }),
     ).toBeFocused();
@@ -322,14 +333,12 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     );
     await page.reload();
     await expect(copy).toBeDisabled();
+    await row.getByText('Další možnosti', { exact: true }).click();
     await row
       .getByRole('button', { name: 'Obnovit odkaz', exact: true })
       .click();
     await expect(
-      page.getByRole('textbox', {
-        name: 'Jméno porotce, řádek 1',
-        exact: true,
-      }),
+      row.getByRole('textbox', { name: /^Jméno porotce,/ }),
     ).toBeDisabled();
     await page
       .getByRole('button', { name: 'Potvrdit náhradu', exact: true })
@@ -351,6 +360,7 @@ test('roster copies existing links in one click with keyboard, fallback and unti
     // Capture after interactions: full-page screenshots can change Chromium's
     // focus-scroll position on narrow viewports between pointer down/up.
     await page.getByLabel('Hledat porotce', { exact: true }).fill('Kopírování');
+    await row.getByText('Další možnosti', { exact: true }).click();
     await page.screenshot({
       path: testInfo.outputPath(`stage1-roster-${testInfo.project.name}.png`),
       fullPage: true,

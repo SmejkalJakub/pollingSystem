@@ -21,9 +21,8 @@ export function TeamsManager({
         Soutěžní týmy
       </h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Upravte tabulku a všechny změny uložte najednou. Oprava názvu nebo
-        popisu se projeví ve všech kategoriích týmu. Stejné názvy označují
-        samostatné týmy.
+        Upravte týmy a uložte tabulku. Názvy a popisy se aktualizují ve všech
+        jejich kategoriích.
       </p>
       <ResourceState resource={resource} />
       {resource.data && (

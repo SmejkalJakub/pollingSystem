@@ -1,5 +1,6 @@
 import { EventHeading } from './EventNavigation';
 import { BallotUnlock } from './BallotUnlock';
+import { VotingLifecycleActions } from './VotingLifecycleActions';
 import { lazy, Suspense, useState } from 'react';
 import {
   eventSchema,
@@ -33,10 +34,9 @@ export function VotingDetail({
     onExpired,
   );
   const [setupBlocked, setSetupBlocked] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const [reopening, setReopening] = useState(false);
   const [activating, setActivating] = useState(false);
   const [notice, setNotice] = useState('');
+  const [showSetup, setShowSetup] = useState(false);
   return (
     <>
       <ResourceState resource={resource} />
@@ -65,11 +65,13 @@ export function VotingDetail({
               </h2>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild className="min-h-11" variant="outline">
-                <a href={`/admin/results/votings/${votingId}`}>
-                  Výsledky kategorie
-                </a>
-              </Button>
+              {resource.data.status !== 'draft' && (
+                <Button asChild className="min-h-11" variant="outline">
+                  <a href={`/admin/results/votings/${votingId}`}>
+                    Výsledky kategorie
+                  </a>
+                </Button>
+              )}
               {resource.data.status === 'draft' && (
                 <Button
                   className="min-h-11"
@@ -82,33 +84,12 @@ export function VotingDetail({
                   Aktivovat hlasování
                 </Button>
               )}
-              {(resource.data.status === 'closed' ||
-                resource.data.status === 'archived') && (
-                <Button
-                  className="min-h-11"
-                  variant="outline"
-                  disabled={reopening}
-                  onClick={() => {
-                    setReopening(true);
-                    setNotice('');
-                  }}
-                >
-                  Znovu otevřít hlasování
-                </Button>
-              )}
-              {resource.data.status === 'active' && (
-                <Button
-                  className="min-h-11"
-                  variant="outline"
-                  disabled={closing}
-                  onClick={() => {
-                    setClosing(true);
-                    setNotice('');
-                  }}
-                >
-                  Uzavřít hlasování
-                </Button>
-              )}
+              <VotingLifecycleActions
+                voting={resource.data}
+                onExpired={onExpired}
+                onChanged={resource.reload}
+                disabled={resource.loading}
+              />
               <Button
                 className="min-h-11"
                 variant="ghost"
@@ -148,56 +129,6 @@ export function VotingDetail({
               />
             </div>
           )}
-          {closing && resource.data.status === 'active' && (
-            <div className="mt-6">
-              <MutationForm
-                title="Uzavřít hlasování"
-                description="Hlasování bude uzavřeno. Dosavadní hlasovací lístky a konfigurace zůstanou zachované."
-                initial={{}}
-                fields={[]}
-                schema={votingActionSchema}
-                submitLabel="Uzavřít"
-                onExpired={onExpired}
-                cancel={() => setClosing(false)}
-                save={async () => {
-                  await adminRequest(
-                    `/votings/${votingId}/close`,
-                    votingRecordSchema,
-                    { method: 'POST', body: {} },
-                  );
-                  setClosing(false);
-                  setNotice('Hlasování bylo uzavřeno.');
-                  resource.reload();
-                }}
-              />
-            </div>
-          )}
-          {reopening &&
-            (resource.data.status === 'closed' ||
-              resource.data.status === 'archived') && (
-              <div className="mt-6">
-                <MutationForm
-                  title="Znovu otevřít hlasování"
-                  description="Hlasování bude znovu aktivní bez kontroly připravenosti. Dosavadní hlasovací lístky, konfigurace a uzamčení složení poroty zůstanou zachované."
-                  initial={{}}
-                  fields={[]}
-                  schema={votingActionSchema}
-                  submitLabel="Znovu otevřít"
-                  onExpired={onExpired}
-                  cancel={() => setReopening(false)}
-                  save={async () => {
-                    await adminRequest(
-                      `/votings/${votingId}/reopen`,
-                      votingRecordSchema,
-                      { method: 'POST', body: {} },
-                    );
-                    setReopening(false);
-                    setNotice('Hlasování bylo znovu otevřeno.');
-                    resource.reload();
-                  }}
-                />
-              </div>
-            )}
           {resource.data.status !== 'draft' && (
             <section
               className="mt-8 border-t border-border pt-6"
@@ -220,26 +151,39 @@ export function VotingDetail({
                 onExpired={onExpired}
                 onSaved={resource.reload}
                 onBlocked={setSetupBlocked}
-                paused={activating || closing || reopening}
+                paused={activating}
               />
             </Suspense>
           ) : (
             <>
-              <VotingGroups voting={resource.data} onExpired={onExpired} />
-              <VotingConfiguration
-                voting={resource.data}
-                onSaved={resource.reload}
-                onExpired={onExpired}
-              />
-              <VotingItems voting={resource.data} onExpired={onExpired} />
+              <details
+                className="mt-6 rounded-xl border border-border bg-card p-5"
+                onToggle={(event) => {
+                  if (event.currentTarget.open) setShowSetup(true);
+                }}
+              >
+                <summary className="min-h-11 cursor-pointer py-3 font-semibold">
+                  Nastavení kategorie · uzamčeno
+                </summary>
+                {showSetup && (
+                  <>
+                    <VotingGroups
+                      voting={resource.data}
+                      onExpired={onExpired}
+                    />
+                    <VotingConfiguration
+                      voting={resource.data}
+                      onSaved={resource.reload}
+                      onExpired={onExpired}
+                    />
+                    <VotingItems voting={resource.data} onExpired={onExpired} />
+                  </>
+                )}
+              </details>
             </>
           )}
-          <BallotUnlock votingId={votingId} onExpired={onExpired} />
-          {resource.data.status === 'draft' && (
-            <p className="mt-8 border border-dashed border-border p-5 text-sm leading-relaxed text-muted-foreground">
-              Toto hlasování je koncept. Před aktivací je potřeba dokončit
-              pravidla, týmy a oprávnění poroty.
-            </p>
+          {resource.data.status !== 'draft' && (
+            <BallotUnlock votingId={votingId} onExpired={onExpired} />
           )}
         </>
       )}

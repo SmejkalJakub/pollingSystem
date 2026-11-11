@@ -7,10 +7,13 @@ import { ResultsState } from './ResultsState';
 import { ResultCategory } from './ResultCategory';
 import { ExportResults } from './ExportResults';
 import { JurorVotesList } from './JurorVotesList';
+import type { ReactNode } from 'react';
 
 function ResultsContent({
   data,
   resource,
+  exportAction,
+  showEvent = false,
 }: {
   data:
     | {
@@ -24,32 +27,33 @@ function ResultsContent({
     error?: unknown;
     reload: () => void;
   };
+  exportAction?: ReactNode;
+  showEvent?: boolean;
 }) {
   return (
     <>
       <ResultsState resource={resource} />
       {data && (
         <>
-          <EventHeading event={data.event} section="results" />
+          {showEvent && <EventHeading event={data.event} section="results" />}
           <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <h2
-              id="results-heading"
-              tabIndex={-1}
-              className="min-w-0 break-words text-xl font-semibold outline-none sm:text-2xl"
-            >
-              Výsledky hlasování
-            </h2>
-            <DashboardRefresh resource={resource} />
+            <div className="min-w-0">
+              <h2
+                id="results-heading"
+                tabIndex={-1}
+                className="break-words text-xl font-semibold outline-none sm:text-2xl"
+              >
+                Výsledky hlasování
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Data k {timestamp(data.asOf)}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-start gap-2">
+              <DashboardRefresh resource={resource} />
+              {exportAction}
+            </div>
           </div>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Pouze aktuálně odevzdané lístky oprávněných porotců. Uložené návrhy
-            ani historie se nezapočítávají. Finální výsledek vyžaduje uzavření,
-            všechna odevzdání a žádný datový problém či shodu přes hranici
-            výběru.
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Data k {timestamp(data.asOf)}. Pro aktuální stav obnovte přehled.
-          </p>
         </>
       )}
     </>
@@ -70,13 +74,16 @@ export function Results({
   );
   return (
     <>
-      <ResultsContent data={resource.data} resource={resource} />
-      {resource.data && (
-        <ExportResults eventId={eventId} onExpired={onExpired} />
-      )}
+      <ResultsContent
+        data={resource.data}
+        resource={resource}
+        exportAction={<ExportResults eventId={eventId} onExpired={onExpired} />}
+      />
       {resource.data &&
         (resource.data.categories.length ? (
-          <div className="mt-8 grid items-start gap-6 lg:grid-cols-2">
+          <div
+            className={`mt-5 grid items-start gap-6 ${resource.data.categories.length > 1 ? 'lg:grid-cols-2' : ''}`}
+          >
             {resource.data.categories.map((c) => (
               <ResultCategory key={c.id} category={c} />
             ))}
@@ -86,6 +93,19 @@ export function Results({
             Event zatím nemá žádné hlasovací kategorie.
           </p>
         ))}
+      {resource.data && (
+        <details className="mt-5 border-t border-border text-sm">
+          <summary className="min-h-11 cursor-pointer py-3 font-medium">
+            Jak se počítají výsledky a co obsahuje export
+          </summary>
+          <p className="max-w-2xl pb-3 text-muted-foreground">
+            Počítají se jen aktuálně odevzdané lístky oprávněných porotců.
+            Finální výsledek vyžaduje uzavření, všechna odevzdání a žádný datový
+            problém ani shodu přes hranici výběru. Excel obsahuje čerstvý
+            přehled kategorií, skóre týmů, účast a jednotlivé hlasy porotců.
+          </p>
+        </details>
+      )}
     </>
   );
 }
@@ -105,7 +125,7 @@ export function ResultsDetail({
   const data = resource.data;
   return (
     <>
-      <ResultsContent data={data} resource={resource} />
+      <ResultsContent data={data} resource={resource} showEvent />
       {data && (
         <>
           <a

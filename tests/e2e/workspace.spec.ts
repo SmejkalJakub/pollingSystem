@@ -39,7 +39,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
     await expect(
       eventNav.getByRole('link', { name, exact: true }),
     ).toHaveAttribute('aria-current', 'page');
-    await expect(eventNav.getByRole('link')).toHaveCount(3);
+    await expect(eventNav.getByRole('link')).toHaveCount(5);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
       event.name,
     );
@@ -50,6 +50,13 @@ test('compact event workspace keeps context, deep links, preparation and recover
       await Promise.all(
         document
           .getAnimations()
+          // Closed native details can suspend transitions indefinitely.
+          .filter(
+            (animation) =>
+              animation.effect instanceof KeyframeEffect &&
+              animation.effect.target instanceof Element &&
+              animation.effect.target.checkVisibility(),
+          )
           .map((animation) => animation.finished.catch(() => {})),
       );
     });
@@ -80,7 +87,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(
     page.getByRole('button', { name: 'Nové hlasování', exact: true }),
   ).toHaveCount(0);
-  await section('Příprava');
+  await section('Porotci');
   await page.screenshot({
     path: testInfo.outputPath('workspace-jurors.png'),
     fullPage: true,
@@ -156,7 +163,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(
     page.getByText('Tabulka týmů byla uložena.', { exact: true }),
   ).toBeVisible();
-  await section('Příprava');
+  await section('Týmy');
   await page.screenshot({
     path: testInfo.outputPath('workspace-teams.png'),
     fullPage: true,
@@ -175,7 +182,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(
     preparation.getByRole('link', { name: 'Kategorie', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
-  await section('Příprava');
+  await section('Kategorie');
   await page.screenshot({
     path: testInfo.outputPath('workspace-categories.png'),
     fullPage: true,
@@ -184,7 +191,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
   await expect(page).toHaveURL(
     `${runtime.origin}/admin/votings/${category.id}`,
   );
-  await section('Příprava');
+  await section('Kategorie');
   await page
     .getByRole('link', { name: '← Všechny kategorie', exact: true })
     .click();
@@ -221,7 +228,7 @@ test('compact event workspace keeps context, deep links, preparation and recover
     page.getByRole('heading', { name: category.name, exact: true }),
   ).toBeVisible();
   await section('Výsledky');
-  await eventNav.getByRole('link', { name: 'Příprava', exact: true }).click();
+  await eventNav.getByRole('link', { name: 'Porotci', exact: true }).click();
   await expect(
     preparation.getByRole('link', { name: 'Porotci', exact: true }),
   ).toHaveAttribute('aria-current', 'page');

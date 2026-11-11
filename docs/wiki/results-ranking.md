@@ -1,5 +1,9 @@
 # Results and ranking
 
+The [streamlined workflow](streamlined-workflow.md) puts ranking and finality first, with refresh and XLSX in one toolbar and full identifiers in category detail. The server ranking and export rules are unchanged.
+
+The 2026-11-10 [organizer usability update](organizer-usability.md) presents zero-submission results with a quiet no-votes state instead of repeated cutoff warnings. Factual problems remain visible; API ranks, ties, selection, finality and exports below are unchanged.
+
 Phase 11 provides read-only internal results for the existing shared administration/guarantor identity. Open an event and choose **Výsledky hlasování**, or choose **Výsledky kategorie** in category administration. Validation status/evidence are recorded in [progress](../implementation/progress.md).
 
 ## Approved Q06 rules

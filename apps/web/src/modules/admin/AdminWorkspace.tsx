@@ -1,11 +1,11 @@
-import { Results, ResultsDetail } from '../results/Results';
-import { Dashboard } from '../dashboard/Dashboard';
+import { ResultsDetail } from '../results/Results';
 import { CategoryDetail } from '../dashboard/CategoryDetail';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { EventList } from './EventList';
 import { EventDetail } from './EventDetail';
 import { VotingDetail } from './VotingDetail';
+import { useAdminNavigation } from './navigation';
 export function AdminWorkspace({
   onExpired,
   logout,
@@ -17,15 +17,20 @@ export function AdminWorkspace({
   busy: boolean;
   error: React.ReactNode;
 }) {
-  const eventId = window.location.pathname.split('/')[3];
-  const path = window.location.pathname.replace(/\/+$/, '');
+  const location = useAdminNavigation();
+  const [pathname, search] = location.split('?');
+  const path = pathname!.replace(/\/+$/, '');
+  const eventId = path.split('/')[3];
   const dashboardCategoryId =
     /^\/admin\/dashboard\/votings\/([0-9a-f-]{36})$/i.exec(path)?.[1];
   const resultsCategoryId =
     /^\/admin\/results\/votings\/([0-9a-f-]{36})$/i.exec(path)?.[1];
-  const isResults = path.endsWith('/results') || !!resultsCategoryId;
-  const isDashboard = path.endsWith('/dashboard');
-  const isVoting = window.location.pathname.startsWith('/admin/votings/');
+  const section = path.endsWith('/results')
+    ? 'results'
+    : path.endsWith('/dashboard')
+      ? 'progress'
+      : 'preparation';
+  const isVoting = path.startsWith('/admin/votings/');
   return (
     <>
       <a
@@ -59,7 +64,7 @@ export function AdminWorkspace({
       <main
         id="main"
         tabIndex={-1}
-        className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-6"
+        className="admin-workspace mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8"
       >
         {error}
         {resultsCategoryId ? (
@@ -68,16 +73,12 @@ export function AdminWorkspace({
             votingId={resultsCategoryId}
             onExpired={onExpired}
           />
-        ) : isResults && eventId ? (
-          <Results key={eventId} eventId={eventId} onExpired={onExpired} />
         ) : dashboardCategoryId ? (
           <CategoryDetail
             key={dashboardCategoryId}
             votingId={dashboardCategoryId}
             onExpired={onExpired}
           />
-        ) : isDashboard && eventId ? (
-          <Dashboard key={eventId} eventId={eventId} onExpired={onExpired} />
         ) : isVoting && eventId ? (
           <VotingDetail
             key={eventId}
@@ -85,7 +86,13 @@ export function AdminWorkspace({
             onExpired={onExpired}
           />
         ) : eventId ? (
-          <EventDetail key={eventId} eventId={eventId} onExpired={onExpired} />
+          <EventDetail
+            key={eventId}
+            eventId={eventId}
+            section={section}
+            search={search}
+            onExpired={onExpired}
+          />
         ) : (
           <EventList onExpired={onExpired} />
         )}

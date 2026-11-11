@@ -1,5 +1,6 @@
 import { juryGroupLabel } from '@d21/contracts';
 import { useEffect, useRef } from 'react';
+import { teamsByName } from './team-table-utils';
 import type { VotingSetupSnapshot, VotingSetupValues } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
 import { controlClass } from './MutationForm';
@@ -24,6 +25,7 @@ export function VotingSetupFields({
   fieldId: (field: string) => string;
 }) {
   const focusRow = useRef<string>(null);
+  const teams = teamsByName(snapshot.teams);
   useEffect(() => {
     if (focusRow.current) {
       document.getElementById(focusRow.current)?.focus();
@@ -258,7 +260,7 @@ export function VotingSetupFields({
                 )
               }
               onClick={() => {
-                const next = addAllEventTeams(values, snapshot.teams);
+                const next = addAllEventTeams(values, teams);
                 const first = next.items.findIndex(
                   (item, index) => item.teamId !== values.items[index]?.teamId,
                 );
@@ -335,7 +337,7 @@ export function VotingSetupFields({
                 }
               >
                 <option value="">Vyberte tým</option>
-                {snapshot.teams.map((team) => (
+                {teams.map((team) => (
                   <option key={team.id} value={team.id}>
                     {team.name}
                     {snapshot.teams.some(

@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import {
+  votingConfigurationSchema,
   votingSetupSnapshotSchema,
   votingSetupSaveSchema,
   type VotingSetupSnapshot,
   type VotingSetupValues,
 } from '@d21/contracts';
 import { Button } from '@/components/ui/button';
+import { useAdminLeaveWarning } from './navigation';
 import { ApiError } from '@/lib/api';
 import { adminRequest, managementError } from './api';
 import {
@@ -46,8 +48,14 @@ export function VotingSetup({
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false),
-    [conflict, setConflict] = useState(false),
-    [discarding, setDiscarding] = useState(false);
+    [conflict, setConflict] = useState(false);
+  const [undo, setUndo] = useState<{
+    values: VotingSetupValues;
+    current?: VotingSetupSnapshot;
+    issues: string[];
+    error: string;
+    conflict: boolean;
+  }>();
   const feedback = useRef<HTMLDivElement>(null),
     heading = useRef<HTMLHeadingElement>(null),
     controller = useRef<AbortController>(null);
@@ -97,19 +105,14 @@ export function VotingSetup({
   useEffect(() => {
     if (error || issues.length || current || notice) feedback.current?.focus();
   }, [error, issues, current, notice]);
-  useEffect(() => {
-    if (!dirty) return;
-    const unload = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', unload);
-    return () => window.removeEventListener('beforeunload', unload);
-  }, [dirty]);
+  useAdminLeaveWarning(dirty || busy);
   function accept(snapshot: VotingSetupSnapshot) {
     setBase(snapshot);
     setValues(setupValues(snapshot));
     setCurrent(undefined);
     setIssues([]);
     setConflict(false);
-    setDiscarding(false);
+    setUndo(undefined);
     setError('');
   }
   async function refresh() {
@@ -181,7 +184,7 @@ export function VotingSetup({
     if (values && next.items.length !== values.items.length) setIssues([]);
     setValues(next);
     setNotice('');
-    setDiscarding(false);
+    setUndo(undefined);
   }
   const fieldId = (field: string) => `${id}-${field}`;
   const fieldLabel = (field: string) =>
@@ -204,6 +207,25 @@ export function VotingSetup({
       </div>
     );
   const rebased = current ? rebaseSetup(base, values, current) : null;
+  const limits = votingConfigurationSchema.safeParse(
+    base.voting && {
+      selectedPlaces: base.voting.selectedPlaces,
+      maxPlusVotes: base.voting.maxPlusVotes,
+      maxMinusVotes: base.voting.maxMinusVotes,
+      allowNegativeVotes: base.voting.allowNegativeVotes,
+    },
+  );
+  const readiness = [
+    !limits.success && 'Doplňte platné limity hlasů.',
+    (!base.items.length ||
+      base.items.some((item) => !item.teamId) ||
+      (limits.success &&
+        (limits.data.selectedPlaces >= base.items.length ||
+          limits.data.maxPlusVotes + limits.data.maxMinusVotes >=
+            base.items.length))) &&
+      'Přiřaďte všechny položky k týmům. Počet týmů musí převýšit počet míst i součet limitů.',
+    !base.juryGroupIds.length && 'Vyberte alespoň jednu oprávněnou porotu.',
+  ].filter(Boolean);
   return (
     <form
       onSubmit={save}
@@ -230,11 +252,86 @@ export function VotingSetup({
           Načíst aktuální přípravu
         </Button>
       </div>
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Název, pravidla, porota a položky se uloží společně. Koncept může zůstat
-        bez pravidel, poroty nebo týmů. Uložení neaktivuje hlasování. Před
-        odchodem uložte změny.
-      </p>
+      {isCreation ? (
+        <p className="text-sm text-muted-foreground">
+          Kategorii můžete uložit jako koncept a dokončit ji později.
+        </p>
+      ) : (
+        <div className="rounded-lg border border-border bg-secondary px-4 py-3 text-sm">
+          <p className="font-medium">
+            {dirty
+              ? 'Před aktivací uložte úpravy'
+              : readiness.length
+                ? 'Před aktivací zbývá'
+                : 'Uložené nastavení je připravené k aktivaci'}
+          </p>
+          {!dirty && readiness.length > 0 && (
+            <ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
+              {readiness.map((hint) => (
+                <li key={String(hint)}>{hint}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <div className="editor-actions">
+        <Button
+          type="submit"
+          className="min-h-11"
+          disabled={
+            busy || paused || !base.editable || conflict || Boolean(current)
+          }
+        >
+          {busy ? 'Ukládání…' : 'Uložit kategorii'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11"
+          disabled={busy || !dirty}
+          onClick={() => {
+            const previous = { values, current, issues, error, conflict };
+            accept(base);
+            setUndo(previous);
+            setNotice('Místní změny byly zahozeny.');
+          }}
+        >
+          Zahodit místní změny
+        </Button>
+        {undo && (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            disabled={busy || paused}
+            onClick={() => {
+              setValues(undo.values);
+              setCurrent(undo.current);
+              setIssues(undo.issues);
+              setError(undo.error);
+              setConflict(undo.conflict);
+              setUndo(undefined);
+              setNotice('Místní změny byly obnoveny.');
+            }}
+          >
+            Vrátit změny
+          </Button>
+        )}
+        <span className="text-sm text-muted-foreground">
+          {dirty ? 'Neuložené změny' : 'Žádné neuložené úpravy'}
+        </span>
+        {onCancel && (
+          <Button
+            type="button"
+            className="min-h-11"
+            variant="ghost"
+            disabled={busy || dirty}
+            onClick={onCancel}
+          >
+            Zrušit
+          </Button>
+        )}
+      </div>
       {(error || issues.length > 0 || notice || current) && (
         <div
           ref={feedback}
@@ -354,61 +451,6 @@ export function VotingSetup({
           fieldId={fieldId}
         />
       </fieldset>
-      <div className="flex flex-wrap gap-3">
-        <Button
-          type="submit"
-          className="min-h-11"
-          disabled={
-            busy || paused || !base.editable || conflict || Boolean(current)
-          }
-        >
-          {busy ? 'Ukládání…' : 'Uložit kategorii'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11"
-          disabled={busy || !dirty}
-          onClick={() => setDiscarding(true)}
-        >
-          Zahodit místní změny
-        </Button>
-        {onCancel && (
-          <Button
-            type="button"
-            className="min-h-11"
-            variant="ghost"
-            disabled={busy || dirty}
-            onClick={onCancel}
-          >
-            Zrušit
-          </Button>
-        )}
-      </div>
-      {discarding && (
-        <div className="space-y-3">
-          <p>Zahodit všechny neuložené změny této kategorie?</p>
-          <Button
-            type="button"
-            className="min-h-11"
-            disabled={busy || paused}
-            onClick={() => {
-              accept(base);
-              setNotice('Místní změny byly zahozeny.');
-            }}
-          >
-            Potvrdit zahození
-          </Button>
-          <Button
-            type="button"
-            className="ml-3 min-h-11"
-            variant="ghost"
-            onClick={() => setDiscarding(false)}
-          >
-            Pokračovat v úpravách
-          </Button>
-        </div>
-      )}
     </form>
   );
 }

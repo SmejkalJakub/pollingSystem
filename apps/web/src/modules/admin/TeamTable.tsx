@@ -9,7 +9,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api';
 import { adminRequest, managementError } from './api';
-import { teamRowIssues, teamFieldError, rowChanged } from './team-table-utils';
+import {
+  teamRowIssues,
+  teamFieldError,
+  rowChanged,
+  teamsByName,
+} from './team-table-utils';
+import { useAdminLeaveWarning } from './navigation';
 import { TeamPaste } from './TeamPaste';
 import { TeamRows } from './TeamRows';
 
@@ -23,14 +29,22 @@ export function TeamTable({
   onExpired: () => void;
 }) {
   const [base, setBase] = useState(initial);
-  const [rows, setRows] = useState<TeamTableRow[]>(initial.teams);
+  const [rows, setRows] = useState<TeamTableRow[]>(() =>
+    teamsByName(initial.teams),
+  );
   const [issues, setIssues] = useState<TeamTableIssue[]>([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [latest, setLatest] = useState<TeamTableSnapshot>();
   const [conflict, setConflict] = useState(false);
-  const [discard, setDiscard] = useState(false);
+  const [undo, setUndo] = useState<{
+    rows: TeamTableRow[];
+    issues: TeamTableIssue[];
+    error: string;
+    latest?: TeamTableSnapshot;
+    conflict: boolean;
+  }>();
   const [focusTarget, setFocusTarget] = useState<{ id: string }>();
   const feedback = useRef<HTMLDivElement>(null);
   const controller = useRef<AbortController | null>(null);
@@ -47,21 +61,14 @@ export function TeamTable({
   useEffect(() => {
     if (focusTarget) document.getElementById(focusTarget.id)?.focus();
   }, [focusTarget]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+  useAdminLeaveWarning(dirty || busy);
   function reset(snapshot: TeamTableSnapshot) {
     setBase(snapshot);
-    setRows(snapshot.teams);
+    setRows(teamsByName(snapshot.teams));
     setLatest(undefined);
     setConflict(false);
     setIssues([]);
-    setDiscard(false);
+    setUndo(undefined);
   }
   function fail(cause: unknown) {
     if (cause instanceof ApiError && cause.status === 401) {
@@ -83,6 +90,7 @@ export function TeamTable({
   async function loadLatest() {
     if (busy) return;
     setBusy(true);
+    setUndo(undefined);
     setError('');
     setNotice('');
     const request = new AbortController();
@@ -150,23 +158,32 @@ export function TeamTable({
       current.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     );
     setNotice('');
-    setDiscard(false);
+    setUndo(undefined);
     // Retain submitted errors until another validation, including while correcting fields.
   }
   function append(added: TeamTableRow[]) {
+    setUndo(undefined);
     setRows((current) => [...current, ...added]);
     setNotice('Nové řádky jsou připraveny. Uložte tabulku.');
     if (added[0]) setFocusTarget({ id: `team-${added[0].id}-name` });
   }
   function rebase() {
+    setUndo(undefined);
     if (!latest) return;
     const local = new Map(rows.map((row) => [row.id, row]));
-    const merged: TeamTableRow[] = latest.teams.map((team) => {
+    const merged: TeamTableRow[] = teamsByName(latest.teams).map((team) => {
       const row = local.get(team.id);
       return row && rowChanged(row, baseById.get(row.id)) ? row : team;
     });
     const ids = new Set(merged.map((row) => row.id));
     for (const row of rows) if (!ids.has(row.id)) merged.push(row);
+    const positions = new Map(rows.map((row, index) => [row.id, index]));
+    // Keep edited rows in place while reviewing a merge; sort after saving.
+    merged.sort(
+      (a, b) =>
+        (positions.get(a.id) ?? rows.length) -
+        (positions.get(b.id) ?? rows.length),
+    );
     setRows(merged);
     setBase(latest);
     setLatest(undefined);
@@ -186,9 +203,62 @@ export function TeamTable({
         noValidate
         aria-busy={busy}
       >
+        <div className="editor-actions mb-4">
+          <Button
+            className="min-h-11"
+            id="teams-save"
+            type="submit"
+            disabled={busy || !dirty || conflict}
+          >
+            {busy ? 'Probíhá požadavek…' : 'Uložit tabulku'}
+          </Button>
+          {dirty && (
+            <Button
+              className="min-h-11"
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => {
+                const previous = { rows, issues, error, latest, conflict };
+                reset(base);
+                setUndo(previous);
+                setError('');
+                setNotice('Místní změny byly zahozeny.');
+                setFocusTarget({ id: 'teams-status' });
+              }}
+            >
+              Zahodit změny
+            </Button>
+          )}
+          {undo && (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={busy}
+              onClick={() => {
+                setRows(undo.rows);
+                setIssues(undo.issues);
+                setError(undo.error);
+                setLatest(undo.latest);
+                setConflict(undo.conflict);
+                setUndo(undefined);
+                setNotice('Místní změny byly obnoveny.');
+                setFocusTarget({ id: 'teams-status' });
+              }}
+            >
+              Vrátit změny
+            </Button>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {dirty
+              ? `${changed} změněných řádků · neuloženo`
+              : 'Všechny změny uloženy'}
+          </p>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {rows.length} týmů · {changed} změněných řádků
+            {rows.length} týmů · uložené týmy podle názvu
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -246,6 +316,15 @@ export function TeamTable({
           </p>
         )}
         <fieldset disabled={busy} className="min-w-0">
+          {!dirty && notice === 'Tabulka týmů byla uložena.' && (
+            <a
+              className="wizard-link mt-2 text-sm"
+              href={`/admin/events/${eventId}?setup=jurors`}
+            >
+              Pokračovat k porotcům
+            </a>
+          )}
+          <TeamPaste disabled={busy || conflict} append={append} />
           <TeamRows
             showIds={conflict}
             rows={rows}
@@ -324,61 +403,7 @@ export function TeamTable({
             )}
           </div>
         )}
-        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
-          <Button
-            className="min-h-11"
-            id="teams-save"
-            type="submit"
-            disabled={busy || !dirty || conflict}
-          >
-            {busy ? 'Probíhá požadavek…' : 'Uložit tabulku'}
-          </Button>
-          {dirty && (
-            <Button
-              className="min-h-11"
-              type="button"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => setDiscard(true)}
-            >
-              Zahodit změny
-            </Button>
-          )}
-          <p className="text-sm text-muted-foreground">
-            Uloží se vše, nebo nic. Před odchodem uložte změny.
-          </p>
-        </div>
-        {discard && (
-          <div className="mt-3 flex flex-wrap items-center gap-3 border border-border p-4">
-            <p>Zahodit všechny místní úpravy?</p>
-            <Button
-              className="min-h-11"
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                reset(base);
-                setFocusTarget({ id: 'teams-status' });
-                setError('');
-                setNotice('Místní změny byly zahozeny.');
-              }}
-            >
-              Ano, zahodit
-            </Button>
-            <Button
-              className="min-h-11"
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setDiscard(false);
-                setFocusTarget({ id: 'teams-add' });
-              }}
-            >
-              Pokračovat v úpravách
-            </Button>
-          </div>
-        )}
       </form>
-      <TeamPaste disabled={busy || conflict} append={append} />
     </>
   );
 }

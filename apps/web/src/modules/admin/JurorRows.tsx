@@ -21,6 +21,7 @@ export function JurorRows({
   locked,
   snapshot,
   disabled,
+  copyDisabled,
   reload,
   onExpired,
 }: {
@@ -40,6 +41,7 @@ export function JurorRows({
   locked: boolean;
   snapshot: JurorTableSnapshot;
   disabled: boolean;
+  copyDisabled: boolean;
   reload: (focusFeedback?: boolean) => void;
   onExpired: () => void;
 }) {
@@ -163,6 +165,7 @@ export function JurorRows({
                     juror={juror}
                     locked={snapshot.locked}
                     disabled={disabled}
+                    copyDisabled={copyDisabled}
                     reload={reload}
                     onExpired={onExpired}
                   />

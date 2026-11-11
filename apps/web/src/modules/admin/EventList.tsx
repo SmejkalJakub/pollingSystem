@@ -6,6 +6,7 @@ import { useResource } from './useResource';
 import { MutationForm } from './MutationForm';
 import { ResourceState } from './ResourceState';
 import { eventFields } from './formFields';
+import { openSavedAdminPage } from './navigation';
 
 export function EventList({ onExpired }: { onExpired: () => void }) {
   const resource = useResource('/events', eventListSchema, onExpired);
@@ -44,7 +45,7 @@ export function EventList({ onExpired }: { onExpired: () => void }) {
                 method: 'POST',
                 body: input,
               });
-              window.location.assign(`/admin/events/${created.id}`);
+              openSavedAdminPage(`/admin/events/${created.id}?setup=teams`);
             }}
           />
         </div>

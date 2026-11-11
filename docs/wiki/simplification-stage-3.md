@@ -1,5 +1,7 @@
 # Simplification Stage 3 — editable Teams table
 
+The 2026-11-10 [organizer usability update](organizer-usability.md) puts valid pasted rows straight into the editable table, adds a sticky save bar and replaces local-discard confirmation with in-memory Undo. Explicit atomic saving and comparison remain unchanged. The original phase record follows.
+
 **Release update, 2026-10-18:** deployed with Stages 1–3 as `a79338c` on the existing free test service. Original local-only boundaries below are historical. See [release evidence and limits](../implementation/progress.md#stages-13-release-verification--2026-10-18).
 
 **DONE locally**, approved 2026-10-18 after read-only inspection found no precise prior Stage 3 boundary. This stage covers Teams only. Jurors/categories tables, automatic T/V groups, combined category setup, bulk assignment/copy/duplication and new readiness tools remain later work. All changes stay local; no commit, push, deployment, cloud/live operation, development migration or credential reset.

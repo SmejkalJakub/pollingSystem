@@ -1,5 +1,5 @@
 import { BallotSubmission } from './BallotSubmission';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ballotValidationSchema,
   type BallotIssue,
@@ -20,12 +20,14 @@ export function CategoryVoting({
   onUnsavedChange,
   onRefresh,
   refreshing,
+  completedAction,
 }: {
   detail: WizardStepDetail;
   onAccessError: (error: unknown) => void;
   onUnsavedChange: (unsaved: boolean) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  completedAction: ReactNode;
 }) {
   const [confirming, setConfirming] = useState(false);
   const draft = useBallotDraft(detail, onAccessError);
@@ -43,6 +45,7 @@ export function CategoryVoting({
   const [failed, setFailed] = useState(false);
   const [checking, setChecking] = useState(false);
   const feedback = useRef<HTMLDivElement>(null);
+  const submitButton = useRef<HTMLButtonElement>(null);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const { step, items } = detail;
@@ -64,6 +67,7 @@ export function CategoryVoting({
     categoryUnavailable ||
     Boolean(draft.saved && draft.saved.status !== 'draft') ||
     Boolean(draft.remote && draft.remote.status !== 'draft');
+  const readOnly = Boolean(draft.saved && draft.saved.status !== 'draft');
   const issues = [
     ...new Set([
       ...local.issues,
@@ -114,45 +118,97 @@ export function CategoryVoting({
   return (
     <>
       <div
-        className="sticky top-0 z-10 mt-6 border-y border-border bg-background py-3 sm:py-4"
+        className="sticky top-0 z-10 mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-y border-border bg-background py-2"
         aria-label="Souhrn hlasů"
       >
         <div
-          className="grid grid-cols-2 gap-3 text-sm"
+          className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm tabular-nums"
           role="status"
           aria-atomic="true"
         >
           <p>
-            <span className="block font-medium">Kladné hlasy</span>
-            <strong className="font-mono text-lg">
-              {local.plusUsed} / {step.maxPlusVotes ?? '—'}
+            Kladné{' '}
+            <strong>
+              {local.plusUsed}/{step.maxPlusVotes ?? '—'}
             </strong>
-            <span className="block text-muted-foreground">
-              Zbývá {local.plusRemaining}
-            </span>
           </p>
           <p>
-            <span className="block font-medium">Záporné hlasy</span>
-            <strong className="font-mono text-lg">
-              {local.minusUsed} / {step.maxMinusVotes ?? '—'}
-            </strong>
-            <span className="block text-muted-foreground">
-              {step.allowNegativeVotes
-                ? `Nyní zbývá ${local.minusRemaining}`
-                : 'Nejsou povoleny'}
-            </span>
+            Záporné{' '}
+            {step.allowNegativeVotes ? (
+              <>
+                <strong>
+                  {local.minusUsed}/{step.maxMinusVotes ?? '—'}
+                </strong>{' '}
+                <span className="text-muted-foreground">
+                  · zbývá {local.minusRemaining}
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">nepovoleny</span>
+            )}
           </p>
         </div>
+        {draft.saved?.status === 'submitted'
+          ? completedAction
+          : !readOnly && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  ref={submitButton}
+                  className="min-h-11"
+                  disabled={
+                    confirming ||
+                    checking ||
+                    draft.busy ||
+                    Boolean(unavailable) ||
+                    !local.valid ||
+                    draft.needsComparison
+                  }
+                  onClick={() => setConfirming(true)}
+                >
+                  Odevzdat kategorii
+                </Button>
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  disabled={
+                    confirming ||
+                    checking ||
+                    draft.busy ||
+                    Boolean(categoryUnavailable) ||
+                    draft.needsComparison ||
+                    (Boolean(draft.saved) && !draft.dirty)
+                  }
+                  onClick={() => void draft.save()}
+                >
+                  {draft.busy && !confirming ? 'Ukládáme…' : 'Uložit návrh'}
+                </Button>
+              </div>
+            )}
       </div>
+      <BallotSubmission
+        draft={draft}
+        valid={local.valid}
+        unavailable={Boolean(unavailable) || checking}
+        confirming={confirming}
+        setConfirming={setConfirming}
+        onCancel={() => {
+          setConfirming(false);
+          queueMicrotask(() => submitButton.current?.focus());
+        }}
+      />
+      <DraftPersistence
+        draft={draft}
+        items={items}
+        unavailable={Boolean(categoryUnavailable)}
+        interactionDisabled={confirming || checking}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+      />
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
         {step.kind === 'selection' ? 'Postupujících' : 'Vítězů'}:{' '}
         {step.selectedPlaces ?? 'Neuvedeno'}. Hlasy nemusíte využít všechny.
         {step.allowNegativeVotes && ' Každý záporný hlas vyžaduje dva kladné.'}
         {' Opětovné stisknutí hlas odebere; opačné znaménko jej nahradí.'}
-      </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        Návrh uložíte tlačítkem pod seznamem týmů. Kontrola výběru hlasy
-        neukládá ani neodevzdává. Neuložené změny se při odchodu ztratí.
       </p>
       <div aria-live="polite" aria-atomic="true" className="mt-4">
         {issues.length > 0 && (
@@ -234,7 +290,7 @@ export function CategoryVoting({
                     <td role="cell" key={sign} className="py-4 text-center">
                       <Button
                         variant="outline"
-                        className={`relative min-h-11 min-w-11 p-0 text-xl ${value === sign ? (sign === 1 ? 'border-2 border-ring bg-ring text-primary-foreground hover:bg-ring hover:text-primary-foreground dark:bg-ring dark:hover:bg-ring' : 'border-2 border-destructive bg-destructive text-primary-foreground hover:bg-destructive hover:text-primary-foreground dark:bg-destructive dark:hover:bg-destructive') : ''}`}
+                        className={`relative min-h-11 min-w-11 scroll-mt-28 p-0 text-xl ${value === sign ? (sign === 1 ? 'border-2 border-ring bg-ring text-primary-foreground hover:bg-ring hover:text-primary-foreground dark:bg-ring dark:hover:bg-ring' : 'border-2 border-destructive bg-destructive text-primary-foreground hover:bg-destructive hover:text-primary-foreground dark:bg-destructive dark:hover:bg-destructive') : ''}`}
                         aria-label={`${sign === 1 ? 'Kladný' : 'Záporný'} hlas: ${item.name}, tým ${index + 1}`}
                         aria-pressed={value === sign}
                         disabled={
@@ -268,56 +324,48 @@ export function CategoryVoting({
           V této kategorii zatím nejsou žádné týmy. Obraťte se na organizátora.
         </p>
       )}
-      <DraftPersistence
-        draft={draft}
-        items={items}
-        unavailable={Boolean(categoryUnavailable)}
-        interactionDisabled={confirming || checking}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
-      />
-      <BallotSubmission
-        draft={draft}
-        valid={local.valid}
-        unavailable={Boolean(unavailable) || checking}
-        confirming={confirming}
-        setConfirming={setConfirming}
-      />
-      <div className="mt-6 flex flex-wrap items-center gap-4">
-        <Button
-          variant="outline"
-          className="min-h-11"
-          onClick={check}
-          disabled={
-            confirming || checking || draft.busy || Boolean(unavailable)
-          }
-        >
-          {checking ? 'Kontrolujeme…' : 'Zkontrolovat výběr'}
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          Kontrola nic neukládá
-        </span>
-      </div>
-      <div
-        ref={feedback}
-        tabIndex={-1}
-        className="mt-4 scroll-mt-44 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-        role="status"
-      >
-        {verified && (
-          <p className={verified.valid ? 'text-ring' : 'text-destructive'}>
-            {verified.valid
-              ? 'Server potvrdil platný výběr. Kontrola neukládá změny ani neodevzdává hlasy.'
-              : 'Server výběr nepotvrdil. Opravte uvedené chyby.'}
-          </p>
-        )}
-        {failed && (
-          <p className="text-destructive">
-            Kontrola se nezdařila. Váš výběr zůstává na stránce. Zkontrolujte
-            připojení a zkuste kontrolu znovu.
-          </p>
-        )}
-      </div>
+      {!readOnly && (
+        <details className="mt-5 border-t border-border">
+          <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">
+            Kontrola výběru na serveru
+          </summary>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="ghost"
+              className="min-h-11"
+              onClick={check}
+              disabled={
+                confirming || checking || draft.busy || Boolean(unavailable)
+              }
+            >
+              {checking ? 'Kontrolujeme…' : 'Zkontrolovat výběr'}
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Kontrola nic neukládá
+            </span>
+          </div>
+          <div
+            ref={feedback}
+            tabIndex={-1}
+            className="mt-4 scroll-mt-44 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+            role="status"
+          >
+            {verified && (
+              <p className={verified.valid ? 'text-ring' : 'text-destructive'}>
+                {verified.valid
+                  ? 'Server potvrdil platný výběr. Kontrola neukládá změny ani neodevzdává hlasy.'
+                  : 'Server výběr nepotvrdil. Opravte uvedené chyby.'}
+              </p>
+            )}
+            {failed && (
+              <p className="text-destructive">
+                Kontrola se nezdařila. Váš výběr zůstává na stránce.
+                Zkontrolujte připojení a zkuste kontrolu znovu.
+              </p>
+            )}
+          </div>
+        </details>
+      )}
     </>
   );
 }

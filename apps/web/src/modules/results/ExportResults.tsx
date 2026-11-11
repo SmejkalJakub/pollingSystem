@@ -74,37 +74,26 @@ export function ExportResults({
     }
   }
   return (
-    <div className="mt-6 border border-border bg-card p-5 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="font-semibold">Export výsledků a účasti</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            XLSX obsahuje přehled kategorií, výsledky týmů, stav účasti porotců
-            a jednotlivé hlasy porotců s časem exportu. Při stažení se načte
-            nový snímek dat.
-          </p>
-        </div>
-        <Button
-          ref={button}
-          variant="outline"
-          className="min-h-11 shrink-0"
-          disabled={state === 'pending'}
-          onClick={() => void download()}
-        >
-          {state === 'pending'
-            ? 'Připravuji XLSX…'
-            : state === 'error'
-              ? 'Zkusit export znovu'
-              : 'Stáhnout XLSX'}
-        </Button>
-      </div>
+    <div>
+      <Button
+        ref={button}
+        className="min-h-11 shrink-0"
+        disabled={state === 'pending'}
+        onClick={() => void download()}
+      >
+        {state === 'pending'
+          ? 'Připravuji XLSX…'
+          : state === 'error'
+            ? 'Zkusit export znovu'
+            : 'Stáhnout XLSX'}
+      </Button>
       {state === 'pending' && (
-        <p role="status" className="mt-3 text-sm">
+        <p role="status" className="sr-only">
           Připravuji aktuální data ke stažení…
         </p>
       )}
       {state === 'success' && (
-        <p role="status" className="mt-3 text-sm">
+        <p role="status" className="sr-only">
           Export je připraven ke stažení. Čas dat najdete v souboru.
         </p>
       )}
@@ -113,7 +102,7 @@ export function ExportResults({
           ref={feedback}
           role="alert"
           tabIndex={-1}
-          className="mt-3 text-sm outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+          className="mt-2 max-w-xs text-sm text-destructive outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
         >
           Export se nepodařilo připravit. Zkontrolujte připojení a zkuste export
           znovu.

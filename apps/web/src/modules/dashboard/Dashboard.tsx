@@ -1,6 +1,5 @@
 import { juryGroupLabel } from '@d21/contracts';
 import { useState } from 'react';
-import { EventHeading } from '../admin/EventNavigation';
 import {
   dashboardOverviewSchema,
   type DashboardCategory,
@@ -150,8 +149,7 @@ export function Dashboard({
       <DashboardState resource={resource} />
       {data && (
         <>
-          <EventHeading event={data.event} section="progress" />
-          <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <h2
               id="dashboard-heading"
               tabIndex={-1}
@@ -164,7 +162,7 @@ export function Dashboard({
           <p className="mt-4 text-sm text-muted-foreground">
             Data k {timestamp(data.asOf)}. Obnovte přehled pro aktuální stav.
           </p>
-          <dl className="mt-5 grid grid-cols-2 gap-px border border-border bg-border lg:grid-cols-4">
+          <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
             {[
               [
                 'Odevzdané lístky',
@@ -177,67 +175,63 @@ export function Dashboard({
               ['Čekající porotci', data.totals.pendingJurors],
               ['Kategorie ke kontrole', data.totals.problemCategories],
             ].map(([label, value]) => (
-              <div key={label} className="min-w-0 bg-card p-4">
+              <div key={label} className="min-w-0 bg-card p-3">
                 <dt className="text-sm text-muted-foreground">{label}</dt>
-                <dd className="mt-3 break-words font-mono text-2xl font-medium sm:text-3xl">
+                <dd className="mt-1 break-words font-mono text-2xl font-medium">
                   {value}
                 </dd>
               </div>
             ))}
           </dl>
-          <div className="mt-6">
-            <Progress
-              {...data.totals}
-              label="Celkový průběh spuštěných kategorií"
-            />
-          </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Počítáme aktuálně odevzdané lístky vůči oprávněným dvojicím porotce
-            a kategorie. Koncepty se nezapočítávají. Hotovo znamená odevzdání
-            všech očekávaných lístků bez zjištěného problému; kategorii tím
-            neuzavíráme.
-          </p>
-          <section
-            className="mt-10 border-l-2 border-primary pl-5"
-            aria-labelledby="attention-heading"
-          >
-            <h2 id="attention-heading" className="text-xl font-semibold">
-              Ke kontrole
-            </h2>
-            {data.totals.problemCategories ? (
-              <ul className="mt-3 space-y-4">
-                {data.categories
-                  .filter((c) => c.status !== 'draft' && c.problems.length)
-                  .map((c) => (
-                    <li key={c.id}>
-                      <a
-                        className="wizard-link break-words font-medium"
-                        href={`/admin/dashboard/votings/${c.id}`}
-                      >
-                        {c.name}
-                      </a>
-                      <ul className="space-y-1 text-sm text-muted-foreground">
-                        {c.problems.map((p) => (
-                          <li key={p}>{problemLabels[p]}</li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">
-                V uložených datech spuštěných kategorií nebyl zjištěn problém.
-              </p>
-            )}
-          </section>
-          <section className="mt-12" aria-labelledby="categories-heading">
+          {data.totals.problemCategories > 0 && (
+            <section
+              className="mt-10 border-l-2 border-primary pl-5"
+              aria-labelledby="attention-heading"
+            >
+              <h2 id="attention-heading" className="text-xl font-semibold">
+                Ke kontrole
+              </h2>
+              {data.totals.problemCategories ? (
+                <ul className="mt-3 space-y-4">
+                  {data.categories
+                    .filter((c) => c.status !== 'draft' && c.problems.length)
+                    .map((c) => (
+                      <li key={c.id}>
+                        <a
+                          className="wizard-link break-words font-medium"
+                          href={`/admin/dashboard/votings/${c.id}`}
+                        >
+                          {c.name}
+                        </a>
+                        <ul className="space-y-1 text-sm text-muted-foreground">
+                          {c.problems.map((p) => (
+                            <li key={p}>{problemLabels[p]}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  V uložených datech spuštěných kategorií nebyl zjištěn problém.
+                </p>
+              )}
+            </section>
+          )}
+          <section className="mt-6" aria-labelledby="categories-heading">
             <h2 id="categories-heading" className="text-2xl font-semibold">
               Kategorie ({data.categories.length})
             </h2>
             {data.categories.length ? (
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {data.categories.map((c) => (
-                  <CategoryCard key={c.id} category={c} />
+                  <CategoryCard
+                    key={c.id}
+                    category={c}
+                    onExpired={onExpired}
+                    onChanged={resource.reload}
+                    disabled={resource.loading}
+                  />
                 ))}
               </div>
             ) : (
@@ -247,6 +241,23 @@ export function Dashboard({
               </p>
             )}
           </section>
+          <details className="mt-6 text-sm text-muted-foreground">
+            <summary className="min-h-11 cursor-pointer py-3">
+              Jak se počítá průběh
+            </summary>
+            <div className="mt-6">
+              <Progress
+                {...data.totals}
+                label="Celkový průběh spuštěných kategorií"
+              />
+            </div>
+            <p className="mt-3">
+              Počítáme aktuálně odevzdané lístky vůči oprávněným dvojicím
+              porotce a kategorie. Koncepty se nezapočítávají. Hotovo znamená
+              odevzdání všech očekávaných lístků bez zjištěného problému;
+              kategorii tím neuzavíráme.
+            </p>
+          </details>
           <JurorOverview categories={data.categories} />
         </>
       )}

@@ -63,6 +63,7 @@ export function JurorPortal({
   const [loggedOut, setLoggedOut] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const feedback = useRef<HTMLParagraphElement>(null);
+  const justEntered = useRef(false);
   const atRoot = window.location.pathname === '/';
   const expiresAt = data?.current.expiresAt;
 
@@ -84,6 +85,10 @@ export function JurorPortal({
   }, []);
   useEffect(() => {
     if (link || loggedOut) return;
+    if (justEntered.current) {
+      justEntered.current = false;
+      return;
+    }
     const controller = new AbortController();
     const load = async () => {
       try {
@@ -153,12 +158,19 @@ export function JurorPortal({
     setBusy(true);
     setError(undefined);
     try {
-      await apiRequest('/auth/juror/start', jurorStartResponseSchema, {
-        method: 'POST',
-        body: link,
-      });
+      const result = await apiRequest(
+        '/auth/juror/start',
+        jurorStartResponseSchema,
+        {
+          method: 'POST',
+          body: link,
+        },
+      );
+      window.history.replaceState(null, '', '/wizard');
+      justEntered.current = true;
+      setData({ current: result.wizard });
+      setLoading(false);
       setLink(null);
-      window.location.replace('/wizard');
     } catch (cause) {
       setError(cause);
     } finally {

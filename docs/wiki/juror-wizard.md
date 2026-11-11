@@ -1,5 +1,7 @@
 # Juror entry and voting interactions
 
+The [streamlined workflow](streamlined-workflow.md) opens the overview from the personal-link response and brings ballot actions beside the vote counters. Server-only checking is optional; draft and submission rules are unchanged.
+
 Phases 5–8 are DONE as of 2026-10-17; actual validation and limitations are recorded in [progress](../implementation/progress.md). Phase 6 adds verified temporary category interactions and authoritative validation. Phase 7 draft persistence is now implemented; independent category submission and administrator-only unlocking are now implemented in Phase 8; review remains Phase 9. See the Phase 7 section below for current behavior; earlier Phase 5/6 descriptions are historical.
 
 ## Organizer workflow and approved lifecycle

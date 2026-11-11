@@ -1,5 +1,11 @@
 # Design reference
 
+## Current refinement — 2026-11-10
+
+The user requests a less sterile interface and provides [DashHack](https://dashhack-production.up.railway.app) as inspiration. Read-only native-browser inspection covered its home and the ATT Hackathon Junior 2026 Teams workspace. Adapt blue accents, navy surfaces, softer panel corners and compact direct navigation to the existing voting product. The current refinement introduces a blue/light workspace with a navy header and a dark palette for dark browser preference. Functional requirements, voting rules and existing access mechanics remain authoritative. [Organizer workflow scope and validation](organizer-usability.md).
+
+The original Lovable notes below are historical evidence; their warm monochrome palette and two-level navigation are superseded by this user-requested refinement.
+
 Recorded 2026-10-16 from the user's message and a browser inspection.
 
 ## User-provided preview

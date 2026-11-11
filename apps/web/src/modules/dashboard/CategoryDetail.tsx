@@ -1,4 +1,10 @@
 import { juryGroupLabel } from '@d21/contracts';
+import { useEffect, useRef, useState } from 'react';
+import { adminBallotsSchema, type AdminBallot } from '@d21/contracts';
+import { Button } from '@/components/ui/button';
+import { UnlockBallotForm } from '../admin/BallotUnlock';
+import { ResourceState } from '../admin/ResourceState';
+import { VotingLifecycleActions } from '../admin/VotingLifecycleActions';
 import { EventHeading } from '../admin/EventNavigation';
 import { dashboardDetailSchema, type DashboardCategory } from '@d21/contracts';
 import { useResource } from '../admin/useResource';
@@ -13,49 +19,109 @@ import {
   timestamp,
 } from './presentation';
 
-export function JurorRows({ category: c }: { category: DashboardCategory }) {
+export function JurorRows({
+  category: c,
+  ballots,
+  onExpired,
+  onChanged,
+  disabled,
+}: {
+  category: DashboardCategory;
+  ballots: AdminBallot[];
+  onExpired: () => void;
+  onChanged: () => void;
+  disabled: boolean;
+}) {
+  const [selected, setSelected] = useState<AdminBallot>();
+  const [notice, setNotice] = useState('');
+  const feedback = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (notice) feedback.current?.focus();
+  }, [notice]);
+  const byJuror = new Map(ballots.map((ballot) => [ballot.jurorId, ballot]));
   return (
-    <ul className="mt-5 divide-y divide-border">
-      {c.jurors.map((j) => (
-        <li
-          key={j.id}
-          className="flex min-w-0 flex-col gap-2 py-4 sm:flex-row sm:items-start sm:justify-between"
-        >
-          <div className="min-w-0">
-            <p className="break-words font-medium">
-              {j.displayName}{' '}
-              <span className="text-sm text-muted-foreground">
-                ·{' '}
-                {juryGroupLabel(c.groups.find((g) => g.id === j.groupId)?.code)}
-              </span>
-            </p>
-            <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-              {j.id}
-            </p>
-          </div>
-          <div className="shrink-0 text-sm sm:text-right">
-            <p
-              className={
-                j.progress === 'invalid_draft' || j.progress === 'locked'
-                  ? 'text-destructive'
-                  : ''
-              }
-            >
-              {progressLabels[j.progress]}
-            </p>
-            {j.submittedAt ? (
-              <p className="mt-1 text-muted-foreground">
-                Odevzdáno {timestamp(j.submittedAt)}
+    <>
+      {notice && (
+        <p ref={feedback} tabIndex={-1} role="status" className="mt-4 text-sm">
+          {notice}
+        </p>
+      )}
+      <ul className="mt-5 divide-y divide-border">
+        {c.jurors.map((j) => (
+          <li
+            key={j.id}
+            className="flex min-w-0 flex-wrap justify-between gap-3 py-4"
+          >
+            <div className="min-w-0">
+              <p className="break-words font-medium">
+                {j.displayName}{' '}
+                <span className="text-sm text-muted-foreground">
+                  ·{' '}
+                  {juryGroupLabel(
+                    c.groups.find((g) => g.id === j.groupId)?.code,
+                  )}
+                </span>
               </p>
-            ) : j.savedAt ? (
-              <p className="mt-1 text-muted-foreground">
-                Uloženo {timestamp(j.savedAt)}
+              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                {j.id}
               </p>
-            ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
+            </div>
+            <div className="shrink-0 text-sm sm:text-right">
+              <p
+                className={
+                  j.progress === 'invalid_draft' || j.progress === 'locked'
+                    ? 'text-destructive'
+                    : ''
+                }
+              >
+                {progressLabels[j.progress]}
+              </p>
+              {j.submittedAt ? (
+                <p className="mt-1 text-muted-foreground">
+                  Odevzdáno {timestamp(j.submittedAt)}
+                </p>
+              ) : j.savedAt ? (
+                <p className="mt-1 text-muted-foreground">
+                  Uloženo {timestamp(j.savedAt)}
+                </p>
+              ) : null}
+              {byJuror.get(j.id)?.status === 'submitted' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-2 min-h-11"
+                  disabled={disabled || Boolean(selected)}
+                  aria-label={`Odemknout lístek: ${j.displayName}, ${j.id}`}
+                  onClick={() => {
+                    setNotice('');
+                    setSelected(byJuror.get(j.id));
+                  }}
+                >
+                  Odemknout porotci
+                </Button>
+              )}
+            </div>
+            {selected?.jurorId === j.id && (
+              <div className="w-full">
+                <UnlockBallotForm
+                  votingId={c.id}
+                  ballot={selected}
+                  onExpired={onExpired}
+                  cancel={() => setSelected(undefined)}
+                  done={() => {
+                    setSelected(undefined);
+                    setNotice(
+                      'Lístek byl odemčen porotci. Historie odevzdání je zachovaná.',
+                    );
+                    onChanged();
+                  }}
+                />
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 export function CategoryDetail({
@@ -71,6 +137,11 @@ export function CategoryDetail({
     onExpired,
   );
   const data = resource.data;
+  const ballots = useResource(
+    `/votings/${votingId}/ballots`,
+    adminBallotsSchema,
+    onExpired,
+  );
   return (
     <>
       <DashboardState resource={resource} />
@@ -91,7 +162,39 @@ export function CategoryDetail({
             >
               {data.category.name}
             </h2>
-            <DashboardRefresh resource={resource} />
+            <DashboardRefresh
+              resource={{
+                loading: resource.loading || ballots.loading,
+                error: resource.error ?? ballots.error,
+                reload() {
+                  resource.reload();
+                  ballots.reload();
+                },
+              }}
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap items-start gap-3">
+            <VotingLifecycleActions
+              voting={data.category}
+              onExpired={onExpired}
+              onChanged={() => {
+                resource.reload();
+                ballots.reload();
+              }}
+              disabled={resource.loading}
+            />
+            <a
+              className="wizard-link text-sm"
+              href={`/admin/results/votings/${votingId}`}
+            >
+              Výsledky kategorie
+            </a>
+            <a
+              className="wizard-link text-sm"
+              href={`/admin/votings/${votingId}`}
+            >
+              Nastavení kategorie
+            </a>
           </div>
           <p className="mt-4">
             {stateLabels[data.category.state]} ·{' '}
@@ -136,20 +239,24 @@ export function CategoryDetail({
                 ? 'Přehled plánovaného oprávnění; koncept ještě není otevřený.'
                 : 'Odevzdané lístky jsou pro porotce uzamčené. Uložený návrh není odevzdání.'}
             </p>
+            <ResourceState resource={ballots} />
             {data.category.jurors.length ? (
-              <JurorRows category={data.category} />
+              <JurorRows
+                category={data.category}
+                ballots={ballots.data ?? []}
+                onExpired={onExpired}
+                disabled={ballots.loading || resource.loading}
+                onChanged={() => {
+                  resource.reload();
+                  ballots.reload();
+                }}
+              />
             ) : (
               <p className="mt-5 text-muted-foreground">
                 Žádní oprávnění porotci.
               </p>
             )}
           </section>
-          <a
-            className="wizard-link mt-6 text-sm"
-            href={`/admin/votings/${votingId}`}
-          >
-            Správa kategorie a odemčení lístků →
-          </a>
         </>
       )}
     </>

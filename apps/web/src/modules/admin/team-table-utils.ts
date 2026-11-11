@@ -89,3 +89,12 @@ export const teamFieldError = (field: 'name' | 'description') =>
   field === 'name'
     ? 'Zadejte název o délce 1–200 znaků.'
     : 'Popis může mít nejvýše 5 000 znaků.';
+export function teamsByName<T extends { name: string; id: string }>(
+  teams: T[],
+) {
+  return [...teams].sort(
+    (a, b) =>
+      a.name.localeCompare(b.name, 'cs', { numeric: true }) ||
+      a.id.localeCompare(b.id),
+  );
+}

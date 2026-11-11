@@ -28,15 +28,10 @@ export function DraftPersistence({
     window.setTimeout(() => feedback.current?.focus(), 0);
   }
   return (
-    <section
-      className="mt-6 border border-border bg-card p-4 sm:p-6"
-      aria-label="Uložení návrhu"
-    >
-      <h2 className="text-lg font-semibold">
-        {draft.saved?.status === 'submitted'
-          ? 'Odevzdané hlasování'
-          : 'Rozpracované hlasování'}
-      </h2>
+    <section className="mt-3" aria-label="Uložení návrhu">
+      {draft.saved?.status === 'submitted' && (
+        <h2 className="text-base font-semibold">Odevzdané hlasování</h2>
+      )}
       <p
         className="mt-2 text-sm leading-relaxed text-muted-foreground"
         role="status"
@@ -53,13 +48,6 @@ export function DraftPersistence({
         {draft.saved &&
           ` Naposledy uloženo ${new Date(draft.saved.savedAt).toLocaleString('cs-CZ')}.`}
       </p>
-      {!readOnly && (
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Uložený návrh obnovíte i po návratu z jiného zařízení. Uložit lze také
-          neplatný nebo prázdný výběr. Uložení není odevzdání. Před odchodem
-          změny uložte.
-        </p>
-      )}
       {draft.saved?.submittedAt && (
         <p className="mt-3 text-sm" role="status">
           Odevzdáno {new Date(draft.saved.submittedAt).toLocaleString('cs-CZ')}.
@@ -177,21 +165,6 @@ export function DraftPersistence({
             {draft.busy ? 'Načítáme…' : 'Obnovit porovnání'}
           </Button>
         </div>
-      )}
-      {!readOnly && (
-        <Button
-          className="mt-4 min-h-11"
-          onClick={() => perform(draft.save)}
-          disabled={
-            draft.busy ||
-            interactionDisabled ||
-            unavailable ||
-            draft.needsComparison ||
-            (Boolean(draft.saved) && !draft.dirty)
-          }
-        >
-          {draft.busy ? 'Čekáme na server…' : 'Uložit návrh'}
-        </Button>
       )}
       {unavailable && (
         <div className="mt-3">
